@@ -21,7 +21,7 @@ def main():
 	removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 	
 	for Glyph in Font.glyphs:
-		Layer = Glyph.layerForKey_(FontMaster.id())
+		Layer = Glyph.layerForKey_(FontMaster.id)
 		Components = Layer.components
 		for i in range(2):
 			for Component in Components:

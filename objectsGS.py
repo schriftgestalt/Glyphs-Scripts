@@ -47,11 +47,12 @@ def AllFonts():
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
 	Doc = Glyphs.currentDocument
-	Font = CurrentFont()
-	try:
-		Layer = Doc.selectedLayers()[0]
-		return RGlyph(Layer.parent())
-	except: pass
+	print Doc.selectedLayers()
+	#Font = CurrentFont()
+	#try:
+	Layer = Doc.selectedLayers()[0]
+	return RGlyph(Layer.parent())
+	#except: pass
 	
 	print "No glyph selected!"
 	return None
@@ -144,9 +145,9 @@ class RFont(BaseFont):
 		#print "__RFont.init doc:", type(doc)#, len(doc), str(doc[0]).encode("ascii", "replace"), "\n"
 		self._object = doc
 		self._master = master
-		self._masterKey = doc.font().masters[master].id()
+		self._masterKey = doc.font.masters[master].id
 		#print "_masterKey", self._masterKey
-		self.features = RFeatures(doc.font())
+		self.features = RFeatures(doc.font)
 		self._lib = {}
 		self.info = RInfo(self)
 		
@@ -156,7 +157,7 @@ class RFont(BaseFont):
 
 	def keys(self):
 		keys = {}
-		for glyph in self._object.font().glyphs:
+		for glyph in self._object.font.glyphs:
 			glyphName = glyph.name
 			if glyphName in keys:
 				n = 1
@@ -170,7 +171,7 @@ class RFont(BaseFont):
 		return keys.keys()
 
 	def has_key(self, glyphName):
-		glyph = self._object.font().glyphForName_(glyphName)
+		glyph = self._object.font.glyphForName_(glyphName)
 		if glyph is None:
 			return False
 		else:
@@ -179,10 +180,10 @@ class RFont(BaseFont):
 	__contains__ = has_key
 	
 	def __setitem__(self, glyphName, glyph):
-		self._object.font().addGlyph_( glyph.naked() )
+		self._object.font.addGlyph_( glyph.naked() )
 	
 	def __getitem__(self, glyphName):
-		return RGlyph(self._object.font().glyphForName_(glyphName))
+		return RGlyph(self._object.font.glyphForName_(glyphName))
 	
 	def __cmp__(self, other):
 		if not hasattr(other, '_object'):
@@ -197,9 +198,9 @@ class RFont(BaseFont):
 			return -1
 	
 	def __len__(self):
-		if self._object.font().glyphs() is None:
+		if self._object.font.glyphs() is None:
 			return 0
-		return len(self._object.font().glyphs())
+		return len(self._object.font.glyphs())
 	
 	# def _get_info(self):
 	# 	return RInfo(self)
@@ -210,12 +211,12 @@ class RFont(BaseFont):
 		self._object.close()
 		
 	def _get_lib(self):
-		# print "_get_lib", self._object.font().userData()
-		return self._object.font().userData().objectForKey_("org.robofab.ufoLib")
+		# print "_get_lib", self._object.font.userData()
+		return self._object.font.userData().objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
-		#print "_set_lib", self._object.font().userData(), obj
-		self._object.font().userData().setObject_forKey_(obj, "org.robofab.ufoLib")
+		#print "_set_lib", self._object.font.userData(), obj
+		self._object.font.userData().setObject_forKey_(obj, "org.robofab.ufoLib")
 		
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
@@ -239,7 +240,7 @@ class RFont(BaseFont):
 	
 	def _get_groups(self):
 		Dictionary = {}
-		for currGlyph in self._object.font().glyphs:
+		for currGlyph in self._object.font.glyphs:
 			#print currGlyph
 			if currGlyph.leftKerningGroupId():
 				Group = Dictionary[currGlyph.leftKerningGroupId()]
@@ -253,7 +254,7 @@ class RFont(BaseFont):
 					Group = []
 					Dictionary[currGlyph.rightKerningGroupId()] = Group
 				Group.append(currGlyph.name)
-		for aClass in self._object.font().classes:
+		for aClass in self._object.font.classes:
 			Dictionary[aClass.name().encode('ascii')] = aClass.code().split(" ")
 		return Dictionary
 	
@@ -268,27 +269,27 @@ class RFont(BaseFont):
 							currGroupKey = ChangedGlyphNames[currGroupKey]
 						if ChangedGlyphNames.has_key(GlyphName): 
 							GlyphName = ChangedGlyphNames[GlyphName]
-						self._object.font().glyphForName_(GlyphName).setRightKerningGroupId_( currGroupKey )
+						self._object.font.glyphForName_(GlyphName).setRightKerningGroupId_( currGroupKey )
 			
 			elif currGroupKey.startswith("@MMK_R_"):
 				Group = GroupsDict[currGroupKey]
 				if Group:
 					for GlyphName in Group:
-						self._object.font().glyphForName_(GlyphName).setLeftKerningGroupId_(currGroupKey)
+						self._object.font.glyphForName_(GlyphName).setLeftKerningGroupId_(currGroupKey)
 			else:
 				newClass = GSClass.alloc().init()
 				newClass.setName_( currGroupKey )
 				newClass.setCode_( " ".join(GroupsDict[currGroupKey]))
 				newClass.setAutomatic_( False )
-				self._object.font().addClass_(newClass)
+				self._object.font.addClass_(newClass)
 				
 	
 	
 	groups = property(_get_groups, _set_groups, doc="groups")
 	
 	def _get_kerning(self):
-		FontMaster = self._object.font().masters[self._master]
-		Kerning = self._object.font().kerning().objectForKey_(FontMaster.id())
+		FontMaster = self._object.font.masters[self._master]
+		Kerning = self._object.font.kerning().objectForKey_(FontMaster.id)
 		RKerning = {}
 		if Kerning != None:
 			for LeftKey in Kerning.allKeys():
@@ -296,18 +297,18 @@ class RFont(BaseFont):
 				for RightKey in LeftKerning.allKeys():
 					RKerning[(LeftKey, RightKey)] = LeftKerning.objectForKey_(RightKey)
 		
-		return RKerning # self._object.font().kerning().objectForKey_(FontMaster.id())
+		return RKerning # self._object.font.kerning().objectForKey_(FontMaster.id)
 	
 	def _set_kerning(self, kerning):
 		# print "kerning:", kerning
-		FontMasterID = self._object.font().masters[self._master].id()
+		FontMasterID = self._object.font.masters[self._master].id
 		LeftKerning = NSMutableDictionary.alloc().init()
-		Font = self._object.font()
+		Font = self._object.font
 		for pair in kerning:
 			Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMasterID, pair[0], pair[1], kerning[pair])
 			
 		#	print "key:", pair, "Value:", kerning[pair]
-		#self._object.font().kerning().setObject_forKey_(kerning, FontMaster.id())
+		#self._object.font.kerning().setObject_forKey_(kerning, FontMaster.id)
 	
 	kerning = property(_get_kerning, _set_kerning, doc="groups")
 	
@@ -316,8 +317,8 @@ class RFont(BaseFont):
 	#
 	
 	def getWidth(self, glyphName):
-		if self._object.font().glyphForName_(glyphName):
-			return self._object.font().glyphForName_(glyphName).layerForKey_(self._masterKey).width()
+		if self._object.font.glyphForName_(glyphName):
+			return self._object.font.glyphForName_(glyphName).layerForKey_(self._masterKey).width()
 		raise IndexError		# or return None?
 	
 	def save(self, path=None):
@@ -348,7 +349,7 @@ class RFont(BaseFont):
 			n = self._RGlyphs[glyphName]
 		else:
 			# haven't served it before, is it in the glyphSet then?
-			n = RGlyph( self.object.font().glyphForName_(glyphName) )
+			n = RGlyph( self.object.font.glyphForName_(glyphName) )
 			self._RGlyphs[glyphName] = n
 			
 		if n is None:
@@ -363,7 +364,7 @@ class RFont(BaseFont):
 		#else:
 		g = Glyphs.glyph()
 		g.setName_(glyphName)
-		self._object.font().addGlyph_(g)
+		self._object.font.addGlyph_(g)
 		g = RGlyph(g)
 		self._RGlyphs[glyphName] = g
 		return self.getGlyph(glyphName)
@@ -483,7 +484,7 @@ class RFont(BaseFont):
 			# lib
 			if doLib:
 				#self.lib.clear()
-				# print "readUFO lib:", fontLib, self._object.font().userData()
+				# print "readUFO lib:", fontLib, self._object.font.userData()
 				self.lib = fontLib
 				if bar:
 					bar.tick()
@@ -497,7 +498,7 @@ class RFont(BaseFont):
 	def writeUFO(self, path=None, doProgress=False, glyphNameToFileNameFunc=None, doHints=False, doInfo=True, doKerning=True, doGroups=True, doLib=True, doFeatures=True, glyphs=None, formatVersion=2):
 		if (path != None):
 			Plugin = GlyphsFileFormatUFO.alloc().init()
-			Plugin.writeFont_toURL_error_(self._object.font(), NSURL.fileURLWithPath_(path), None)
+			Plugin.writeFont_toURL_error_(self._object.font, NSURL.fileURLWithPath_(path), None)
 	
 	
 	def _getGlyphOrderFromLib(self, fontLib, glyphSet):
@@ -527,7 +528,7 @@ class RFont(BaseFont):
 		if classes is not None:
 			del fontLib["org.robofab.opentype.classes"]
 			if setFeatures:
-				self._object.font().setClasses_( classes )
+				self._object.font.setClasses_( classes )
 		features = fontLib.get("org.robofab.opentype.features")
 		if features is not None:
 			order = fontLib.get("org.robofab.opentype.featureorder")
@@ -545,11 +546,11 @@ class RFont(BaseFont):
 				if oneFeature is not None:
 					orderedFeatures.append((tag, oneFeature))
 			if setFeatures:
-				self._object.font().setFeatures_(objc.nil)
+				self._object.font.setFeatures_(objc.nil)
 				for tag, src in orderedFeatures:
 					Feature = NewFeature(tag)
 					Feature.setCode_(src)
-					self._object.font().addFeature_(Feature)
+					self._object.font.addFeature_(Feature)
 	def _get_selection(self):
 		# return a list of glyph names for glyphs selected in the font window
 		l=[]
@@ -574,7 +575,7 @@ class RGlyph(BaseGlyph):
 			raise RoboFabError, "RGlyph: there's nothing to wrap!?"
 		self._object = _GSGlyph
 		if _GSGlyph.parent():
-			self._layerID = _GSGlyph.parent().masters[master].id()
+			self._layerID = _GSGlyph.parent().masters[master].id
 		elif (_GSGlyph.layers[master]):
 			self._layerID = _GSGlyph.layers[master].layerId()
 		self.masterIndex = master
@@ -1749,8 +1750,8 @@ class RInfo(BaseInfo):
 					# print "rename Attr:", attr, "to:", _renameAttributes[attr]
 					attr = _renameAttributes[attr]
 				# print "__setattr__", attr, "(", type(attr),")", value, "(", type(value), ")"
-				#print "self._object.font()._object", self._object._object.font()
-				self._object._object.font().setValue_forKey_(value, attr)
+				#print "self._object.font._object", self._object._object.font
+				self._object._object.font.setValue_forKey_(value, attr)
 			except:
 				#print "sys.exc_info()", sys.exc_info()
 				raise AttributeError("Unknown attribute %s." % attr)
@@ -1798,7 +1799,7 @@ class RInfo(BaseInfo):
 			attr = _renameAttributes[attr]
 		#print "__getattr__", attr
 		try:
-			value = self._object._object.font().valueForKey_(attr)
+			value = self._object._object.font.valueForKey_(attr)
 			# use the environment specific info attr get
 			# method if it is defined.
 			# if hasattr(self, "_environmentGetAttr"):

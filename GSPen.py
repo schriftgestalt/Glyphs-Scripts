@@ -38,7 +38,7 @@ class GSPointPen(AbstractPointPen):
 		self._glyph = r_glyph
 		#print "Glyph:", r_glyph
 		if self._glyph._object.parent():
-			self._layerID = self._glyph._object.parent().fontMasters()[masterIndex].id()
+			self._layerID = self._glyph._object.parent().fontMasters()[masterIndex].id
 			self._layer = self._glyph._object.layerForKey_(self._layerID)
 		elif self._glyph._object.layers[masterIndex]:
 			self._layerID = self._glyph._object.layers[masterIndex].layerId()

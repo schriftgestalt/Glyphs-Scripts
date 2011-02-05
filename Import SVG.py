@@ -6,26 +6,27 @@ Import SVG.py
 Created by Georg Seifert on 2010-11-28.
 Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 """
-
-from GlyphsInternal import *
 from objectsGS import *
-from Glyphs import *
-
-import sys
-import os
-import objc
-from AppKit import *
-from Foundation import *
-
+from GlyphsApp import GetFile
 from xml.dom import minidom
 
 Bounds = None
-pen = None
-
-def drawSVGNode(node):
-	global Bounds
-	global pen
+def stringToFloatList(String):
 	
+	points = String.replace(",", " ").strip(" ").split(" ")
+	newPoints = []
+	print "- points", points
+	for value in points:
+		try:
+			value = float(value)
+			newPoints.append(value)
+		except:
+			pass
+	print "f points", newPoints
+	return newPoints
+	
+def drawSVGNode(pen, node):
+	global Bounds
 	if node.localName:
 		if node.localName == "rect":
 			X = float(node.getAttribute('x'))
@@ -76,15 +77,37 @@ def drawSVGNode(node):
 					#if len(pen.contour) > 0:
 					#	pen.
 						
-					point = part[1:].strip(",").split(",")
-					point = [float(Value) for Value in point]
+					# point = part[1:].strip(",").split(",")
+					# newPoint = []
+					# print "point", point
+					# for value in point:
+					# 	try:
+					# 		value = float(value)
+					# 		newPoint.append(value)
+					# 	except:
+					# 		pass
+					point = points = stringToFloatList(part[1:])
+					print "point", point
+					assert(len(point) == 2)
 					point[1] = Bounds[3] - point[1]
 					pen.moveTo(point)
 					lastPoint = point
 				elif part[0] == "C":
-					# print "__C"
-					points = part[1:].strip(",").split(",")
-					points = [float(Value) for Value in points]
+					print "__C", part
+					# points = part[1:].replace(",", " ").strip(" ").split(" ")
+					# newPoints = []
+					# print "- points c", points
+					# for value in points:
+					# 	try:
+					# 		value = float(value)
+					# 		newPoints.append(value)
+					# 	except:
+					# 		pass
+					points = stringToFloatList(part[1:])
+					print "+ points c", points
+					assert(len(points) == 6)
+					
+					#points = [float(Value) for Value in points]
 					P1 = points[0:2]
 					P2 = points[2:4]
 					P3 = points[4:6]
@@ -157,9 +180,9 @@ def drawSVGNode(node):
 					lastPoint = P3
 				elif part[0] == "L":
 					# print "__l", part[1:].strip(",")
-					points = part[1:].strip(",").split(",")
+					#points = part[1:].strip(",").split(",")
 					# print "1 L points", points
-					points = [float(Value) for Value in points]
+					points = stringToFloatList(part[1:])
 					# print "2 L points", points
 					for i in range(0, len(points), 2):
 						#point[1] = Bounds[3] - point[1]
@@ -186,46 +209,51 @@ def drawSVGNode(node):
 			if parts[-1] != "z":
 				pen.endPath()
 		if node.localName == "polygon":
-			print "Poly"
+			# print "Poly"
 			points = node.getAttribute('points').strip(" ")
-			print "1 points", points
+			# print "1 points", points
 			points = points.split(" ")
-			print "2 points", points
+			# print "2 points", points
 			point = points[0].split(",")
 			point = [float(Value) for Value in point]
 			point[1] = Bounds[3] - point[1]
 			pen.moveTo(point)
+			print "1 points", points
 			for i in range(1, len(points), 1):
-				point = points[i].split(",")
-				point = [float(Value) for Value in point]
-				point[1] = Bounds[3] - point[1]
-				pen.lineTo(point)
+				#point = points[i].split(",")
+				point = stringToFloatList(points[i])
+				if len(point) == 2:
+					#point = [float(Value) for Value in point]
+					point[1] = Bounds[3] - point[1]
+					pen.lineTo(point)
 			pen.closePath()
 		if node.localName == "g":
 			for subNode in node.childNodes:
-				drawSVGNode(subNode)
-	
+				drawSVGNode(pen, subNode)
 	
 def main():
 	global Bounds
-	global pen
-	Doc = Glyphs.currentDocument
-	#print Doc.selectedLayers()[0]
-	Layer = Doc.selectedLayers()[0]
-	g = RGlyph(Layer.parent())
+	
+	g = CurrentGlyph()
+	print g
 	pen = g.getPen()
-
-	# print pen
+	
 	path = GetFile("Please select a .svg", ["svg"], False, True)
-	print path
+	# print path
 	if path:
 		dom = minidom.parse(path)
 		SVG = dom.getElementsByTagName("svg")[0]
 		Bounds = SVG.getAttribute('viewBox').split(" ")
-		Bounds = [float(Value) for Value in Bounds]
+		if (len(Bounds) == 4):
+			print Bounds
+			Bounds = [float(Value) for Value in Bounds]
+		else:
+			Width = SVG.getAttribute("width")
+			Height = SVG.getAttribute("height")
+			if Width and Height:
+				Bounds = [0, 0, float(Width), float(Height) ]
 		for node in dom.getElementsByTagName("svg")[0].childNodes:
-			drawSVGNode(node)
+			drawSVGNode(pen, node)
 
 if __name__ == '__main__':
 	main()
-
