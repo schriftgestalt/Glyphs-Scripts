@@ -31,8 +31,11 @@ LOCAL_ENCODING = "macroman"
 
 def CurrentFont():
 	"""Return a RoboFab font object for the currently selected font."""
-	if (Glyphs.currentDocument):
-		return RFont( Glyphs.currentDocument )
+	if Glyphs.currentDocument:
+		try:
+			return RFont( Glyphs.currentDocument )
+		except:
+			pass
 	return None
 
 def AllFonts():
@@ -49,10 +52,10 @@ def CurrentGlyph():
 	Doc = Glyphs.currentDocument
 	print Doc.selectedLayers()
 	#Font = CurrentFont()
-	#try:
-	Layer = Doc.selectedLayers()[0]
-	return RGlyph(Layer.parent())
-	#except: pass
+	try:
+		Layer = Doc.selectedLayers()[0]
+		return RGlyph(Layer.parent())
+	except: pass
 	
 	print "No glyph selected!"
 	return None
@@ -127,8 +130,8 @@ class PostScriptGlyphHintValues(BasePostScriptGlyphHintValues):
 			self._loadFromLib(aGlyph.lib)
 		if data is not None:
 			self.fromDict(data)
-			
-			
+	
+	
 class RFont(BaseFont):
 	"""RoboFab UFO wrapper for GS Font object"""
 	
@@ -138,15 +141,12 @@ class RFont(BaseFont):
 		BaseFont.__init__(self)
 		if doc is None:
 			doc = Glyphs.documentController().makeUntitledDocumentOfType_error_("com.schriftgestaltung.glyphs", None)
-
+		
 		if type(doc) == type(()):
 			doc = doc[0]
-		
-		#print "__RFont.init doc:", type(doc)#, len(doc), str(doc[0]).encode("ascii", "replace"), "\n"
 		self._object = doc
 		self._master = master
 		self._masterKey = doc.font.masters[master].id
-		#print "_masterKey", self._masterKey
 		self.features = RFeatures(doc.font)
 		self._lib = {}
 		self.info = RInfo(self)
@@ -690,7 +690,7 @@ class RGlyph(BaseGlyph):
 	name = property(_get_name, _set_name)
 	
 	def _get_unicodes(self):
-		return (self._object.unicode())
+		return [int(self._object.unicode, 16)]
 	
 	def _set_unicodes(self, value):
 		if not isinstance(value, list):
@@ -703,21 +703,21 @@ class RGlyph(BaseGlyph):
 	unicodes = property(_get_unicodes, _set_unicodes, doc="all unicode values for the glyph")
 	
 	def _get_unicode(self):
-		if len(self._unicodes) == 0:
+		if len(self._object.unicode) == 0:
 			return None
-		return self._object.unicode()
+		return int(self._object.unicode, 16)
 	
 	def _set_unicode(self, value):
-		if value is not None and value is not self._object.unicode():
-			self._object.setUnicode_(value)
-		# uni = self._unicodes
-		# if value is not None:
-		# 	if value not in uni:
-		# 		self.unicodes.insert(0, value)
-		# 	elif uni.index(value) != 0:
-		# 		uni.insert(0, uni.pop(uni.index(value)))
-		# 		self.unicodes = uni
-		
+		if type(value) == str:
+			if value is not None and value is not self._object.unicode:
+				self._object.setUnicode_(value)
+		elif type(value) == int:
+			strValue = "%0.4X" % value
+			if strValue is not None and strValue is not self._object.unicode:
+				self._object.setUnicode_(strValue)
+		else:
+			raise(KeyError)
+	
 	unicode = property(_get_unicode, _set_unicode, doc="first unicode value for the glyph")
 	
 	def _get_leftMargin(self):
@@ -882,7 +882,7 @@ class RGlyphAnchorsProxy (object):
 		StringVal = "(\n"
 		for key in self._owner.anchors().allKeys():
 			currAnchor = self._owner.anchorForName_(key)
-			StringVal += "	%s {%.0f, %.0f},\n" % (currAnchor.name(), currAnchor.position().x, currAnchor.position().y)
+			StringVal += "	%s {%.0f, %.0f},\n" % (currAnchor.name, currAnchor.position.x, currAnchor.position.y)
 		StringVal += ")"
 		return StringVal
 
@@ -924,21 +924,32 @@ class RContour(BaseContour):
 	def _get_points(self):
 		'''returns a list of RPoints, generated on demand from the GSPath.nodes'''
 		points = []
+		Node = None
 		for Node in self._object.nodes:
 			Type = MOVE
-			if (Node.type() == GSLINE):
+			if Node.type == GSLINE:
 				Type = LINE
-			elif (Node.type() == GSCURVE):
+			elif Node.type == GSCURVE:
 				Type = CURVE
-			elif (Node.type() == GSOFFCURVE):
+			elif Node.type == GSOFFCURVE:
 				Type = OFFCURVE
-			X = Node.position().x
-			Y = Node.position().y
+			X = Node.position.x
+			Y = Node.position.y
 			_RPoint = RPoint(Node)
 			_RPoint.parent = self
-			_RPoint.smooth = Node.connection() == GSSMOOTH
+			_RPoint.smooth = Node.connection == GSSMOOTH
 			
 			points.append(_RPoint) #x=0, y=0, pointType=None, name=None):
+		
+		if self._object.closed:
+			_RPoint = RPoint(Node)
+			_RPoint.type = MOVE
+			points.insert(0, _RPoint)
+		else:
+			#_RPoint = RPoint(self._object.nodeAtIndex_(0))
+			#_RPoint.type = MOVE
+			points[0].type = MOVE
+		
 		return points
 	
 	def _set_points(self, points):
@@ -988,24 +999,24 @@ class RContour(BaseContour):
 		
 		# print "contour.draw:", self.points[-1]
 		
-		if self._object.closed():
+		if self._object.closed:
 			for i in range(len(self), -1, -1):
 				StartNode = self._object.nodeAtIndex_(i)
 				if StartNode.type is not OFFCURVE:
-					pen.moveTo(StartNode.position())
+					pen.moveTo(StartNode.position)
 					break
 		else:
 			for i in range(len(self)):
 				StartNode = self._object.nodeAtIndex_(i)
 				if StartNode.type is not OFFCURVE:
-					pen.moveTo(StartNode.position())
+					pen.moveTo(StartNode.position)
 					break
 		for i in range(len(self)):
 			Node = self._object.nodeAtIndex_(i)
 			if Node.type is LINE:
-				pen.lineTo(Node.position())
+				pen.lineTo(Node.position)
 			elif Node.type is CURVE:
-				pen.curveTo(self._object.nodeAtIndex_(i-2).position(), self._object.nodeAtIndex_(i-1).position(), Node.position())
+				pen.curveTo(self._object.nodeAtIndex_(i-2).position, self._object.nodeAtIndex_(i-1).position, Node.position)
 		if self._object.closed():
 			pen.closePath()
 		else:
@@ -1095,10 +1106,11 @@ class RContour(BaseContour):
 			return []
 		segments = []
 		index = 0
+		node = None
 		for i in range(len(self._object.nodes)):
 			node = self._object.nodeAtIndex_(i)
 			#print "_get_segments node", node
-			if node.type() == GSLINE or node.type() == GSCURVE:
+			if node.type == GSLINE or node.type == GSCURVE:
 				_Segment = RSegment(index, self, node)
 				_Segment.parent = self
 				_Segment.index = index
@@ -1107,6 +1119,15 @@ class RContour(BaseContour):
 			# if not self._object.closed():
 			# 	segment[0].onCurve.type = "move"
 		# print "__segments", segments
+		if self._object.closed:
+			_Segment = RSegment(0, self, node)
+			_Segment.type = MOVE
+			segments.insert(0, _Segment)
+		else:
+			_Segment = RSegment(0, self, self._object.nodeAtIndex_(0))
+			_Segment.type = MOVE
+			segments.insert(0, _Segment)
+			
 		return segments
 	
 	# def _get_segments_(self):
@@ -1252,6 +1273,7 @@ class RSegment(BaseSegment):
 		self._object = node
 		self.parent = contoure
 		self.index = index
+		self.isMove = False # to store if the segment is a move segment
 		#self.smooth = smooth
 	
 	def __repr__(self):
@@ -1261,8 +1283,10 @@ class RSegment(BaseSegment):
 	
 	def _get_type(self):
 		
-		nodeType = self._object.type()
+		
 		#print "RSegment.get Type", nodeType, GSLINE, GSCURVE, GSOFFCURVE
+		if self.isMove: return MOVE
+		nodeType = self._object.type
 		if nodeType == GSLINE:
 			return LINE
 		elif nodeType == GSCURVE:
@@ -1272,6 +1296,9 @@ class RSegment(BaseSegment):
 		return
 	
 	def _set_type(self, pointType):
+		if pointType == MOVE:
+			self.isMove = True
+			return
 		raise NotImplementedError
 		return
 		onCurve = self.points[-1]
@@ -1327,7 +1354,7 @@ class RSegment(BaseSegment):
 	type = property(_get_type, _set_type, doc="type of the segment")
 	
 	def _get_smooth(self):
-		return self._object.connection() == GSSMOOTH
+		return self._object.connection == GSSMOOTH
 		
 	def _set_smooth(self, smooth):
 		raise NotImplementedError
@@ -1361,11 +1388,11 @@ class RSegment(BaseSegment):
 		index = Path.indexOfNode_(self._object)
 		points = []
 		if index < len(Path.nodes):
-			if self._object.type() == GSCURVE:
+			if self._object.type == GSCURVE:
 				points.append(RPoint(Path.nodes[index-2]))
 				points.append(RPoint(Path.nodes[index-1]))
 				points.append(RPoint(Path.nodes[index]))
-			elif self._object.type() == GSLINE:
+			elif self._object.type == GSLINE:
 				points.append(RPoint(Path.nodes[index]))
 		return points
 	
@@ -1376,9 +1403,9 @@ class RSegment(BaseSegment):
 		index = Path.indexOfNode_(self._object)
 		Layer = Path.parent()
 		
-		if self._object.type() == GSCURVE:
+		if self._object.type == GSCURVE:
 			return Path.nodes[index-2] in Layer.selection() or Path.nodes[index-1] in Layer.selection() or Path.nodes[index] in Layer.selection()
-		elif self._object.type() == GSLINE:
+		elif self._object.type == GSLINE:
 			return Path.nodes[index] in Layer.selection()
 	
 	def _set_selected(self, select):
@@ -1386,12 +1413,12 @@ class RSegment(BaseSegment):
 		index = Path.indexOfNode_(self._object)
 		Layer = Path.parent()
 		
-		if self._object.type() == GSCURVE:
+		if self._object.type == GSCURVE:
 			if select:
 				Layer.addObjectsFromArrayToSelection_([Path.nodes[index-2], Path.nodes[index-1], Path.nodes[index] ] )
 			else:
 				Layer.removeObjectsFromSelection_([Path.nodes[index-2], Path.nodes[index-1], Path.nodes[index] ] )
-		elif self._object.type() == GSLINE:
+		elif self._object.type == GSLINE:
 			if select:
 				Layer.addSelection_( Path.nodes[index] )
 			else:
@@ -1431,7 +1458,7 @@ class RBPoint(BaseBPoint):
 						#try:
 						FontName = Font.valueForKey_("familyName")
 						#except AttributeError: pass
-		return "<RBPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object._object.position().x, self._object._object.position().y, FontName, GlyphName, pathIndex, nodeIndex)
+		return "<RBPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object._object.position.x, self._object._object.position.y, FontName, GlyphName, pathIndex, nodeIndex)
 	
 	def getParent(self):
 		return self._object
@@ -1486,8 +1513,9 @@ class RPoint(BasePoint):
 	
 	def __init__(self, gs_point):
 		self._object = gs_point;
+		self.isMove = False
 		# self.selected = False
-		# self._type = pointType
+		self._type = False
 		# self._x = x
 		# self._y = y
 		# self._name = None
@@ -1518,36 +1546,44 @@ class RPoint(BasePoint):
 						#try:
 						FontName = Font.valueForKey_("familyName")
 						#except AttributeError: pass
-		return "<RPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object.position().x, self._object.position().y, FontName, GlyphName, pathIndex, nodeIndex)
+		return "<RPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object.position.x, self._object.position.y, FontName, GlyphName, pathIndex, nodeIndex)
 	
 	def _get_x(self):
-		return self._object.position().x
+		return self._object.position.x
 	
 	def _set_x(self, value):
-		self._object.setPosition_((value, self._object.position().y))
+		self._object.setPosition_((value, self._object.position.y))
 	
 	x = property(_get_x, _set_x, doc="")
 	
 	def _get_y(self):
-		return self._object.position().y
+		return self._object.position.y
 	
 	def _set_y(self, value):
-		self._object.setPosition_((self._object.position().x, value))
+		self._object.setPosition_((self._object.position.x, value))
 	
 	y = property(_get_y, _set_y, doc="")
 	
 	def _get_type(self):
-		if self._object.type == GSOFFCURVE:
+		if self._type == MOVE:
+			return MOVE
+		elif self._object.type == GSOFFCURVE:
 			return OFFCURVE
 		elif self._object.type == GSCURVE:
 			return CURVE
-		elif self._object.parent().startNode() == self._object and type == GSLINE:
-			return MOVE
 		else:
 			return LINE
 	
 	def _set_type(self, value):
-		self._type = value
+		if value == MOVE:
+			self._type = value
+		elif value == LINE:
+			self._object.type = GSLINE
+		elif value == OFFCURVE:
+			self._object.type = GSOFFCURVE
+		elif value == CURVE:
+			self._object.type = GSCURVE
+		
 		self._hasChanged()
 
 	type = property(_get_type, _set_type, doc="")
