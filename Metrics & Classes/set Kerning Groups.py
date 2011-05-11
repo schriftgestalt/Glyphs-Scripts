@@ -543,11 +543,12 @@ DefaultKeys = {
 	"Thorn" : ["", "H"],
 	"a" : ["n", ""],
 	"b" : ["o", "h"],
-	"c" : ["", "o"],
+	"c" : ["c", "o"],
 	"d" : ["l", "o"],
-	"e" : ["", "o"],
+	"e" : ["e", "o"],
 	"h" : ["n", ""],
-	"k" : ["", "h"],
+	"i" : ["i", "i"],
+	"k" : ["k", "h"],
 	"l" : ["", "h"],
 	"m" : ["n", "n"],
 	"p" : ["o", ""],
@@ -745,19 +746,19 @@ DefaultKeys = {
 	"iu-cy" : ["n", "o"],
 	"gheupturn-cy" : ["n", "ge-cy"],
 	"dje-cy" : ["h", ""],
-	"gje-cy" : ["nacute", "ge-cy"],
+	"gje-cy" : ["n", "ge-cy"],
 	"e-cy" : ["o", ""],
 	"dze-cy" : ["s", "s"],
-	"i-cy" : ["nacute", ""],
-	"yi-cy" : ["nacute", ""],
+	"i-cy" : ["i", "i"],
+	"yi-cy" : ["i", "i"],
 	"lje-cy" : ["el-cy", "softsign-cy"],
 	"nje-cy" : ["n", "softsign-cy"],
 	"tshe-cy" : ["", "n"],
-	"kje-cy" : ["nacute", "k"],
+	"kje-cy" : ["n", "k"],
 	"ushort-cy" : ["y", "y"],
 	"dzhe-cy" : ["n", "u"],
 	"ie-cygrave" : ["o", "e"],
-	"iigrave-cy" : ["nacute", "u"],
+	"iigrave-cy" : ["n", "u"],
 	"endescender-cy" : ["n", "de-cy"],
 	"ustrait-cy" : ["v", "v"],
 	"hadesender-cy" : ["x", ""],
@@ -774,7 +775,7 @@ DefaultKeys = {
 	"Iota" : ["H", "H"],
 	"Kappa" : ["H", "K"],
 	"Lambda" : ["A", "A"],
-	"Mu" : ["H", "M"],
+	"Mu" : ["M", "M"],
 	"Nu" : ["H", "H"],
 	"Omicron" : ["O", "O"],
 	"Pi" : ["H", "H"],
@@ -801,15 +802,15 @@ DefaultKeys = {
 	"psi" : ["upsilon", "upsilon"],
 	"alphatonos" : ["alpha", "alpha"],
 	"epsilontonos" : ["epsilon", "epsilon"],
-	"etatonos" : ["nacute", "n"],
-	"iotadieresis" : ["nacute", ""],
+	"etatonos" : ["n", "n"],
+	"iotadieresis" : ["", ""],
 	"omicrontonos" : ["o", "o"],
 	"upsilontonos" : ["upsilon", "upsilon"],
 	"upsilondieresistonos" : ["upsilon", "upsilon"],
 	"upsilondieresis" : ["upsilon", "upsilon"],
 	"omegatonos" : ["omega", "omega"],
-	"fi" : ["f", "i"],
-	"fl" : ["f", "l"],
+	"fi" : ["i", "f"],
+	"fl" : ["l", "f"],
 	"comma" : ["period", "period"],
 	"semicolon" : ["colon", "colon"],
 	"ellipsis" : ["period", "period"],
@@ -837,11 +838,11 @@ def KeysForGlyph(Glyph):
 	LeftKey = False
 	RightKey = False
 	try:
-		LeftKey = Glyph.leftKerningGroup()
+		LeftKey = Glyph.leftKerningGroup
 	except:
 		print traceback.format_exc()
 	try:
-		RightKey = Glyph.rightKerningGroup()
+		RightKey = Glyph.rightKerningGroup
 	except:
 		print traceback.format_exc()
 	try:
@@ -862,17 +863,20 @@ def KeysForGlyph(Glyph):
 
 def updateKeyGlyphsForSelected():
 	Doc = Glyphs.currentDocument
-	Font = Doc.font()
+	Font = Doc.font
 	#GlyphsInfo = GSGlyphsInfo.glyphsInfo
 	SelectedLayers = Doc.selectedLayers()
 	for Layer in SelectedLayers:
-		Glyph = Layer.parent()
+		Glyph = Layer.parent
 		#print ">> Glyph:", Glyph.name
 		LeftKey = ""
 		RightKey = ""
 		LigatureComponents = Glyph.name.split("_")
 		if len(Layer.components) > 0 and len(Layer.paths) == 0 and Layer.components[0].transformStruct()[0] == 1:
-			componentGlyph = Layer.components[0].component()
+			componentGlyph = Layer.components[0].component
+			print "Layer.components[0]", Layer.parent, Layer.components[0]
+			if not componentGlyph:
+				raise Exception("Something is wrong with a Component in Glyphs %s" % Layer.parent.name)
 			if componentGlyph.category == "Letter":
 				LeftKey = KeysForGlyph(componentGlyph)[0]
 			if not LeftKey:
@@ -880,13 +884,15 @@ def updateKeyGlyphsForSelected():
 			
 			for Component in Layer.components:
 				try:
-					if Component.component().category == "Letter":
-						componentGlyph = Component.component()
+					if Component.component.category == "Letter":
+						componentGlyph = Component.component
 				except:
 					pass
 			RightKey = KeysForGlyph(componentGlyph)[1]
+			print "0 RightKey", RightKey, "componentGlyph", componentGlyph
 			if not RightKey:
 				RightKey = componentGlyph.name
+			print "1 RightKey", RightKey
 		
 		elif len(LigatureComponents) > 1:
 			print LigatureComponents
@@ -897,18 +903,20 @@ def updateKeyGlyphsForSelected():
 		
 		if LeftKey and not Font.glyphs[LeftKey].keep():
 			LeftKey = False
+		print "2 RightKey", RightKey
 		if RightKey and not Font.glyphs[RightKey].keep():
 			RightKey = False
 		if not LeftKey:
 			try:
-				LeftKey = GSGlyphsInfo.niceGlpyhNameForName_(DefaultKeys[Glyph.name][1])
+				LeftKey = niceName(DefaultKeys[Glyph.name][1])
 			except KeyError:
 				pass
 			except:
 				print traceback.format_exc()
 		if not RightKey:
 			try:
-				RightKey = GSGlyphsInfo.niceGlpyhNameForName_(DefaultKeys[Glyph.name][0])
+				print "DefaultKeys[Glyph.name][0]", DefaultKeys[Glyph.name], niceName(DefaultKeys[Glyph.name][0])
+				RightKey = niceName(DefaultKeys[Glyph.name][0])
 			except KeyError:
 				pass
 			except:
@@ -934,6 +942,7 @@ def updateKeyGlyphsForSelected():
 		if not LeftKey:
 			LeftKey = Glyph.name
 		if not RightKey:
+			print "5 RightKey", Glyph.name
 			RightKey = Glyph.name
 		
 		print Glyph.name, ">", LeftKey, RightKey
@@ -949,11 +958,11 @@ def test():
 	#GlyphsInfo = Glyphs.glyphsInfo
 	NewDefaultKeys = {}
 	for key in Keys:
-		key = GSGlyphsInfo.niceGlpyhNameForName_(key)
+		key = niceName(key)
 		values = DefaultKeys[key]
 		newValues = []
 		for value in values:
-			newValues.append( GSGlyphsInfo.niceGlpyhNameForName_(value) )
+			newValues.append( niceName(value) )
 		print "	\"%s\" : [\"%s\", \"%s\"]," % (key, newValues[1], newValues[0])
 		NewDefaultKeys[key] = newValues
 	#print NewDefaultKeys
