@@ -26,10 +26,24 @@ def main():
 		for i in range(2):
 			for Component in Components:
 				#Component = Layer.components[i]
-				#print "Component", Component
-				ComponentGlyph = Font.glyphs[Component.componentName()]
+				#print "Component", Component.component
+				ComponentGlyph = Font.glyphs[Component.componentName]
 				if not ComponentGlyph.keep() or len(Layer.paths) > 0 :
 					Component.decompose()
+		if Glyph.leftKerningGroup:
+			Glyph.leftKerningGroup = Glyph.leftKerningGroup.replace("-", "")
+		if Glyph.rightKerningGroup:
+			Glyph.rightKerningGroup = Glyph.rightKerningGroup.replace("-", "")
+		
+		for Component in Layer.components:
+			
+			if not Component.transformStruct()[0] == 1.0 or not Component.transformStruct()[3] == 1.0:
+				Layer.decomposeComponents()
+				break
+		
+		if len(Layer.paths) > 0 and len(Layer.components) > 0:
+			Layer.decomposeComponents()
+		
 		removeOverlapFilter.runFilterWithLayer_error_(Layer, None)
 	Font.willChangeValueForKey_("glyphs")
 	for Glyph in Font.glyphs:
