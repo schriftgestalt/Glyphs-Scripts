@@ -3,7 +3,7 @@
 """
 MakeProdunctionFont.py
 
-Created by Georg Seifert on 2010-12-14.
+Created by Georg Seifert on 2011-05-11.
 Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 """
 
