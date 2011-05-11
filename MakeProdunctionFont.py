@@ -14,9 +14,9 @@ from GlyphsApp import *
 
 def main():
 	Doc = Glyphs.currentDocument
-	Font = Doc.font()
+	Font = Doc.font 
 	print "Font", Font
-	#Font.setDisablesNiceNames_(True)
+	Font.setDisablesNiceNames_(True)
 	FontMaster = Font.fontMasters()[0]
 	removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 	
