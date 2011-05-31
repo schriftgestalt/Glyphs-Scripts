@@ -3,6 +3,8 @@
 # Version 0.3
 # copyright Georg Seifert 2011, schriftgestaltung.de
 # 
+# please install it to: /Library/Application Support/FontLab/Studio 5/Macros/Glyphs Export.py
+# 
 # The scrit will write a .glyphs file at the same loaction than the .vfb file.
 # This preserves hints/links, kerning and Multiple Masters.
 # if you find any bugs, please report to info@glyphsapp.com
