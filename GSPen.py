@@ -6,7 +6,7 @@ import objc
 from AppKit import *
 from Foundation import *
 
-from GlyphsInternal import *
+from GlyphsApp import *
 from objectsGS import RGlyph
 
 __all__ = ["GSPen", "GSPointPen", "drawGSGlyphOntoPointPen"]
@@ -37,22 +37,28 @@ class GSPointPen(AbstractPointPen):
 		#print "pen: glyph", r_glyph
 		self._glyph = r_glyph
 		#print "Glyph:", r_glyph
-		if self._glyph._object.parent():
-			self._layerID = self._glyph._object.parent().fontMasters()[masterIndex].id
+		#print "self._glyph._object", self._glyph._object
+		#print "self._glyph._object.layers", self._glyph._object.layers
+		#print "self._glyph._object.layers[", masterIndex, "]", self._glyph._object.layers[masterIndex]
+		if self._glyph._object.parent:
+			self._layerID = self._glyph._object.parent.masters[masterIndex].id
 			self._layer = self._glyph._object.layerForKey_(self._layerID)
 		elif self._glyph._object.layers[masterIndex]:
-			self._layerID = self._glyph._object.layers[masterIndex].layerId()
-			self._layer = self._glyph._object.layerForKey_(self._layerID)
+			#print "__masterIndex"
+			self._layerID = self._glyph._object.layers[masterIndex].layerId
+			self._layer = self._glyph._object.layers[masterIndex]
+		#print "__GSPointPen self._layer:", self._layer
 	
 	def beginPath(self):
 		#print "begin", self._layer.paths
-		_Path = GSPath.alloc().init() 
-		_Path.setClosed_(1)
+		_Path = GSPath()
+		_Path.closed = True
 		#print "_Path", _Path
 		self._layer.paths.append( _Path )
 		#print "newPath:", self._layer.paths
 	
 	def endPath(self):
+		self._glyph._invalidateContours()
 		# print "compareString", self._layer.compareString()
 		pass
 		# path = self.currentPath
@@ -166,7 +172,7 @@ class GSPointPen(AbstractPointPen):
 			self._layer.addAnchor_(_Anchor)
 		else:
 			#print "addPoint - segmentType:", segmentType, "pt:", pt
-			_Node = NewNode(pt)
+			_Node = GSNode(pt)
 			if segmentType == "move":
 				_Node.setType_(GSLINE)
 				self._layer.paths[-1].setClosed_(0)
@@ -189,7 +195,7 @@ class GSPointPen(AbstractPointPen):
 	def addComponent(self, baseName, transformation):
 		xx, xy, yx, yy, dx, dy = transformation
 		# XXX warn when xy or yx != 0
-		_Component = GSComponent.alloc().init()
+		_Component = GSComponent()
 		
 		if baseName:
 			if isinstance(baseName, str):
@@ -208,7 +214,7 @@ class GSPointPen(AbstractPointPen):
 
 def test():
 	# print  "Glyphs.glyphs",  Glyphs
-	g = Glyphs.currentDocument.windowControllers()[0].activeLayer().parent()
+	g = Glyphs.currentDocument.windowControllers()[0].activeLayer().parent
 	print "g", g
 	p = GSPen(RGlyph(g))
 	print "p", p
