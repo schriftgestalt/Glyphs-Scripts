@@ -21,14 +21,18 @@ def main():
 	removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 	
 	for Glyph in Font.glyphs:
+		if not Glyph.keep():
+			continue
 		Layer = Glyph.layerForKey_(FontMaster.id)
 		Components = Layer.components
 		for i in range(2):
 			for Component in Components:
 				#Component = Layer.components[i]
-				#print "Component", Component.component
+				
+				if not Component.component:
+					print Glyph.name, " > Component", Component, Component.component
 				ComponentGlyph = Font.glyphs[Component.componentName]
-				if not ComponentGlyph.keep() or len(Layer.paths) > 0 :
+				if ComponentGlyph and not ComponentGlyph.keep() or len(Layer.paths) > 0 :
 					Component.decompose()
 		if Glyph.leftKerningGroup:
 			Glyph.leftKerningGroup = Glyph.leftKerningGroup.replace("-", "")
