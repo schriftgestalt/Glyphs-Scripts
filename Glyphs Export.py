@@ -26,7 +26,6 @@ def makePlist(font):
 			right = f.GetClassRight(i)
 			elements = classes[i].split(" ")
 			TargetGlyphs = []
-			#print "elements", elements
 			key = None
 			for j in range(1, len(elements)):
 				if len(elements[j]) > 0:
@@ -36,7 +35,6 @@ def makePlist(font):
 					else:
 						TargetGlyphs.append( elements[j])
 			if key == None:
-				print "TargetGlyphs ohne Key", TargetGlyphs
 				continue
 			if left == 1:
 				FirstClasses.append(key)
@@ -52,10 +50,9 @@ def makePlist(font):
 					ClassesDict[Target]['r'] = key
 	
 	#kerning
-	#print "ClassesDict", ClassesDict
-	#return
 	Font = Plist ()
-	Font["familyName"] = font.family_name
+	if font.family_name is not None:
+		Font["familyName"] = font.family_name
 	Font["gridLength"] = 1
 	Font["unitsPerEm"] = font.upm
 	FontMasters = []
@@ -83,16 +80,13 @@ def makePlist(font):
 				FontMaster["verticalStems"].append(font.stem_snap_v[i][j])
 		
 		AlignmentCount = font.blue_values_num
-		
 		FontMaster["alignmentZones"] = []
-		for j in range(AlignmentCount, -2, 1):
-			print "blue_values __j", j
+		for j in range(AlignmentCount-1, 0, -2):
 			FontMaster["alignmentZones"].append("{%d, %d}" %( font.blue_values[i][j-1] , font.blue_values[i][j] - font.blue_values[i][j-1]))
 		
 		AlignmentCount = font.other_blues_num
 		
-		for j in range(AlignmentCount, -2, 1):
-			print "other_blues __j", j
+		for j in range(AlignmentCount-1, 0, -2):
 			FontMaster["alignmentZones"].append("{%d, %d}" %( font.other_blues[i][j-1] , font.other_blues[i][j] - font.other_blues[i][j-1]))
 		
 		
@@ -122,8 +116,6 @@ def makePlist(font):
 	
 	Glyphs = []
 	for glyph in font.glyphs:
-		#if len(glyph) > 0:
-		#print "f[0].layers_number;", glyph.layers_number
 		Glyph = {}
 		Glyph["glyphname"] = glyph.name
 		Layers = []
@@ -138,14 +130,12 @@ def makePlist(font):
 		except:
 			pass
 		
-		#print "Glyph:", glyph.name, " Left: ", LeftKey, " Right: ", RightKey
 		if LeftKey:
 			Glyph["rightKerningGroup"] = LeftKey
 		if RightKey:
 			Glyph["leftKerningGroup"] = RightKey
 		
 		if len(glyph.kerning) > 0:
-			print "Glyph:", glyph.kerning, len(glyph.kerning)
 			for kerningPair in glyph.kerning:
 				firstKey = glyph.name
 				secondGlyph = f.glyphs[kerningPair.key]
@@ -157,7 +147,6 @@ def makePlist(font):
 				if secondKey in SecondClasses:
 					secondKey = "@MMK_R_"+secondKey
 				
-				print "kerningPair", kerningPair, secondKey
 				i = 0
 				for FontMaster in FontMasters:
 					if firstKey not in Kerning[FontMaster["id"]]:
@@ -193,7 +182,6 @@ def makePlist(font):
 							LastParts = Nodes[-1].split(" ")
 							FirstParts = Nodes[0].split(" ")
 							if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-								#print "Entferne ", Nodes[0]
 								Nodes.pop(0)
 						Paths.append({"nodes": Nodes, "closed":True})
 					Nodes = []
@@ -209,14 +197,11 @@ def makePlist(font):
 				
 				PathIndesPaths.append("{%d, %d}" % (len(Paths), len(Nodes)-1))
 			
-			#print "PathIndesPaths", PathIndesPaths
-		
 			if Nodes:
 				if Nodes[-1].find("CURVE") > 0:
 					LastParts = Nodes[-1].split(" ")
 					FirstParts = Nodes[0].split(" ")
 					if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-						#print "Entferne ", Nodes[0]
 						Nodes.pop(0)
 				Paths.append({"nodes": Nodes, "closed":True})
 			Layer["paths"] = Paths
@@ -224,13 +209,10 @@ def makePlist(font):
 			Hints = []
 			for vhint in glyph.vhints:
 				Hint = {}
-				#print "vhint {%f, %f}" % (vhint.positions[masterIndex], vhint.widths[masterIndex])
 				Hint["place"] = "{%f, %f}" % (vhint.positions[masterIndex], vhint.widths[masterIndex])
 				Hints.append(Hint)
 			for hhint in glyph.hhints:
 				Hint = {}
-				# if masterIndex == 0:
-				# 	print "hhint {%f, %f}" % (hhint.positions[masterIndex], hhint.widths[masterIndex])
 				Hint["place"] = "{%f, %f}" % (hhint.positions[masterIndex], hhint.widths[masterIndex])
 				Hint["horizontal"] = True
 				Hints.append(Hint)
@@ -239,12 +221,9 @@ def makePlist(font):
 			
 				Hint["origin"] = PathIndesPaths[vlink.node1]
 				Hint["target"] = PathIndesPaths[vlink.node2]
-				#Hint["horizontal"] = False
 				Hints.append(Hint)
 			for hlink in glyph.hlinks:
 				Hint = {}
-				# if masterIndex == 0:
-				# 	print "hlink {%d, %d} o: %s, t: %s}" % (hlink.node1, hlink.node2, PathIndesPaths[hlink.node1], PathIndesPaths[hlink.node2])
 				Hint["origin"] = PathIndesPaths[hlink.node1]
 				if hlink.node2 == -1:
 					Hint["target"] = "up"
@@ -272,8 +251,6 @@ def makePlist(font):
 		if glyph.unicode > 1:
 			Glyph["unicode"] = ("%.4X" % glyph.unicode)
 		Glyphs.append(Glyph)
-		#else:
-		#print glyph.name
 	Font["glyphs"] = Glyphs
 	Font["kerning"] = Kerning
 	return Font
@@ -289,7 +266,6 @@ def main():
 		if path is None:
 			return
 	folder, base = os.path.split(path)
-	#base = base.split(".")[0] + ".glyphs"
 	base = base.replace(".vfb", ".glyphs")
 	dest = os.path.join(folder, base)
 	makePlist(font).write(dest)
