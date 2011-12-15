@@ -27,7 +27,7 @@ class GSPen(SegmentToPointPen):
 	def __init__(self, r_glyph):
 		SegmentToPointPen.__init__(self, GSPointPen(r_glyph))
 
-class GSPointPen(AbstractPointPen):
+class GSPointPen(SegmentToPointPen):
 	
 	def __init__(self, r_glyph, masterIndex = 0):
 		# try:
@@ -211,6 +211,11 @@ class GSPointPen(AbstractPointPen):
 		# print "Component:", _Component, " > ", _Component.elementDict()
 		self._layer.addComponent_(_Component)
 		# print "nach add sComponent:", _Component, " > ", _Component.elementDict()
+	def closePath(self):
+		print "__closePath__", self._layer.paths
+		Path = self._layer.paths[-1]
+		if Path != None:
+			self._layer.paths[-1].setClosePath_(1)
 
 def test():
 	# print  "Glyphs.glyphs",  Glyphs

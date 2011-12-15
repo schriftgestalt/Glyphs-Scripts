@@ -43,7 +43,7 @@ def AllFonts():
 	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
-		print "__doc.windowController()", doc.windowController().masterIndex()
+		#print "__doc.windowController()", doc.windowController().masterIndex()
 		all.append(RFont(doc, doc.windowController().masterIndex()))
 	return all
 
@@ -51,7 +51,7 @@ def AllFonts():
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
 	Doc = Glyphs.currentDocument
-	print Doc.selectedLayers()
+	#print Doc.selectedLayers()
 	#Font = CurrentFont()
 	try:
 		Layer = Doc.selectedLayers()[0]
@@ -185,7 +185,10 @@ class RFont(BaseFont):
 		self._object.font.addGlyph_( glyph.naked() )
 	
 	def __getitem__(self, glyphName):
-		return RGlyph(self._object.font.glyphForName_(glyphName), self._master)
+		GGlyph = self._object.font.glyphForName_(glyphName)
+		if GGlyph is not None:
+			return RGlyph(GGlyph, self._master)
+		return None
 	
 	def __cmp__(self, other):
 		if not hasattr(other, '_object'):
@@ -682,7 +685,7 @@ class RGlyph(BaseGlyph):
 		return self._object.name
 	
 	def _set_name(self, value):
-		prevName = self._name
+		prevName = self.name
 		newName = value
 		if newName == prevName:
 			return
@@ -707,7 +710,10 @@ class RGlyph(BaseGlyph):
 	name = property(_get_name, _set_name)
 	
 	def _get_unicodes(self):
-		return [int(self._object.unicode, 16)]
+		if not self._object.unicode:
+			print "_unicode:", self._object.unicode
+			return [int(self._object.unicode, 16)]
+		return []
 	
 	def _set_unicodes(self, value):
 		if not isinstance(value, list):
@@ -738,7 +744,7 @@ class RGlyph(BaseGlyph):
 	unicode = property(_get_unicode, _set_unicode, doc="first unicode value for the glyph")
 	
 	def _get_leftMargin(self):
-		return self._layer.LSB()
+		return self._layer.LSB
 
 	def _set_leftMargin(self, value):
 		self._layer.setLSB_(value)
@@ -746,7 +752,7 @@ class RGlyph(BaseGlyph):
 	leftMargin = property(_get_leftMargin, _set_leftMargin, doc="Left Side Bearing")
 		
 	def _get_rightMargin(self):
-		return self._layer.RSB()
+		return self._layer.RSB
 
 	def _set_rightMargin(self, value):
 		self._layer.setRSB_(value)
@@ -754,7 +760,7 @@ class RGlyph(BaseGlyph):
 	rightMargin = property(_get_rightMargin, _set_rightMargin, doc="Right Side Bearing")
 
 	def _get_width(self):
-		return self._layer.width()
+		return self._layer.width
 
 	def _set_width(self, value):
 		self._layer.setWidth_(value)
@@ -818,7 +824,7 @@ class RGlyph(BaseGlyph):
 	
 	def decompose(self):
 		"""Decompose all components"""
-		raise NotImplementedError
+		self._layer.decomposeComponents()
 		# for i in range(len(self.components)):
 		# 	self.components[-1].decompose()
 		# self._hasChanged()
@@ -837,8 +843,10 @@ class RGlyph(BaseGlyph):
 	
 	def clearContours(self):
 		"""clear all contours"""
-		for path in self._layer.paths:
-			self._layer.removePath_(path)
+		#for path in self._layer.paths:
+		#	self._layer.removePath_(path)
+		while len(self._layer.paths) > 0:
+			self._layer.removePathAtIndex_(0)
 	
 	def clearComponents(self):
 		"""clear all components"""
@@ -847,8 +855,12 @@ class RGlyph(BaseGlyph):
 	
 	def clearAnchors(self):
 		"""clear all anchors"""
-		for anchor in self._layer.anchors:
-			self._layer.removeAnchor_(anchor)
+		self._layer.setAnchors_(NSMutableDictionary.dictionary())
+		# while len(self._layer.anchors) > 0:
+		# 	self._layer.removeAnchorAtIndex_(0)
+		
+		#for anchor in self._layer.anchors:
+		#	self._layer.removeAnchor_(anchor)
 		
 	def clearHGuides(self):
 		"""clear all horizontal guides"""
@@ -866,6 +878,9 @@ class RGlyph(BaseGlyph):
 	
 	def update(self):
 		self._contours = None
+	
+	def correctDirection(self, trueType=False):
+		self._layer.correctPathDirection()
 
 class RGlyphAnchorsProxy (object):
 	def __init__(self, Layer):
@@ -909,8 +924,6 @@ class RGlyphAnchorsProxy (object):
 		return StringVal
 
 RGlyph.anchors = property(lambda self: RGlyphAnchorsProxy(self._layer))
-
-
 
 
 class RContour(BaseContour):
@@ -962,13 +975,7 @@ class RContour(BaseContour):
 			
 			points.append(_RPoint) #x=0, y=0, pointType=None, name=None):
 		
-		if self._object.closed:
-			_RPoint = RPoint(Node)
-			_RPoint.type = MOVE
-			points.insert(0, _RPoint)
-		else:
-			#_RPoint = RPoint(self._object.nodeAtIndex_(0))
-			#_RPoint.type = MOVE
+		if not self._object.closed:
 			points[0].type = MOVE
 		
 		return points
@@ -1651,15 +1658,15 @@ class RAnchor(BaseAnchor):
 	
 	_title = "RoboFabAnchor"
 	
-	def __init__(self, name=None, position=None, mark=None):
+	def __init__(self, gs_point=None):
 		BaseAnchor.__init__(self)
 		self.selected = False
-		self.name = name
+		self.name = gs_point.name
+		position = gs_point.position
 		if position is None:
 			self.x = self.y = None
 		else:
 			self.x, self.y = position
-		self.mark = mark
 		
 	def _get_index(self):
 		if self.getParent() is None: return None
