@@ -1,4 +1,4 @@
-#MenuTitle: import SVG
+#MenuTitle: import SVGs to Glyphs
 # encoding: utf-8
 """
 Import SVG.py
@@ -9,17 +9,20 @@ Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 from objectsGS import *
 from GlyphsApp import GetFile
 from xml.dom import minidom
+from os.path import basename, splitext
 
 Bounds = None
 def stringToFloatList(String):
 	points = String.replace(",", " ").strip(" ").split(" ")
 	newPoints = []
+	# print "- points", points
 	for value in points:
 		try:
 			value = float(value)
 			newPoints.append(value)
 		except:
 			pass
+	# print "f points", newPoints
 	return newPoints
 	
 def drawSVGNode(pen, node):
@@ -66,8 +69,10 @@ def drawSVGNode(pen, node):
 				parts.append(part)
 			lastPoint = None
 			for part in parts:
+				# print "part", part
 				if part[0] == "M":
 					point = points = stringToFloatList(part[1:])
+					# print "point", point
 					assert(len(point) == 2)
 					point[1] = Bounds[3] - point[1]
 					pen.moveTo(point)
@@ -75,7 +80,6 @@ def drawSVGNode(pen, node):
 				elif part[0] == "C":
 					points = stringToFloatList(part[1:])
 					assert(len(points) == 6)
-					
 					P1 = points[0:2]
 					P2 = points[2:4]
 					P3 = points[4:6]
@@ -142,10 +146,8 @@ def drawSVGNode(pen, node):
 				elif part[0] == "L":
 					points = stringToFloatList(part[1:])
 					for i in range(0, len(points), 2):
-						#point[1] = Bounds[3] - point[1]
 						points[i+1] = Bounds[3] - points[i+1]
 						pen.lineTo(points[i:i+2])
-						# print "l lastPoint", lastPoint, " result ", points[i:i+2]
 						lastPoint = points[i:i+2]
 				elif part[0] == "l":
 					points = part[1:].strip(",").split(",")
@@ -199,10 +201,8 @@ def drawSVGNode(pen, node):
 			point[1] = Bounds[3] - point[1]
 			pen.moveTo(point)
 			for i in range(1, len(points), 1):
-				#point = points[i].split(",")
 				point = stringToFloatList(points[i])
 				if len(point) == 2:
-					#point = [float(Value) for Value in point]
 					point[1] = Bounds[3] - point[1]
 					pen.lineTo(point)
 			pen.closePath()
@@ -213,13 +213,18 @@ def drawSVGNode(pen, node):
 def main():
 	global Bounds
 	
-	g = CurrentGlyph()
-	print g
-	pen = g.getPen()
-	
-	path = GetFile("Please select a .svg", ["svg"], False, True)
-	# print path
-	if path:
+	paths = GetFile("Please select a .svg", True, ["svg"])
+
+	if paths is None:
+		return
+	for path in  paths:
+		name = basename(path)
+		name = splitext(name)[0]
+		f = CurrentFont()
+		g = f[name]
+		if g is None:
+			g = f.newGlyph(name)
+		pen = g.getPen()
 		dom = minidom.parse(path)
 		SVG = dom.getElementsByTagName("svg")[0]
 		Bounds = SVG.getAttribute('viewBox').split(" ")

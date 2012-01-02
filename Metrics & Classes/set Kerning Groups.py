@@ -864,17 +864,14 @@ def KeysForGlyph(Glyph):
 def updateKeyGlyphsForSelected():
 	Doc = Glyphs.currentDocument
 	Font = Doc.font
-	#GlyphsInfo = GSGlyphsInfo.glyphsInfo
 	SelectedLayers = Doc.selectedLayers()
 	for Layer in SelectedLayers:
 		Glyph = Layer.parent
-		#print ">> Glyph:", Glyph.name
 		LeftKey = ""
 		RightKey = ""
 		LigatureComponents = Glyph.name.split("_")
 		if len(Layer.components) > 0 and len(Layer.paths) == 0 and Layer.components[0].transformStruct()[0] == 1:
 			componentGlyph = Layer.components[0].component
-			print "Layer.components[0]", Layer.parent, Layer.components[0]
 			if not componentGlyph:
 				raise Exception("Something is wrong with a Component in Glyphs %s" % Layer.parent.name)
 			if componentGlyph.category == "Letter":
@@ -889,10 +886,8 @@ def updateKeyGlyphsForSelected():
 				except:
 					pass
 			RightKey = KeysForGlyph(componentGlyph)[1]
-			print "0 RightKey", RightKey, "componentGlyph", componentGlyph
 			if not RightKey:
 				RightKey = componentGlyph.name
-			print "1 RightKey", RightKey
 		
 		elif len(LigatureComponents) > 1:
 			print LigatureComponents
@@ -903,7 +898,6 @@ def updateKeyGlyphsForSelected():
 		
 		if LeftKey and not Font.glyphs[LeftKey].keep():
 			LeftKey = False
-		print "2 RightKey", RightKey
 		if RightKey and not Font.glyphs[RightKey].keep():
 			RightKey = False
 		if not LeftKey:
@@ -915,21 +909,17 @@ def updateKeyGlyphsForSelected():
 				print traceback.format_exc()
 		if not RightKey:
 			try:
-				print "DefaultKeys[Glyph.name][0]", DefaultKeys[Glyph.name], niceName(DefaultKeys[Glyph.name][0])
 				RightKey = niceName(DefaultKeys[Glyph.name][0])
 			except KeyError:
 				pass
 			except:
 				print traceback.format_exc()
 		if not LeftKey and Glyph.name[-3:] == ".sc":
-			print "is sc:", Glyph.name[:-3].title()
 			try:
 				Glyph
 				LeftKey = DefaultKeys[Glyph.name[:-3].title()][1]
-				print "new", LeftKey
 				if (len(LeftKey) > 0):
 					LeftKey = LeftKey.lower()+".sc"
-				print "new Key:", LeftKey
 			except:
 				print traceback.format_exc()
 		if not RightKey and Glyph.name[-3:] == ".sc":
@@ -942,7 +932,6 @@ def updateKeyGlyphsForSelected():
 		if not LeftKey:
 			LeftKey = Glyph.name
 		if not RightKey:
-			print "5 RightKey", Glyph.name
 			RightKey = Glyph.name
 		
 		print Glyph.name, ">", LeftKey, RightKey
@@ -955,7 +944,6 @@ def main():
 	print "*** Ende ****"
 	
 def test():
-	#GlyphsInfo = Glyphs.glyphsInfo
 	NewDefaultKeys = {}
 	for key in Keys:
 		key = niceName(key)
