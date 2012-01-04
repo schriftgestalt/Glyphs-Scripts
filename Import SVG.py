@@ -7,7 +7,7 @@ Created by Georg Seifert on 2010-11-28.
 Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 """
 from objectsGS import *
-from GlyphsApp import GetFile
+from vanilla.dialogs import getFile
 from xml.dom import minidom
 
 Bounds = None
@@ -217,10 +217,9 @@ def main():
 	print g
 	pen = g.getPen()
 	
-	path = GetFile("Please select a .svg", ["svg"], False, True)
-	# print path
+	path = getFile(title="Please select a .svg", fileTypes=["svg"])
 	if path:
-		dom = minidom.parse(path)
+		dom = minidom.parse(path[0])
 		SVG = dom.getElementsByTagName("svg")[0]
 		Bounds = SVG.getAttribute('viewBox').split(" ")
 		if (len(Bounds) == 4):

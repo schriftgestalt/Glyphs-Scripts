@@ -212,9 +212,8 @@ def drawSVGNode(pen, node):
 	
 def main():
 	global Bounds
+	paths = getFile(title="Please select .svg files", allowsMultipleSelection=True fileTypes=["svg"])
 	
-	paths = GetFile("Please select a .svg", True, ["svg"])
-
 	if paths is None:
 		return
 	for path in  paths:

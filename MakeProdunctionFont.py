@@ -15,30 +15,23 @@ from GlyphsApp import *
 def main():
 	Doc = Glyphs.currentDocument
 	Font = Doc.font 
-	print "Font", Font
 	Font.setDisablesNiceNames_(True)
 	FontMaster = Font.fontMasters()[0]
 	removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 	Font.disableUpdateInterface()
 	for Glyph in Font.glyphs:
-		if not Glyph.keep():
+		if not Glyph.export:
 			continue
 		Glyph.undoManager().beginUndoGrouping()
 		Layer = Glyph.layerForKey_(FontMaster.id)
 		Components = Layer.components
 		for i in range(2):
 			for Component in Components:
-				#Component = Layer.components[i]
-				
 				if not Component.component:
 					print Glyph.name, " > Component", Component, Component.component
 				ComponentGlyph = Font.glyphs[Component.componentName]
 				ComponentLayer = ComponentGlyph.layerForKey_(FontMaster.id)
-				if (Glyph.name == "Ncaron"):
-					print "__ComponentGlyph:", Glyph.name, " > ", ComponentGlyph.name, ComponentLayer.components
-				if (ComponentGlyph and not ComponentGlyph.keep()) or len(Layer.paths) > 0 or len(ComponentLayer.components) > 0:
-					if (Glyph.name == "Ncaron"):
-						print "__Component.decompose()", Component
+				if (ComponentGlyph and not ComponentGlyph.export) or len(Layer.paths) > 0 or len(ComponentLayer.components) > 0:
 					Component.decompose()
 		if Glyph.leftKerningGroup:
 			Glyph.leftKerningGroup = Glyph.leftKerningGroup.replace("-", "")
@@ -66,8 +59,6 @@ def main():
 		Glyph.undoManager().endUndoGrouping()
 	
 	Font.enableUpdateInterface()
-	
-	print "Doc", Doc
 
 if __name__ == '__main__':
 	main()
