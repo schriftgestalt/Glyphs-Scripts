@@ -7,7 +7,7 @@ Created by Georg Seifert on 2010-11-28.
 Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 """
 from objectsGS import *
-from GlyphsApp import GetFile
+from vanilla.dialogs import getFile
 from xml.dom import minidom
 from os.path import basename, splitext
 
@@ -15,14 +15,12 @@ Bounds = None
 def stringToFloatList(String):
 	points = String.replace(",", " ").strip(" ").split(" ")
 	newPoints = []
-	# print "- points", points
 	for value in points:
 		try:
 			value = float(value)
 			newPoints.append(value)
 		except:
 			pass
-	# print "f points", newPoints
 	return newPoints
 	
 def drawSVGNode(pen, node):
@@ -55,10 +53,12 @@ def drawSVGNode(pen, node):
 			start = -1
 			length = -1
 			for i in range(len(D)):
-				if D[i] in ("C", "c", "L", "l", "M", "s", "z", "H", "h", "V", "v"):
+				if D[i] in ("C", "c", "L", "l", "M", "m", "s", "z", "H", "h", "V", "v"):
 					if start >= 0 and length > 0:
 						part = D[start:start+length]
+						part = part.replace(" ", ",")
 						part = part.replace("-", ",-")
+						part = part.replace(",,", ",")
 						parts.append(part)
 					start = i
 					length = 0
@@ -69,44 +69,54 @@ def drawSVGNode(pen, node):
 				parts.append(part)
 			lastPoint = None
 			for part in parts:
-				# print "part", part
 				if part[0] == "M":
 					point = points = stringToFloatList(part[1:])
-					# print "point", point
 					assert(len(point) == 2)
 					point[1] = Bounds[3] - point[1]
 					pen.moveTo(point)
 					lastPoint = point
+				elif part[0] == "m":
+					point = points = stringToFloatList(part[1:])
+					assert(len(point) == 2)
+					point[1] = Bounds[3] - point[1]
+					point[0] += lastPoint[0]
+					point[1] += lastPoint[1]
+					pen.moveTo(point)
+					lastPoint = point
+			
 				elif part[0] == "C":
 					points = stringToFloatList(part[1:])
 					assert(len(points) == 6)
-					P1 = points[0:2]
-					P2 = points[2:4]
-					P3 = points[4:6]
-					P1[1] = Bounds[3] - P1[1]
-					P2[1] = Bounds[3] - P2[1]
-					P3[1] = Bounds[3] - P3[1]
-					pen.curveTo(P1, P2, P3)
-					lastPoint = P3
+					points = [float(Value) for Value in points]
+					for i in range(0, len(points), 6):
+						P1 = points[i:i+2]
+						P2 = points[i+2:i+4]
+						P3 = points[i+4:i+6]
+						P1[1] = Bounds[3] - P1[1]
+						P2[1] = Bounds[3] - P2[1]
+						P3[1] = Bounds[3] - P3[1]
+						pen.curveTo(P1, P2, P3)
+						lastPoint = P3
 				elif part[0] == "c":
 					points = part[1:].strip(",").split(",")
 					points = [float(Value) for Value in points]
-					P1 = points[0:2]
-					P2 = points[2:4]
-					P3 = points[4:6]
-					P1[0] += lastPoint[0]
-					P1[1] = -P1[1]
-					P1[1] += lastPoint[1]
-					
-					P2[0] += lastPoint[0]
-					P2[1] = -P2[1]
-					P2[1] += lastPoint[1]
-					
-					P3[0] += lastPoint[0]
-					P3[1] = -P3[1]
-					P3[1] += lastPoint[1]
-					pen.curveTo(P1, P2, P3)
-					lastPoint = P3
+					for i in range(0, len(points), 6):
+						P1 = points[i:i+2]
+						P2 = points[i+2:i+4]
+						P3 = points[i+4:i+6]
+						P1[0] += lastPoint[0]
+						P1[1] = -P1[1]
+						P1[1] += lastPoint[1]
+				
+						P2[0] += lastPoint[0]
+						P2[1] = -P2[1]
+						P2[1] += lastPoint[1]
+				
+						P3[0] += lastPoint[0]
+						P3[1] = -P3[1]
+						P3[1] += lastPoint[1]
+						pen.curveTo(P1, P2, P3)
+						lastPoint = P3
 				elif part[0] == "S":
 					points = part[1:].strip(",").split(",")
 					points = [float(Value) for Value in points]
