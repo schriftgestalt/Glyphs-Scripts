@@ -22,7 +22,7 @@ def stringToFloatList(String):
 			pass
 	return newPoints
 	
-def drawSVGNode(pen, node):
+def drawSVGNode(pen, node, Transform):
 	global Bounds
 	if node.localName:
 		if node.localName == "rect":
@@ -30,10 +30,10 @@ def drawSVGNode(pen, node):
 			Y = Bounds[3] - float(node.getAttribute('y')) 
 			W = float(node.getAttribute('width'))
 			H = float(node.getAttribute('height'))
-			pen.moveTo((X, Y))
-			pen.lineTo((X + W, Y))
-			pen.lineTo((X + W, Y - H))
-			pen.lineTo((X, Y - H))
+			pen.moveTo( Transform.transformPoint_((X, Y)) )
+			pen.lineTo( Transform.transformPoint_((X + W, Y)))
+			pen.lineTo( Transform.transformPoint_((X + W, Y - H)))
+			pen.lineTo( Transform.transformPoint_((X, Y - H)))
 			pen.closePath()
 		if node.localName == "circle":
 			CX = float(node.getAttribute('cx'))
@@ -72,15 +72,15 @@ def drawSVGNode(pen, node):
 					point = points = stringToFloatList(part[1:])
 					assert(len(point) == 2)
 					point[1] = Bounds[3] - point[1]
-					pen.moveTo(point)
+					pen.moveTo(Transform.transformPoint_(point))
 					lastPoint = point
 				elif part[0] == "m":
 					point = points = stringToFloatList(part[1:])
 					assert(len(point) == 2)
-					point[1] = Bounds[3] - point[1]
+					point[1] = - point[1]
 					point[0] += lastPoint[0]
 					point[1] += lastPoint[1]
-					pen.moveTo(point)
+					pen.moveTo(Transform.transformPoint_(point))
 					lastPoint = point
 			
 				elif part[0] == "C":
@@ -94,7 +94,7 @@ def drawSVGNode(pen, node):
 						P1[1] = Bounds[3] - P1[1]
 						P2[1] = Bounds[3] - P2[1]
 						P3[1] = Bounds[3] - P3[1]
-						pen.curveTo(P1, P2, P3)
+						pen.curveTo(Transform.transformPoint_(P1), Transform.transformPoint_(P2), Transform.transformPoint_(P3))
 						lastPoint = P3
 				elif part[0] == "c":
 					points = part[1:].strip(",").split(",")
@@ -114,7 +114,7 @@ def drawSVGNode(pen, node):
 						P3[0] += lastPoint[0]
 						P3[1] = -P3[1]
 						P3[1] += lastPoint[1]
-						pen.curveTo(P1, P2, P3)
+						pen.curveTo(Transform.transformPoint_(P1), Transform.transformPoint_(P2), Transform.transformPoint_(P3))
 						lastPoint = P3
 				elif part[0] == "S":
 					points = part[1:].strip(",").split(",")
@@ -129,7 +129,7 @@ def drawSVGNode(pen, node):
 					P3 = points[2:4]
 					P2[1] = Bounds[3] - P2[1]
 					P3[1] = Bounds[3] - P3[1]
-					pen.curveTo(P1, P2, P3)
+					pen.curveTo(Transform.transformPoint_(P1), Transform.transformPoint_(P2), Transform.transformPoint_(P3))
 					lastPoint = P3
 				elif part[0] == "s":
 					points = part[1:].strip(",").split(",")
@@ -150,7 +150,7 @@ def drawSVGNode(pen, node):
 					P3[0] += lastPoint[0]
 					P3[1] = -P3[1]
 					P3[1] += lastPoint[1]
-					pen.curveTo(P1, P2, P3)
+					pen.curveTo(Transform.transformPoint_(P1), Transform.transformPoint_(P2), Transform.transformPoint_(P3))
 					lastPoint = P3
 				elif part[0] == "L":
 					points = stringToFloatList(part[1:])
@@ -165,29 +165,28 @@ def drawSVGNode(pen, node):
 						points[i] += lastPoint[0]
 						points[i+1] = -points[i+1]
 						points[i+1] += lastPoint[1]
-						pen.lineTo(points[i:i+2])
+						pen.lineTo(Transform.transformPoint_(points[i:i+2]))
 						lastPoint = points[i:i+2]
 				elif part[0] == "H":
 					point = float(part[1:].strip(","))
 					points = []
 					points.append(point)
 					points.append(lastPoint[1])
-					pen.lineTo(points)
+					pen.lineTo(Transform.transformPoint_(points))
 					lastPoint = points
-					
 				elif part[0] == "h":
 					point = float(part[1:].strip(","))
 					points = []
 					points.append(point + lastPoint[0])
 					points.append(lastPoint[1])
-					pen.lineTo(points)
+					pen.lineTo(Transform.transformPoint_(points))
 					lastPoint = points
 				elif part[0] == "V":
 					point = float(part[1:].strip(","))
 					points = []
 					points.append(lastPoint[0])
 					points.append(Bounds[3] - point)
-					pen.lineTo(points)
+					pen.lineTo(Transform.transformPoint_(points))
 					lastPoint = points
 				
 				elif part[0] == "v":
@@ -195,7 +194,7 @@ def drawSVGNode(pen, node):
 					points = []
 					points.append(lastPoint[0])
 					points.append(-point + lastPoint[1])
-					pen.lineTo(points)
+					pen.lineTo(Transform.transformPoint_(points))
 					lastPoint = points
 				
 				elif part[0] == "z":
@@ -210,16 +209,46 @@ def drawSVGNode(pen, node):
 			point[1] = Bounds[3] - point[1]
 			pen.moveTo(point)
 			for i in range(1, len(points), 1):
-				#point = points[i].split(",")
 				point = stringToFloatList(points[i])
 				if len(point) == 2:
-					#point = [float(Value) for Value in point]
 					point[1] = Bounds[3] - point[1]
-					pen.lineTo(point)
+					pen.lineTo(Transform.transformPoint_(point))
 			pen.closePath()
 		if node.localName == "g":
+			TransformString = node.getAttribute('transform')
+			Transform = NSAffineTransform.alloc().init()
+			if TransformString:
+				TransformStrings = TransformString.split(" ")
+				TransformStrings.reverse()
+				for TransformStringElement in TransformStrings:
+					if TransformStringElement.startswith("matrix"):
+						Values = stringToFloatList(TransformStringElement[7:-1])
+						Transform.setTransformStruct_(Values)
+					elif TransformStringElement.startswith("translate"):
+						Values = stringToFloatList(TransformStringElement[10:-1])
+						if len(Values) == 2:
+							Values[1] = Bounds[3] - Values[1]
+							Transform.translateXBy_yBy_(Values[0], Values[1])
+						else:
+							Transform.translateXBy_yBy_(Values[0], Values[0])
+					
+					elif TransformStringElement.startswith("scale"):
+						Values = stringToFloatList(TransformStringElement[6:-1])
+						if len(Values) == 2:
+							Transform.scaleXBy_yBy_(Values[0], Values[1])
+						else:
+							Transform.scaleBy_(Values[0])
+					# else if ([TransformStringElement hasPrefix:@"rotate"]) {
+					# 
+					# }
+					# else if ([TransformStringElement hasPrefix:@"skewX"]) {
+					# 
+					# }
+					# else if ([TransformStringElement hasPrefix:@"skewY"]) {
+					# 
+					# }
 			for subNode in node.childNodes:
-				drawSVGNode(pen, subNode)
+				drawSVGNode(pen, subNode, Transform)
 	
 def main():
 	global Bounds
@@ -230,7 +259,7 @@ def main():
 	
 	path = getFile(title="Please select a .svg", fileTypes=["svg"])
 	if path:
-		dom = minidom.parse(path[0])
+		dom = minidom.parse(path)
 		SVG = dom.getElementsByTagName("svg")[0]
 		Bounds = SVG.getAttribute('viewBox').split(" ")
 		if (len(Bounds) == 4):
@@ -241,7 +270,7 @@ def main():
 			if Width and Height:
 				Bounds = [0, 0, float(Width), float(Height) ]
 		for node in dom.getElementsByTagName("svg")[0].childNodes:
-			drawSVGNode(pen, node)
+			drawSVGNode(pen, node, NSAffineTransform.alloc().init())
 
 if __name__ == '__main__':
 	main()
