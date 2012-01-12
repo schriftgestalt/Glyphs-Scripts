@@ -259,7 +259,7 @@ def main():
 	
 	path = getFile(title="Please select a .svg", fileTypes=["svg"])
 	if path:
-		dom = minidom.parse(path)
+		dom = minidom.parse(path[0])
 		SVG = dom.getElementsByTagName("svg")[0]
 		Bounds = SVG.getAttribute('viewBox').split(" ")
 		if (len(Bounds) == 4):
