@@ -9,7 +9,7 @@ Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
 
 import sys
 import os
-from GlyphsInternal import *
+from GlyphsApp import *
 import objc
 from AppKit import *
 from Foundation import *
