@@ -145,7 +145,6 @@ class RFont(BaseFont):
 		
 		if type(doc) == type(()):
 			doc = doc[0]
-		print "__Master", master
 		self._object = doc
 		self._master = master
 		self._masterKey = doc.font.masters[master].id
@@ -917,7 +916,7 @@ class RGlyphAnchorsProxy (object):
 		return self._owner.anchorCount()
 	def __str__(self):
 		StringVal = "(\n"
-		for key in self._owner.anchors().allKeys():
+		for key in self._owner.pyobjc_instanceMethods.anchors().allKeys():
 			currAnchor = self._owner.anchorForName_(key)
 			StringVal += "	%s {%.0f, %.0f},\n" % (currAnchor.name, currAnchor.position.x, currAnchor.position.y)
 		StringVal += ")"
