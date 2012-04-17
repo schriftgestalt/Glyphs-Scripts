@@ -470,7 +470,7 @@ def readGlyphs(Font, Dict):
 							PathIndex, NodeIndex = HintDict["target"][1:-1].split(", ")
 							PathIndex = int(PathIndex)
 							NodeIndex = int(NodeIndex)
-							PathCounter = -1
+							PathCounter = -1
 							NodeCounter = 0
 							for i in range(len(glyph)):
 								node = glyph[i]
