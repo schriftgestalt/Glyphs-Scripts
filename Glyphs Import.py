@@ -34,7 +34,10 @@ def NotNiceName(Name):
 
 def setInstanceStyleNames(Font, Dict):
 	_Familie = str(Dict['familyName'])
-	_Instance = Dict['instances'][0]
+	try:
+		_Instance = Dict['instances'][0]
+	except:
+		_Instance = {"name":"Regular"}
 	_Schnitt = str(_Instance['name'])
 	
 	if "linkStyle" in _Instance:
@@ -512,9 +515,30 @@ def readGlyphs(Font, Dict):
 								hint.positions[masterIndex] = Origin
 								hint.widths[masterIndex] = Size
 								vHintIndex = vHintIndex + 1
+			if "anchors" in Layer:
+				for AnchorIndex in range(len(Layer["anchors"])):
+					# print "__nodeIndex:", nodeIndex
+					AnchorDict = Layer["anchors"][AnchorIndex]
+					Name = str(AnchorDict["name"])
+					X, Y = AnchorDict["position"][1:-1].split(", ")
+					X = round(float(X))
+					Y = round(float(Y))
+					print "__anchor Position", X, Y
+					if masterIndex == 0:
+						anchor = Anchor(Name, X, Y)
+						# print "Move __node", node
+						glyph.anchors.append(anchor)
+					else:
+						Index = nodeIndex
+						#print "_set move point", Index, Position, glyph.nodes #, glyph.nodes[Index].Layer(masterIndex)
+						try:
+							glyph.anchors[AnchorIndex].Layer(masterIndex).x = X
+							glyph.anchors[AnchorIndex].Layer(masterIndex).y = Y
+						except:
+							continue
 				
 		Font.glyphs.append(glyph)
-		GlyphIndexes[glyph.name] = i
+		GlyphIndexes[glyph.name] = len(Font.glyphs)-1
 	for i in range(GlyphsCount):
 		glyph = Font.glyphs[i]
 		GlyphDict = Glyphs[i]
