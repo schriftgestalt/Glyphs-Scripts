@@ -523,7 +523,6 @@ def readGlyphs(Font, Dict):
 					X, Y = AnchorDict["position"][1:-1].split(", ")
 					X = round(float(X))
 					Y = round(float(Y))
-					print "__anchor Position", X, Y
 					if masterIndex == 0:
 						anchor = Anchor(Name, X, Y)
 						# print "Move __node", node
@@ -752,27 +751,29 @@ def readFeatures(Font, Dict):
 	try:
 		for FeatureDict in Dict["features"]:
 			if "name" in FeatureDict and "code" in FeatureDict:
-			
-				CleanCode = str(FeatureDict["code"])
-				CleanCode = CleanCode.replace("'", " ~~'")
-				CleanCode = CleanCode.replace("]", " ~~]")
-				CleanCode = CleanCode.replace("[", "[~~ ")
-				CleanCode = CleanCode.replace(";", " ~~;")
-				CleanCodeList = CleanCode.split(" ")
-				CleanCodeList = map(NotNiceName, CleanCodeList)
-				CleanCode = " ".join(CleanCodeList)
-				CleanCode = CleanCode.replace(" ~~'", "'")
-				CleanCode = CleanCode.replace(" ~~]", "]")
-				CleanCode = CleanCode.replace("[~~ ", "[")
-				CleanCode = CleanCode.replace(" ~~;", ";")
-				Name = str(FeatureDict["name"])
-			
-				CleanCode = CleanCode.replace("\n", "\n	")
-			
-				feature = Feature(Name, "feature %s {\n	%s\n} %s;" % (Name, CleanCode, Name))
-				Font.features.append(feature)
+					Name = str(FeatureDict["name"])
+					try:
+						CleanCode = str(unicode(FeatureDict["code"]).encode("utf-8"))
+						CleanCode = CleanCode.replace("'", " ~~'")
+						CleanCode = CleanCode.replace("]", " ~~]")
+						CleanCode = CleanCode.replace("[", "[~~ ")
+						CleanCode = CleanCode.replace(";", " ~~;")
+						CleanCodeList = CleanCode.split(" ")
+						CleanCodeList = map(NotNiceName, CleanCodeList)
+						CleanCode = " ".join(CleanCodeList)
+						CleanCode = CleanCode.replace(" ~~'", "'")
+						CleanCode = CleanCode.replace(" ~~]", "]")
+						CleanCode = CleanCode.replace("[~~ ", "[")
+						CleanCode = CleanCode.replace(" ~~;", ";")
+						CleanCode = CleanCode.replace("\n", "\n	")
+					
+						feature = Feature(Name, "feature %s {\n	%s\n} %s;" % (Name, CleanCode, Name))
+						Font.features.append(feature)
+					except:
+						print "__ Error in Feature[%s]: %s" % (Name, sys.exc_info()[0])
+						pass
 	except:
-		pass
+		print "__ Error in Feature:", sys.exc_info()[0]
 	
 def setLegacyNames(Font):
 	for glyph in Font.glyphs:
@@ -798,6 +799,7 @@ def readGlyphsFile(filePath):
 	readFeatures(f, GlyphsDoc)
 	
 	fl.UpdateFont()
+	f.modified = 0
 	pool.drain()
 
 
