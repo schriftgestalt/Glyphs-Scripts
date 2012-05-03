@@ -596,8 +596,8 @@ def readGlyphs(Font, Dict):
 					for masterIndex in range(MasterCount):
 						CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
 						CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
-						CopyComponent.deltas[masterIndex].x = CopyComponent.deltas[masterIndex].x + component.deltas[masterIndex].x
-						CopyComponent.deltas[masterIndex].y = CopyComponent.deltas[masterIndex].y + component.deltas[masterIndex].y
+						CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
+						CopyComponent.deltas[masterIndex].y = (CopyComponent.deltas[masterIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
 					glyph.components.append(CopyComponent)
 				del(glyph.components[ComponentIndex])
 				
