@@ -341,6 +341,10 @@ def readGlyphs(Font, Dict):
 		glyph.name = str(GlyphDict["glyphname"])
 		if "unicode" in GlyphDict:
 			glyph.unicode = int(GlyphDict["unicode"], 16)
+		if "export" in GlyphDict and str(GlyphDict["export"]) == "0":
+			print "__g not exported:", glyph.name, GlyphDict["export"], type(GlyphDict["export"])
+			glyph.customdata = "Not Exported"
+			glyph.mark = 2
 		
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
@@ -436,13 +440,17 @@ def readGlyphs(Font, Dict):
 					# we may have output a node too much
 					node = glyph[nodeIndex-1]
 					firstNode = glyph[firstNodeIndex]
-					if node.x == firstNode.x and node.y == firstNode.y:
-						if node.type == nLINE:
-							glyph.DeleteNode(nodeIndex-1)
-							nodeIndex = nodeIndex - 1
-						elif node.type == nCURVE and glyph[firstNodeIndex+1].type != nCURVE:
-							glyph.DeleteNode(firstNodeIndex)
-							nodeIndex = nodeIndex - 1
+					if node is not None and firstNodeIndex is not None:
+						if node.x == firstNode.x and node.y == firstNode.y:
+							if node.type == nLINE:
+								glyph.DeleteNode(nodeIndex-1)
+								nodeIndex = nodeIndex - 1
+							elif node.type == nCURVE and glyph[firstNodeIndex+1].type != nCURVE:
+								glyph.DeleteNode(firstNodeIndex)
+								nodeIndex = nodeIndex - 1
+					else:
+						print "There was a problem with the outline in the glyph: \"%s\". Probably because the outlines are not compatible." % glyph.name
+						glyph.mark = 34
 			if "hints" in Layer:
 				vHintIndex = 0
 				hHintIndex = 0
@@ -582,8 +590,7 @@ def readGlyphs(Font, Dict):
 		for ComponentIndex in range(ComponentCount-1, -1, -1):
 			component = glyph.components[ComponentIndex]
 			ComponentGlyph = Font.glyphs[component.index]
-			if len(ComponentGlyph.components) > 0:
-				GlyphsWithNestedComponemts.append(glyph.name)
+			if ComponentGlyph.customdata == "Not Exported":
 				for ComponentGlyphComponent in ComponentGlyph.components:
 					CopyComponent = Component(ComponentGlyphComponent)
 					for masterIndex in range(MasterCount):
@@ -591,6 +598,35 @@ def readGlyphs(Font, Dict):
 						CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
 						CopyComponent.deltas[masterIndex].x = CopyComponent.deltas[masterIndex].x + component.deltas[masterIndex].x
 						CopyComponent.deltas[masterIndex].y = CopyComponent.deltas[masterIndex].y + component.deltas[masterIndex].y
+					glyph.components.append(CopyComponent)
+				del(glyph.components[ComponentIndex])
+				
+				ComponentGlyphPath = ComponentGlyph.nodes
+				NewPath = []
+				for node in ComponentGlyphPath:
+					NewPath.append(Node(node))
+				for ComponentNode in ComponentGlyph.nodes:
+					node = Node(ComponentNode)
+					for masterIndex in range(MasterCount):
+						for pointIndex in range(node.count):
+							node.Layer(masterIndex)[pointIndex].x = (node.Layer(masterIndex)[pointIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
+							node.Layer(masterIndex)[pointIndex].y = (node.Layer(masterIndex)[pointIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
+					glyph.Insert(node, len(glyph))
+	
+	for glyph in Font.glyphs:
+		ComponentCount = len(glyph.components)
+		for ComponentIndex in range(ComponentCount-1, -1, -1):
+			component = glyph.components[ComponentIndex]
+			ComponentGlyph = Font.glyphs[component.index]
+			if len(ComponentGlyph.components) > 0:
+				GlyphsWithNestedComponemts.append(glyph.name)
+				for ComponentGlyphComponent in ComponentGlyph.components:
+					CopyComponent = Component(ComponentGlyphComponent)
+					for masterIndex in range(MasterCount):
+						CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
+						CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
+						CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
+						CopyComponent.deltas[masterIndex].y = (CopyComponent.deltas[masterIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
 					glyph.components.append(CopyComponent)
 				del(glyph.components[ComponentIndex])
 				
