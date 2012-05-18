@@ -255,6 +255,40 @@ def makePlist(font):
 	Font["kerning"] = Kerning
 	return Font
 	
+def writeFeatures(font, Dict):
+	Prefix = {}
+	Prefix["code"] = font.ot_classes
+	Prefix["name"] = "FontLab OTPanel"
+	Dict["featurePrefixes"] = [Prefix]
+	
+	Classes = []
+	for i in range(len(font.classes)):
+		ClassText = font.classes[i]
+		if ClassText[0] != "_" and ClassText[0] != ".":
+			ClassTupel = ClassText.split(":", 1)
+			if len(ClassTupel) == 2:
+				Class = {}
+				Class["name"] = ClassTupel[0].strip()
+				Class["code"] = ClassTupel[1].strip()
+				Classes.append(Class)
+	if len(Classes) > 0:
+		Dict["classes"] = Classes
+	print "__features", font.features[0]
+	Features = []
+	import re
+	p = re.compile("feature ([A-Za-z0-9]{4}) *{[\\s]*([.'\\{\\}\\[\\]a-zA-Z0-9_ ;\\n\\t@<>#+-\\/]*?)} *\\1 *;")
+	for i in range(len(font.features)):
+		FeatureText = font.features[i]
+		Feature = {}
+		Feature["name"] = FeatureText.tag
+		if Feature["name"] == "kern":
+			continue
+		Match = p.findall(FeatureText.value)
+		Feature["code"] = Match[0][1]
+		Features.append(Feature)
+	if len(Features) > 0:
+		Dict["features"] = Features
+	return Dict
 def main():
 	StartTime = time.clock()
 	font = fl.font
@@ -265,10 +299,12 @@ def main():
 		path = PutFile("Please choose a name for the .glyph")
 		if path is None:
 			return
-	folder, base = os.path.split(path)
-	base = base.replace(".vfb", ".glyphs")
-	dest = os.path.join(folder, base)
-	makePlist(font).write(dest)
+	path = os.path.splitext(path)[0]
+	path = path+".glyphs"
+	print "Will write font to:", path
+	Dict = makePlist(font)
+	Dict = writeFeatures(font, Dict)
+	Dict.write(path)
 	print "export Time:", (time.clock() - StartTime), "s."
 
 if __name__ == '__main__':
