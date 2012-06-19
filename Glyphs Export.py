@@ -273,7 +273,7 @@ def writeFeatures(font, Dict):
 				Classes.append(Class)
 	if len(Classes) > 0:
 		Dict["classes"] = Classes
-	print "__features", font.features[0]
+	#print "__features", font.features[0]
 	Features = []
 	import re
 	p = re.compile("feature ([A-Za-z0-9]{4}) *{[\\s]*([.'\\{\\}\\[\\]a-zA-Z0-9_ ;\\n\\t@<>#+-\\/]*?)} *\\1 *;")
@@ -284,8 +284,11 @@ def writeFeatures(font, Dict):
 		if Feature["name"] == "kern":
 			continue
 		Match = p.findall(FeatureText.value)
-		Feature["code"] = Match[0][1]
-		Features.append(Feature)
+		try:
+			Feature["code"] = Match[0][1]
+			Features.append(Feature)
+		except:
+			pass
 	if len(Features) > 0:
 		Dict["features"] = Features
 	return Dict
