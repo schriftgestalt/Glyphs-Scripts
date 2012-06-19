@@ -257,9 +257,10 @@ def makePlist(font):
 	
 def writeFeatures(font, Dict):
 	Prefix = {}
-	Prefix["code"] = font.ot_classes
-	Prefix["name"] = "FontLab OTPanel"
-	Dict["featurePrefixes"] = [Prefix]
+	if font.ot_classes is not None and len(font.ot_classes) > 0:
+		Prefix["code"] = font.ot_classes
+		Prefix["name"] = "FontLab OTPanel"
+		Dict["featurePrefixes"] = [Prefix]
 	
 	Classes = []
 	for i in range(len(font.classes)):
