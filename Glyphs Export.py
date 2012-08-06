@@ -258,7 +258,7 @@ def makePlist(font):
 def writeFeatures(font, Dict):
 	Prefix = {}
 	if font.ot_classes is not None and len(font.ot_classes) > 0:
-		Prefix["code"] = font.ot_classes
+		Prefix["code"] = font.ot_classes.strip()
 		Prefix["name"] = "FontLab OTPanel"
 		Dict["featurePrefixes"] = [Prefix]
 	
@@ -277,7 +277,7 @@ def writeFeatures(font, Dict):
 	#print "__features", font.features[0]
 	Features = []
 	import re
-	p = re.compile("feature ([A-Za-z0-9]{4}) *{[\\s]*([.'\\{\\}\\[\\]a-zA-Z0-9_ ;\\n\\t@<>#+-\\/]*?)} *\\1 *;")
+	p = re.compile("feature ([A-Za-z0-9]{4}) *{[\\s]*([.'\\{\\}\\[\\]a-zA-Z0-9_ ;,:\\s@<>#+-\\/]*?)} *\\1 *;")
 	for i in range(len(font.features)):
 		FeatureText = font.features[i]
 		Feature = {}
@@ -289,7 +289,13 @@ def writeFeatures(font, Dict):
 			Feature["code"] = Match[0][1]
 			Features.append(Feature)
 		except:
-			pass
+			StartIndex = FeatureText.value.find("{")
+			EndIndex = FeatureText.value.rfind("}")
+			if StartIndex > 0 and EndIndex > 0 and EndIndex > StartIndex:
+				Feature["code"] = FeatureText.value[StartIndex:EndIndex]
+				Features.append(Feature)
+				continue
+			print "__ Problme with Features:", FeatureText.tag, "\n", FeatureText.value
 	if len(Features) > 0:
 		Dict["features"] = Features
 	return Dict
