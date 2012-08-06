@@ -292,7 +292,7 @@ def writeFeatures(font, Dict):
 			StartIndex = FeatureText.value.find("{")
 			EndIndex = FeatureText.value.rfind("}")
 			if StartIndex > 0 and EndIndex > 0 and EndIndex > StartIndex:
-				Feature["code"] = FeatureText.value[StartIndex:EndIndex]
+				Feature["code"] = FeatureText.value[StartIndex+1:EndIndex].strip()
 				Features.append(Feature)
 				continue
 			print "__ Problme with Features:", FeatureText.tag, "\n", FeatureText.value
