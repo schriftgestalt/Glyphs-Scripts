@@ -525,7 +525,7 @@ def readGlyphs(Font, Dict):
 						if masterIndex == 0:
 							
 							if Horizontal:
-							hint = Hint(Origin, Size)
+								hint = Hint(Origin, Size)
 								glyph.hhints.append(hint)
 							else:
 								Origin = Origin - ShiftNodes
