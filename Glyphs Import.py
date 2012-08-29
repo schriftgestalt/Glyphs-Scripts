@@ -18,6 +18,9 @@ import Carbon.File
 from plistlib import *
 
 Nice2Legacy = {}
+Name2Category = {}
+Name2SubCategory = {}
+
 shortStyleList = {"Extra": "Ex", "Condensed": "Cond", "Extended": "Extd", "Semi":"Sm", "Italic": "It", "Bold":"Bd", " Sans":"", " Mono":""}
 weightCodes = {}
 def NotNiceName(Name):
@@ -325,6 +328,10 @@ def loadGlyphsInfo():
 		Attribs = subelement.attrib
 		if "legacy" in Attribs:
 			Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
+		if "category" in Attribs:
+			Name2Category[Attribs["name"]] = Attribs["category"]
+		if "subCategory" in Attribs:
+			Name2SubCategory[Attribs["name"]] = Attribs["subCategory"]
 	global weightCodes
 	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
 	
@@ -345,7 +352,11 @@ def readGlyphs(Font, Dict):
 			print "__g not exported:", glyph.name, GlyphDict["export"], type(GlyphDict["export"])
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
-		
+		isNonSpacingMark = False
+		try:
+			isNonSpacingMark = Name2Category[glyph.name] == "Mark" and Name2SubCategory[glyph.name] == "Nonspacing"
+		except:
+			pass
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
 			try:
@@ -354,8 +365,13 @@ def readGlyphs(Font, Dict):
 						break
 			except:
 				continue
+			ShiftNodes = 0
+			if isNonSpacingMark:
+				ShiftNodes = round(float(Layer["width"]))
+				glyph.SetMetrics(Point(0, 0), masterIndex)
+			else:
+				glyph.SetMetrics(Point(round(float(Layer["width"])), 0), masterIndex)
 			
-			glyph.SetMetrics(Point(round(float(Layer["width"])), 0), masterIndex)
 			if "paths" not in Layer:
 				continue
 			nodeIndex = 0
@@ -364,7 +380,7 @@ def readGlyphs(Font, Dict):
 				Path = Layer["paths"][PathIndex]
 				NodeString = Path["nodes"][-1]
 				NodeList = NodeString.split(" ")
-				Position = Point(round(float(NodeList[0])), round(float(NodeList[1])))
+				Position = Point(round(float(NodeList[0])) - ShiftNodes, round(float(NodeList[1])))
 				if masterIndex == 0:
 					node = Node(nMOVE, Position)
 					glyph.Insert(node, len(glyph))
@@ -383,7 +399,7 @@ def readGlyphs(Font, Dict):
 				OffcurveNodes = []
 				for NodeString in Path["nodes"]:
 					NodeList = NodeString.split(" ")
-					Position = Point(round(float(NodeList[0])), round(float(NodeList[1])))
+					Position = Point(round(float(NodeList[0])) - ShiftNodes, round(float(NodeList[1])))
 					node = None
 					if NodeList[2] == "LINE":
 						if masterIndex == 0:
@@ -434,7 +450,7 @@ def readGlyphs(Font, Dict):
 						
 						
 					elif NodeList[2] == "OFFCURVE":
-						OffcurveNodes.append(Point(round(float(NodeList[0])), round(float(NodeList[1]))))
+						OffcurveNodes.append(Point(round(float(NodeList[0])) - ShiftNodes, round(float(NodeList[1]))))
 					
 				if "closed" in Path and masterIndex == MasterCount-1:
 					# we may have output a node too much
@@ -507,10 +523,13 @@ def readGlyphs(Font, Dict):
 						Origin = int(round(float(Origin)))
 						Size = int(round(float(Size)))
 						if masterIndex == 0:
-							hint = Hint(Origin, Size)
+							
 							if Horizontal:
+							hint = Hint(Origin, Size)
 								glyph.hhints.append(hint)
 							else:
+								Origin = Origin - ShiftNodes
+								hint = Hint(Origin, Size)
 								glyph.vhints.append(hint)
 						else:
 							if Horizontal:
@@ -529,7 +548,7 @@ def readGlyphs(Font, Dict):
 					AnchorDict = Layer["anchors"][AnchorIndex]
 					Name = str(AnchorDict["name"])
 					X, Y = AnchorDict["position"][1:-1].split(", ")
-					X = round(float(X))
+					X = round(float(X)) - ShiftNodes
 					Y = round(float(Y))
 					if masterIndex == 0:
 						anchor = Anchor(Name, X, Y)
@@ -557,6 +576,17 @@ def readGlyphs(Font, Dict):
 						break
 			except:
 				continue
+			isNonSpacingMark = False
+			try:
+				isNonSpacingMark = Name2Category[glyph.name] == "Mark" and Name2SubCategory[glyph.name] == "Nonspacing"
+			except:
+				pass
+			ShiftNodes = 0
+			if isNonSpacingMark:
+				ShiftNodes = round(float(Layer["width"]))
+				glyph.SetMetrics(Point(0, 0), masterIndex)
+			else:
+				glyph.SetMetrics(Point(round(float(Layer["width"])), 0), masterIndex)
 			
 			try:
 				for componentIndex in range(len(Layer["components"])):
@@ -570,7 +600,7 @@ def readGlyphs(Font, Dict):
 					
 					if masterIndex == 0:
 						ComponentIndex = GlyphIndexes[componentDict['name']]
-						Delta = Point(int(str(componentTransformList[4])), int(str(componentTransformList[5])))
+						Delta = Point(int(str(componentTransformList[4])) - ShiftNodes, int(str(componentTransformList[5])))
 						Scale = Point(float(str(componentTransformList[0])), float(str(componentTransformList[3])))
 						component = Component(ComponentIndex, Delta, Scale)
 						glyph.components.append(component)
@@ -578,7 +608,7 @@ def readGlyphs(Font, Dict):
 						component = glyph.components[componentIndex]
 						component.scales[masterIndex].x = float(str(componentTransformList[0]))
 						component.scales[masterIndex].y = float(str(componentTransformList[3]))
-						component.deltas[masterIndex].x = int(str(componentTransformList[4]))
+						component.deltas[masterIndex].x = int(str(componentTransformList[4])) - ShiftNodes
 						component.deltas[masterIndex].y = int(str(componentTransformList[5]))
 			except:
 				continue
@@ -634,7 +664,6 @@ def readGlyphs(Font, Dict):
 				NewPath = []
 				for node in ComponentGlyphPath:
 					NewPath.append(Node(node))
-				
 				
 				for ComponentNode in ComponentGlyph.nodes:
 					node = Node(ComponentNode)
