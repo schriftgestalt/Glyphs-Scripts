@@ -3,7 +3,7 @@
 # Version 0.1
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
-# The scrit will read a .glyphs file and import it into FontLab.
+# The script will read a .glyphs file and import it into FontLab.
 # It requires FontLab 5.1 on Mac
 # if you find any bugs, please report to info@glyphsapp.com
 
