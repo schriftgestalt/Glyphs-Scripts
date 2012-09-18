@@ -349,7 +349,6 @@ def readGlyphs(Font, Dict):
 		if "unicode" in GlyphDict:
 			glyph.unicode = int(GlyphDict["unicode"], 16)
 		if "export" in GlyphDict and str(GlyphDict["export"]) == "0":
-			print "__g not exported:", glyph.name, GlyphDict["export"], type(GlyphDict["export"])
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
 		isNonSpacingMark = False
@@ -600,7 +599,7 @@ def readGlyphs(Font, Dict):
 					
 					if masterIndex == 0:
 						ComponentIndex = GlyphIndexes[componentDict['name']]
-						Delta = Point(int(str(componentTransformList[4])) - ShiftNodes, int(str(componentTransformList[5])))
+						Delta = Point(round(float(str(componentTransformList[4]))) - ShiftNodes, round(float(str(componentTransformList[5]))))
 						Scale = Point(float(str(componentTransformList[0])), float(str(componentTransformList[3])))
 						component = Component(ComponentIndex, Delta, Scale)
 						glyph.components.append(component)
@@ -608,8 +607,8 @@ def readGlyphs(Font, Dict):
 						component = glyph.components[componentIndex]
 						component.scales[masterIndex].x = float(str(componentTransformList[0]))
 						component.scales[masterIndex].y = float(str(componentTransformList[3]))
-						component.deltas[masterIndex].x = int(str(componentTransformList[4])) - ShiftNodes
-						component.deltas[masterIndex].y = int(str(componentTransformList[5]))
+						component.deltas[masterIndex].x = round(float(str(componentTransformList[4])) - ShiftNodes)
+						component.deltas[masterIndex].y = round(float(str(componentTransformList[5])))
 			except:
 				continue
 	# Resolve nested components.
@@ -802,41 +801,48 @@ def readFeatures(Font, Dict):
 		pass
 	try:
 		Classes = Font.classes
-		for FeatureDict in Dict["classes"]:
-			if "name" in FeatureDict and "code" in FeatureDict:
+		if "classes" in Dict:
+			for FeatureDict in Dict["classes"]:
+				if "name" in FeatureDict and "code" in FeatureDict:
 			
-				CleanCode = str(FeatureDict["code"])
-				CleanCodeList = CleanCode.split(" ")
-				CleanCodeList = map(NotNiceName, CleanCodeList)
-				CleanCode = " ".join(CleanCodeList)
-				Classes.append(str(FeatureDict["name"]) + ": " + CleanCode)
-		Font.classes = Classes
+					CleanCode = str(FeatureDict["code"])
+					CleanCodeList = CleanCode.split(" ")
+					CleanCodeList = map(NotNiceName, CleanCodeList)
+					CleanCode = " ".join(CleanCodeList)
+					Classes.append(str(FeatureDict["name"]) + ": " + CleanCode)
+			Font.classes = Classes
+		else:
+			print "the font has no Classes."
 	except:
+		print "__ Error in Classes:", sys.exc_info()[0]
 		pass
 	try:
-		for FeatureDict in Dict["features"]:
-			if "name" in FeatureDict and "code" in FeatureDict:
-					Name = str(FeatureDict["name"])
-					try:
-						CleanCode = str(unicode(FeatureDict["code"]).encode("utf-8"))
-						CleanCode = CleanCode.replace("'", " ~~'")
-						CleanCode = CleanCode.replace("]", " ~~]")
-						CleanCode = CleanCode.replace("[", "[~~ ")
-						CleanCode = CleanCode.replace(";", " ~~;")
-						CleanCodeList = CleanCode.split(" ")
-						CleanCodeList = map(NotNiceName, CleanCodeList)
-						CleanCode = " ".join(CleanCodeList)
-						CleanCode = CleanCode.replace(" ~~'", "'")
-						CleanCode = CleanCode.replace(" ~~]", "]")
-						CleanCode = CleanCode.replace("[~~ ", "[")
-						CleanCode = CleanCode.replace(" ~~;", ";")
-						CleanCode = CleanCode.replace("\n", "\n	")
+		if "features" in Dict:
+			for FeatureDict in Dict["features"]:
+				if "name" in FeatureDict and "code" in FeatureDict:
+						Name = str(FeatureDict["name"])
+						try:
+							CleanCode = str(unicode(FeatureDict["code"]).encode("utf-8"))
+							CleanCode = CleanCode.replace("'", " ~~'")
+							CleanCode = CleanCode.replace("]", " ~~]")
+							CleanCode = CleanCode.replace("[", "[~~ ")
+							CleanCode = CleanCode.replace(";", " ~~;")
+							CleanCodeList = CleanCode.split(" ")
+							CleanCodeList = map(NotNiceName, CleanCodeList)
+							CleanCode = " ".join(CleanCodeList)
+							CleanCode = CleanCode.replace(" ~~'", "'")
+							CleanCode = CleanCode.replace(" ~~]", "]")
+							CleanCode = CleanCode.replace("[~~ ", "[")
+							CleanCode = CleanCode.replace(" ~~;", ";")
+							CleanCode = CleanCode.replace("\n", "\n	")
 					
-						feature = Feature(Name, "feature %s {\n	%s\n} %s;" % (Name, CleanCode, Name))
-						Font.features.append(feature)
-					except:
-						print "__ Error in Feature[%s]: %s" % (Name, sys.exc_info()[0])
-						pass
+							feature = Feature(Name, "feature %s {\n	%s\n} %s;" % (Name, CleanCode, Name))
+							Font.features.append(feature)
+						except:
+							print "__ Error in Feature[%s]: %s" % (Name, sys.exc_info()[0])
+							pass
+		else:
+			print "The font has no Feature."
 	except:
 		print "__ Error in Feature:", sys.exc_info()[0]
 	
