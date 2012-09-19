@@ -575,42 +575,43 @@ def readGlyphs(Font, Dict):
 						break
 			except:
 				continue
-			isNonSpacingMark = False
 			try:
-				isNonSpacingMark = Name2Category[glyph.name] == "Mark" and Name2SubCategory[glyph.name] == "Nonspacing"
+				if "components" in Layer:
+					for componentIndex in range(len(Layer["components"])):
+						try:
+							componentDict = Layer["components"][componentIndex]
+						except:
+							continue
+						ShiftNodes = 0
+						# reconstruct the correct positioning of Nonspacing marks. They where set to zero width on outline import.
+						try:
+							isNonSpacingMark = Name2Category[componentDict['name']] == "Mark" and Name2SubCategory[componentDict['name']] == "Nonspacing"
+							if isNonSpacingMark:
+								ComponentIndex = GlyphIndexes[componentDict['name']]
+								ComponentGlyphDict = Glyphs[ComponentIndex]
+								#print "__componentDict['name']", componentDict['name'], ComponentGlyphDict['layers'][masterIndex]["width"]
+								ShiftNodes = float(str(ComponentGlyphDict['layers'][masterIndex]["width"]))
+						except:
+							pass
+						
+						componentTransformString = componentDict["transform"][1:-1]
+						componentTransformList = componentTransformString.split(", ")
+						
+						if masterIndex == 0:
+							ComponentIndex = GlyphIndexes[componentDict['name']]
+							Delta = Point(round(float(str(componentTransformList[4]))) + ShiftNodes, round(float(str(componentTransformList[5]))))
+							Scale = Point(float(str(componentTransformList[0])), float(str(componentTransformList[3])))
+							component = Component(ComponentIndex, Delta, Scale)
+							glyph.components.append(component)
+						else:
+							component = glyph.components[componentIndex]
+							component.scales[masterIndex].x = float(str(componentTransformList[0]))
+							component.scales[masterIndex].y = float(str(componentTransformList[3]))
+							component.deltas[masterIndex].x = round(float(str(componentTransformList[4])) + ShiftNodes)
+							component.deltas[masterIndex].y = round(float(str(componentTransformList[5])))
 			except:
-				pass
-			ShiftNodes = 0
-			if isNonSpacingMark:
-				ShiftNodes = round(float(Layer["width"]))
-				glyph.SetMetrics(Point(0, 0), masterIndex)
-			else:
-				glyph.SetMetrics(Point(round(float(Layer["width"])), 0), masterIndex)
-			
-			try:
-				for componentIndex in range(len(Layer["components"])):
-					try:
-						componentDict = Layer["components"][componentIndex]
-					except:
-						continue
-					
-					componentTransformString = componentDict["transform"][1:-1]
-					componentTransformList = componentTransformString.split(", ")
-					
-					if masterIndex == 0:
-						ComponentIndex = GlyphIndexes[componentDict['name']]
-						Delta = Point(round(float(str(componentTransformList[4]))) - ShiftNodes, round(float(str(componentTransformList[5]))))
-						Scale = Point(float(str(componentTransformList[0])), float(str(componentTransformList[3])))
-						component = Component(ComponentIndex, Delta, Scale)
-						glyph.components.append(component)
-					else:
-						component = glyph.components[componentIndex]
-						component.scales[masterIndex].x = float(str(componentTransformList[0]))
-						component.scales[masterIndex].y = float(str(componentTransformList[3]))
-						component.deltas[masterIndex].x = round(float(str(componentTransformList[4])) - ShiftNodes)
-						component.deltas[masterIndex].y = round(float(str(componentTransformList[5])))
-			except:
-				continue
+				print "There was a problem reading the components for glyph:", glyph.name
+				
 	# Resolve nested components.
 	GlyphsWithNestedComponemts = []
 	
