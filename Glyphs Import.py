@@ -335,6 +335,12 @@ def loadGlyphsInfo():
 	global weightCodes
 	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
 	
+def fixNodes(Nodes):
+	while "OFFCURVE" in Nodes[-1]:
+		Node = Nodes[-1]
+		Nodes.insert(0, Nodes.pop(Nodes.index(Node)))
+	return Nodes
+	
 def readGlyphs(Font, Dict):
 	Glyphs = Dict["glyphs"]
 	GlyphsCount = len(Glyphs)
@@ -377,7 +383,9 @@ def readGlyphs(Font, Dict):
 			lastMoveNodeIndex = 0
 			for PathIndex in range(len(Layer["paths"])):
 				Path = Layer["paths"][PathIndex]
-				NodeString = Path["nodes"][-1]
+				Nodes = Path["nodes"]
+				Nodes = fixNodes(Nodes)
+				NodeString = Nodes[-1]
 				NodeList = NodeString.split(" ")
 				Position = Point(round(float(NodeList[0])) - ShiftNodes, round(float(NodeList[1])))
 				if masterIndex == 0:
@@ -396,7 +404,7 @@ def readGlyphs(Font, Dict):
 				firstNodeIndex = nodeIndex
 				nodeIndex = nodeIndex + 1
 				OffcurveNodes = []
-				for NodeString in Path["nodes"]:
+				for NodeString in Nodes:
 					NodeList = NodeString.split(" ")
 					Position = Point(round(float(NodeList[0])) - ShiftNodes, round(float(NodeList[1])))
 					node = None
