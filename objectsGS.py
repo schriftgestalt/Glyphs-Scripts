@@ -216,11 +216,11 @@ class RFont(BaseFont):
 		
 	def _get_lib(self):
 		# print "_get_lib", self._object.font.userData
-		return self._object.font.userData.objectForKey_("org.robofab.ufoLib")
+		return self._object.font.userData().objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
 		#print "_set_lib", self._object.font.userData, obj
-		self._object.font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
+		self._object.font.userData().setObject_forKey_(obj, "org.robofab.ufoLib")
 		
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
@@ -673,10 +673,15 @@ class RGlyph(BaseGlyph):
 	#
 	
 	def _get_lib(self):
-		return self._object.userData.objectForKey_("org.robofab.ufoLib")
+		try:
+			return self._object.userData()
+		except:
+			return None
 	
-	def _set_lib(self, obj):
-		self._object.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
+	def _set_lib(self, key, obj):
+		if self._object.userData() is objc.nil:
+			self._object.setUserData_(NSMutableDictionary.dictionary())
+		self._object.userData().setObject_forKey_(obj, key)
 		
 	lib = property(_get_lib, _set_lib, doc="Glyph Lib")
 	
@@ -690,21 +695,6 @@ class RGlyph(BaseGlyph):
 			return
 		self._name = newName
 		self.setChanged(True)
-		# font = self.getParent()
-		# if font is not None:
-		# 	# but, this glyph could be linked to a
-		# 	# FontLab font, because objectsFL.RGlyph.copy()
-		# 	# creates an objectsRF.RGlyph with the parent
-		# 	# set to an objectsFL.RFont object. so, check to see
-		# 	# if this is a legitimate RFont before trying to 
-		# 	# do the objectsRF.RFont glyph name change
-		# 	if isinstance(font, RFont):
-		# 		font._object[newName] = self
-		# 		# is the user changing a glyph's name to the
-		# 		# name of a glyph that was deleted earlier?
-		# 		if newName in font._scheduledForDeletion:
-		# 			font._scheduledForDeletion.remove(newName)
-		# 		font.removeGlyph(prevName)
 	
 	name = property(_get_name, _set_name)
 	
@@ -772,9 +762,9 @@ class RGlyph(BaseGlyph):
 	
 	components = property(getComponents, doc="List of components")
 	
-	def getAnchors(self):
-		#raise NotImplementedError
-		return self.anchors
+	# def getAnchors(self):
+	# 	#raise NotImplementedError
+	# 	return self.anchors
 		
 	#anchors = property(getAnchors, doc="List of anchors")
 	
@@ -1911,7 +1901,13 @@ class RInfo(BaseInfo):
 			attr = _renameAttributes[attr]
 		#print "2 __getattr__", attr
 		try:
-			value = self._object._object.font.valueForKey_(attr)
+			gsFont = self._object._object.font
+			value = gsFont.valueForKey_(attr)
+			
+			if value is None and attr == "postscriptFullName":
+				Instance = gsFont.instanceAtIndex_(self._object._master)
+				value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
+				
 			# use the environment specific info attr get
 			# method if it is defined.
 			# if hasattr(self, "_environmentGetAttr"):
