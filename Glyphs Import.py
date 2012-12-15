@@ -1,6 +1,6 @@
 #FLM: Glyphs Import
 # -*- coding: utf8 -*-
-# Version 0.1
+# Version 0.2
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
 # The script will read a .glyphs file and import it into FontLab.
@@ -212,6 +212,11 @@ def setFontInfo(Font, Dict):
 		Font.weight = "All"
 	MasterCount = len(FontMasters)
 	
+	if "weight" not in FontMasters[0].keys():
+		FontMasters[0]["weight"] = "Regular"
+	if "weight" not in FontMasters[1].keys():
+		FontMasters[1]["weight"] = "Regular"
+	
 	if MasterCount == 1:
 		pass
 	elif MasterCount == 2:
@@ -305,7 +310,7 @@ def setFontInfo(Font, Dict):
 				for j in range(Font.other_blues_num):
 					Font.other_blues[i][j] = OtherZones[j]
 	return True
-			
+	
 def loadGlyphsInfo():
 	try:
 		GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
@@ -352,9 +357,9 @@ def readGlyphs(Font, Dict):
 		GlyphDict = Glyphs[i]
 		glyph = Glyph(MasterCount)
 		glyph.name = str(GlyphDict["glyphname"])
-		if "unicode" in GlyphDict:
+		if "unicode" in GlyphDict.keys():
 			glyph.unicode = int(GlyphDict["unicode"], 16)
-		if "export" in GlyphDict and str(GlyphDict["export"]) == "0":
+		if "export" in GlyphDict.keys() and str(GlyphDict["export"]) == "0":
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
 		isNonSpacingMark = False
@@ -364,6 +369,7 @@ def readGlyphs(Font, Dict):
 			pass
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
+			Layer = None
 			try:
 				for Layer in GlyphDict["layers"]:
 					if Layer["layerId"] == FontMaster["id"]:
@@ -377,7 +383,7 @@ def readGlyphs(Font, Dict):
 			else:
 				glyph.SetMetrics(Point(round(float(Layer["width"])), 0), masterIndex)
 			
-			if "paths" not in Layer:
+			if "paths" not in Layer.keys():
 				continue
 			nodeIndex = 0
 			lastMoveNodeIndex = 0
@@ -474,7 +480,8 @@ def readGlyphs(Font, Dict):
 					else:
 						print "There was a problem with the outline in the glyph: \"%s\". Probably because the outlines are not compatible." % glyph.name
 						glyph.mark = 34
-			if "hints" in Layer:
+			
+			if "hints" in Layer.keys():
 				vHintIndex = 0
 				hHintIndex = 0
 				for HintIndex in range(len(Layer["hints"])):
@@ -549,7 +556,7 @@ def readGlyphs(Font, Dict):
 								hint.positions[masterIndex] = Origin
 								hint.widths[masterIndex] = Size
 								vHintIndex = vHintIndex + 1
-			if "anchors" in Layer:
+			if "anchors" in Layer.keys():
 				for AnchorIndex in range(len(Layer["anchors"])):
 					# print "__nodeIndex:", nodeIndex
 					AnchorDict = Layer["anchors"][AnchorIndex]
@@ -584,7 +591,7 @@ def readGlyphs(Font, Dict):
 			except:
 				continue
 			try:
-				if "components" in Layer:
+				if "components" in Layer.keys():
 					for componentIndex in range(len(Layer["components"])):
 						try:
 							componentDict = Layer["components"][componentIndex]
@@ -705,12 +712,12 @@ def readKerning(Font, Dict):
 		except:
 			pass
 		if LeftGroup is not None:
-			if LeftGroup in RightClasses:
+			if LeftGroup in RightClasses.keys():
 				RightClasses[LeftGroup].append(str(GlyphDict["glyphname"]))
 			else:
 				RightClasses[LeftGroup] = [str(GlyphDict["glyphname"])]
 		if RightGroup is not None:
-			if RightGroup in LeftClasses:
+			if RightGroup in LeftClasses.keys():
 				LeftClasses[RightGroup].append(str(GlyphDict["glyphname"]))
 			else:
 				LeftClasses[RightGroup] = [str(GlyphDict["glyphname"])]
@@ -750,7 +757,7 @@ def readKerning(Font, Dict):
 				Font.SetClassFlags(i, False, True)
 	
 	FontMasters = Dict["fontMaster"]
-	if "kerning" in Dict:
+	if "kerning" in Dict.keys():
 		Kerning = Dict["kerning"]
 		allLeftKeys = set()
 		for LeftKeys in Kerning.values():
@@ -804,15 +811,15 @@ def readFeatures(Font, Dict):
 	Font.ot_classes = ""
 	try:
 		for FeatureDict in Dict["featurePrefixes"]:
-			if "name" in FeatureDict and "code" in FeatureDict:
+			if "name" in FeatureDict.keys() and "code" in FeatureDict.keys():
 				Font.ot_classes = Font.ot_classes + "# " + str(FeatureDict["name"]) + "\n" + str(FeatureDict["code"]) + "\n"
 	except:
 		pass
 	try:
 		Classes = Font.classes
-		if "classes" in Dict:
+		if "classes" in Dict.keys():
 			for FeatureDict in Dict["classes"]:
-				if "name" in FeatureDict and "code" in FeatureDict:
+				if "name" in FeatureDict.keys() and "code" in FeatureDict.keys():
 			
 					CleanCode = str(FeatureDict["code"])
 					CleanCodeList = CleanCode.split(" ")
@@ -826,9 +833,9 @@ def readFeatures(Font, Dict):
 		print "__ Error in Classes:", sys.exc_info()[0]
 		pass
 	try:
-		if "features" in Dict:
+		if "features" in Dict.keys():
 			for FeatureDict in Dict["features"]:
-				if "name" in FeatureDict and "code" in FeatureDict:
+				if "name" in FeatureDict.keys() and "code" in FeatureDict.keys():
 						Name = str(FeatureDict["name"])
 						try:
 							CleanCode = str(unicode(FeatureDict["code"]).encode("utf-8"))
@@ -869,6 +876,9 @@ def readGlyphsFile(filePath):
 	
 	loadGlyphsInfo()
 	from FL import fl, Font
+	folder, base = os.path.split(filePath)
+	base = base.replace(".glyphs", ".vfb")
+	dest = os.path.join(folder, base)
 	f = Font(  )
 	fl.Add(f)
 	if not setFontInfo(f, GlyphsDoc):
