@@ -51,11 +51,135 @@ def makePlist(font):
 	
 	#kerning
 	Font = Plist ()
-	if font.family_name is not None:
+	if font.pref_family_name is not None:
+		Font["familyName"] = font.pref_family_name
+	elif font.family_name is not None:
 		Font["familyName"] = font.family_name
+	
+	WeightValues = {
+		"Thin" : 250,
+		"ExtraLight" : 250,
+		"UltraLight" : 250,
+		"Light" : 300,
+		"Normal" : 400,
+		"Regular" : 400,
+		"Medium" : 500,
+		"SemiBold" : 600,
+		"DemiBold" : 600,
+		"Bold" : 700,
+		"ExtraBold" : 800,
+		"UltraBold" : 800,
+		"Black" : 900,
+		"Heavy" : 900,
+		"Fat" : -1,
+		"ExtraBlack" : -1,
+	}
+	WidthMap = {
+		"Ultra-condensed" : "Ultra Condensed",
+		"Extra-condensed" : "Extra Condensed",
+		"Condensed" : "Condensed",
+		"Semi-condensed" : "SemiCondensed",
+		"Normal" : "Medium (normal)",
+		"Medium (normal)" : "Medium (normal)",
+		"Semi-expanded" : "Semi Expanded",
+		"Expanded" : "Expanded",
+		"Extra-expanded" : "Extra Expanded",
+		"Ultra-expanded" : "Ultra Expanded"
+	}
+	
+	
+	Instance = {}
+	if font.pref_style_name is not None:
+		Instance["name"] = font.pref_style_name
+	elif font.style_name is not None:
+		Instance["name"] = font.style_name
+	if font.weight and len(font.weight) > 0:
+		Instance["weightClass"] = font.weight
+	if font.width and len(font.width) > 0 and font.width in WidthMap.keys():
+		Instance["widthClass"] = WidthMap[font.width]
+
+	CustomParameters = []
+	# if font.ttinfo.os2_us_weight_class != WeightValues[font.weight]: # There seems to be a bug, os2_us_weight_class is always 400
+	# 	CustomParameters.append({"name":"openTypeOS2WeightClass", "value": font.ttinfo.os2_us_weight_class})
+	if len(CustomParameters) > 0:
+		Instance["customParameters"] = CustomParameters
+	
+	fontStyle = font.font_style
+	if (fontStyle & 1) == 1:
+		Instance["isItalic"] = 1
+	if (fontStyle & 32) == 32:
+		Instance["isBold"] = 1
+	
+	if len(Instance) > 0:
+		Font["instances"] = [Instance]
+	
+	
 	Font["gridLength"] = 1
 	Font["unitsPerEm"] = font.upm
 	FontMasters = []
+	
+	# Font Info
+	FontInfoMapping = {
+		"designer":"designer",
+		"designer_url":"designerURL",
+		"source":"manufacturer",
+		"vendor_url":"manufacturerURL",
+		"copyright":"copyright"
+	}
+	for FLKey, GlyphsKey in FontInfoMapping.iteritems():
+		Value = getattr(font, FLKey)
+		if Value and len(Value) > 0:
+			Font[GlyphsKey] = Value.decode('UTF-8')
+	CustomParametersMapping = {
+		"trademark":"trademark",
+		"notice":"openTypeNameDescription",
+		"license":"openTypeNameLicense",
+		"license_url":"openTypeNameLicenseURL",
+		#"vendor":"openTypeOS2VendorID",
+
+	}
+	
+	Sec = getattr(font.ttinfo, "head_creation")[0]
+	Font["date"] = time.strftime("%Y-%m-%d %H:%M:%S +0000", time.gmtime(Sec + 2212126081))#"2013-04-01 21:32:44 +0000";
+	Font["versionMajor"] = font.version_major
+	Font["versionMinor"] = font.version_minor
+	
+	CustomParameters = []
+	for FLKey, GlyphsKey in CustomParametersMapping.iteritems():
+		Value = None
+		if len(FLKey.split(".")) > 1:
+			FLKeyList = FLKey.split(".")
+			obj = font
+			for Key in FLKeyList:
+				obj = getattr(obj, Key)
+			Value = obj
+		else:
+			Value = getattr(font, FLKey)
+		if Value and len(Value) > 0:
+			CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8')})
+	
+	if font.vendor and len(font.vendor) > 0 and font.vendor.upper() != "PYRS":
+		CustomParameters.append({"name":"openTypeOS2VendorID", "value": font.vendor.decode('UTF-8')})
+	fsType = font.ttinfo.os2_fs_type
+	fsTypeList = []
+	
+	
+	if fsType & 2 == 2:
+		fsTypeList.append(1)
+	if fsType & 4 == 4:
+		fsTypeList.append(2)
+	if fsType & 8 == 8:
+		fsTypeList.append(3)
+	if fsType & 256 == 256:
+		fsTypeList.append(8)
+	
+	if len(fsTypeList) > 0:
+		CustomParameters.append({"name":"openTypeOS2Type", "value": fsTypeList})
+		
+	
+	if len(CustomParameters) > 0:
+		Font["customParameters"] = CustomParameters
+	
 	MasterCount = font[0].layers_number
 	for i in range(MasterCount):
 		FontMaster = {}
@@ -209,11 +333,11 @@ def makePlist(font):
 			Hints = []
 			for vhint in glyph.vhints:
 				Hint = {}
-				Hint["place"] = "{%f, %f}" % (vhint.positions[masterIndex], vhint.widths[masterIndex])
+				Hint["place"] = "{%d, %d}" % (vhint.positions[masterIndex], vhint.widths[masterIndex])
 				Hints.append(Hint)
 			for hhint in glyph.hhints:
 				Hint = {}
-				Hint["place"] = "{%f, %f}" % (hhint.positions[masterIndex], hhint.widths[masterIndex])
+				Hint["place"] = "{%d, %d}" % (hhint.positions[masterIndex], hhint.widths[masterIndex])
 				Hint["horizontal"] = True
 				Hints.append(Hint)
 			for vlink in glyph.vlinks:
@@ -240,7 +364,7 @@ def makePlist(font):
 			for currAnchor in glyph.anchors:
 				Anchor = {}
 				Position = currAnchor.Layer(masterIndex)
-				Anchor["position"] = "{%f, %f}" % (Position.x, Position.y)
+				Anchor["position"] = "{%d, %d}" % (Position.x, Position.y)
 				Anchor["name"] = currAnchor.name
 				Anchors.append(Anchor)
 			if len(Anchors)>0:
@@ -274,7 +398,6 @@ def writeFeatures(font, Dict):
 				Classes.append(Class)
 	if len(Classes) > 0:
 		Dict["classes"] = Classes
-	#print "__features", font.features[0]
 	Features = []
 	import re
 	p = re.compile("feature ([A-Za-z0-9]{4}) *{[\\s]*([.'\\{\\}\\[\\]a-zA-Z0-9_ ;,:\\s@<>#+-\\/]*?)} *\\1 *;")
