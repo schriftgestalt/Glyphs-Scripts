@@ -338,11 +338,14 @@ def makePlist(font):
 			for hhint in glyph.hhints:
 				Hint = {}
 				Hint["place"] = "{%d, %d}" % (hhint.positions[masterIndex], hhint.widths[masterIndex])
+				if hhint.widths[masterIndex] == -20:
+					Hint["target"] = "down"
+				if hhint.widths[masterIndex] == -21:
+					Hint["target"] = "up"
 				Hint["horizontal"] = True
 				Hints.append(Hint)
 			for vlink in glyph.vlinks:
 				Hint = {}
-			
 				Hint["origin"] = PathIndesPaths[vlink.node1]
 				Hint["target"] = PathIndesPaths[vlink.node2]
 				Hints.append(Hint)
