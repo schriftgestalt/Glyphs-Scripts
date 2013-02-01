@@ -187,7 +187,7 @@ def setFontInfo(Font, Dict):
 		"manufacturerURL" : ("vendor_url", unicode),
 	}
 	for Key in KeyTranslate:
-		if Key in Dict:
+		if Key in Dict.allKeys():
 			FlKey, FlType = KeyTranslate[Key]
 			if FlType == unicode:
 				setattr(Font, FlKey, unicode(Dict[Key]).encode("utf-8"))
@@ -212,10 +212,9 @@ def setFontInfo(Font, Dict):
 		Font.weight = "All"
 	MasterCount = len(FontMasters)
 	
-	if "weight" not in FontMasters[0].keys():
-		FontMasters[0]["weight"] = "Regular"
-	if "weight" not in FontMasters[1].keys():
-		FontMasters[1]["weight"] = "Regular"
+	for FontMaster in FontMasters:
+		if "weight" not in FontMaster.keys():
+			FontMaster["weight"] = "Regular"
 	
 	if MasterCount == 1:
 		pass
@@ -579,6 +578,7 @@ def readGlyphs(Font, Dict):
 				
 		Font.glyphs.append(glyph)
 		GlyphIndexes[glyph.name] = len(Font.glyphs)-1
+	# Read the components. 
 	for i in range(GlyphsCount):
 		glyph = Font.glyphs[i]
 		GlyphDict = Glyphs[i]
