@@ -876,13 +876,9 @@ class RGlyphAnchorsProxy (object):
 		#print "__init__"
 		self._owner = Layer
 	def __getitem__(self, Key):
-		# print "anchor __getitem__", Key
-		if type(Key) is str:
-			return RAnchor(self._owner.anchorForName_(Key))
-		elif type(Key) is int:
-			return RAnchor(self._owner.anchors[Key])
-		else:
-			raise TypeError
+		Anchor = self._owner.anchors[Key]
+		if Anchor is not None:
+			return RAnchor(Anchor)
 	def __setitem__(self, Key, Anchor):
 		#print "__setitem__", i, Node
 		if type(Key) is str:
@@ -896,13 +892,15 @@ class RGlyphAnchorsProxy (object):
 			self._owner.removeAnchorWithName_(Key)
 		else:
 			raise TypeError
-	# def __iter__(self):
-	# 	return ComponentsIterator(self._owner)
+	def __iter__(self):
+		if self._owner.anchorCount() > 0:
+			for Anchor in self._owner.pyobjc_instanceMethods.anchors().allValues():
+				yield RAnchor(Anchor)
+	
 	def append(self, Anchor):
 		#print "append", Node
 		self._owner.addAnchor_(Anchor)
 	def __len__(self):
-		#print "count"
 		return self._owner.anchorCount()
 	def __str__(self):
 		StringVal = "(\n"
@@ -1400,8 +1398,7 @@ class RSegment(BaseSegment):
 		self._hasChanged()
 		
 	def _get_points(self):
-		Path = self._object.parent
-		# print "_get_points", Path, len(Path.nodes)
+		Path = self._object.parent()
 		index = Path.indexOfNode_(self._object)
 		points = []
 		if index < len(Path.nodes):
@@ -1567,7 +1564,7 @@ class RPoint(BasePoint):
 		return "<RPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object.position.x, self._object.position.y, FontName, GlyphName, pathIndex, nodeIndex)
 	
 	def _get_x(self):
-		return self._object.position.x
+		return self._object.x
 	
 	def _set_x(self, value):
 		self._object.setPosition_((value, self._object.position.y))
@@ -1575,7 +1572,7 @@ class RPoint(BasePoint):
 	x = property(_get_x, _set_x, doc="")
 	
 	def _get_y(self):
-		return self._object.position.y
+		return self._object.y
 	
 	def _set_y(self, value):
 		self._object.setPosition_((self._object.position.x, value))
@@ -1626,8 +1623,7 @@ class RPoint(BasePoint):
 	
 	def _get_selected(self):
 		#print "_get_selected: self._object", self.getParent, "\n"
-		Path = self._object.parent
-		
+		Path = self._object.parent()
 		Layer = Path.parent
 		# print "self._object", self._object, "Path", Path, "Layer", Layer, self._object in Layer.selection()
 		return self._object in Layer.selection()
@@ -1895,11 +1891,8 @@ class RInfo(BaseInfo):
 			warn(note, DeprecationWarning)
 			attr = newAttr
 			needValueConversionTo1 = True
-		# getting a known attribute
-		#if attr in self._infoAttributes or attr in self._environmentAttributes:
 		if attr in _renameAttributes:
 			attr = _renameAttributes[attr]
-		#print "2 __getattr__", attr
 		try:
 			gsFont = self._object._object.font
 			value = gsFont.valueForKey_(attr)
@@ -1908,20 +1901,8 @@ class RInfo(BaseInfo):
 				Instance = gsFont.instanceAtIndex_(self._object._master)
 				value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
 				
-			# use the environment specific info attr get
-			# method if it is defined.
-			# if hasattr(self, "_environmentGetAttr"):
-			#	value = self._environmentGetAttr(attr)
-			# fallback to super
-			# else:
-			# 	try:
-			# 		value = super(BaseInfo, self).__getattribute__(attr)
-			# 	except AttributeError:
-			# 		return None
-			#print "__getattr__ vor", attr, value
 			if needValueConversionTo1:
 				oldAttr, value = ufoLib.convertFontInfoValueForAttributeFromVersion2ToVersion1(attr, value)
-			#print "__getattr__ nach", attr, value
 			return value
 		except:
 			raise AttributeError("Unknown attribute %s." % attr)
