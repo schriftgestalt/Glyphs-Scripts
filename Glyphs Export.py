@@ -410,7 +410,11 @@ def writeFeatures(font, Dict):
 		Feature["name"] = FeatureText.tag
 		if Feature["name"] == "kern":
 			continue
-		Match = p.findall(FeatureText.value)
+		
+		try:
+			Match = p.findall(FeatureText.value.decode('utf8','ignore'))
+		except:
+			print "__ illegal character in feature", FeatureText.tag
 		try:
 			Feature["code"] = Match[0][1]
 			Features.append(Feature)
