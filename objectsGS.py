@@ -77,7 +77,7 @@ def OpenFont(path=None, note=None):
 def NewFont(familyName=None, styleName=None):
 	"""Make a new font"""
 	#from GS import GS, Font
-	doc = Glyphs.documentController().makeUntitledDocumentOfType_error_("com.schriftgestaltung.glyphs", None)
+	doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
 	rf = RFont(doc)
 	if familyName:
 		rf.info.familyName = familyName
@@ -141,7 +141,7 @@ class RFont(BaseFont):
 	def __init__(self, doc=None, master=0):
 		BaseFont.__init__(self)
 		if doc is None:
-			doc = Glyphs.documentController().makeUntitledDocumentOfType_error_("com.schriftgestaltung.glyphs", None)
+			doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
 		
 		if type(doc) == type(()):
 			doc = doc[0]
@@ -366,8 +366,7 @@ class RFont(BaseFont):
 		#if generate:
 		#	g = GenerateGlyph(self._object, glyphName, replace=clear)
 		#else:
-		g = Glyphs.glyph()
-		g.setName_(glyphName)
+		g = GSGlyph(glyphName)
 		self._object.font.addGlyph_(g)
 		g = RGlyph(g)
 		self._RGlyphs[glyphName] = g
@@ -867,9 +866,14 @@ class RGlyph(BaseGlyph):
 	
 	def update(self):
 		self._contours = None
+		GSGlyphsInfo.updateGlyphInfo_changeName_(self._object, False)
 	
 	def correctDirection(self, trueType=False):
 		self._layer.correctPathDirection()
+		
+	def removeOverlap(self):
+		removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
+		removeOverlapFilter.runFilterWithLayer_error_(self._layer, None)
 
 class RGlyphAnchorsProxy (object):
 	def __init__(self, Layer):
