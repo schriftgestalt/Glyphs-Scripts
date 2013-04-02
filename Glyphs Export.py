@@ -175,7 +175,12 @@ def makePlist(font):
 	
 	if len(fsTypeList) > 0:
 		CustomParameters.append({"name":"openTypeOS2Type", "value": fsTypeList})
-		
+	
+	GlyphOrder = []
+	for glyph in font.glyphs:
+		if glyph.name != ".notdef":
+			GlyphOrder.append(glyph.name)
+	CustomParameters.append({"name":"glyphOrder", "value": GlyphOrder})
 	
 	if len(CustomParameters) > 0:
 		Font["customParameters"] = CustomParameters
