@@ -697,7 +697,7 @@ DefaultKeys = {
 	"Iu-cy" : ["H", "O"],
 	"Dje-cy" : ["T", ""],
 	"Ghestroke-cy" : ["", "Ge-cy"],
-	"Ia-cy" : ["H", ""],
+	"Ia-cy" : ["", "H"],
 	"Gheupturn-cy" : ["H", "Ge-cy"],
 	"Gje-cy" : ["Ge-cy", "H"],
 	"E-cy" : ["O", "C"],
@@ -751,13 +751,16 @@ DefaultKeys = {
 	"softsign-cy" : ["n", ""],
 	"ereversed-cy" : ["", "o"],
 	"iu-cy" : ["n", "o"],
+	"ia-cy" : ["ia-cy", "u"],
 	"gheupturn-cy" : ["n", "ge-cy"],
-	"dje-cy" : ["h", ""],
+	"dje-cy" : ["hbar", "j"],
 	"gje-cy" : ["ge-cy", "n"],
-	"e-cy" : ["", "o"],
+	"e-cy" : ["o", "c"],
 	"dze-cy" : ["s", "s"],
 	"i-cy" : ["i", "i"],
 	"yi-cy" : ["i", "i"],
+	"fita-cy" : ["o", "o"],
+	"izhitsa-cy" : ["v", "v"],
 	"lje-cy" : ["el-cy", "softsign-cy"],
 	"nje-cy" : ["n", "softsign-cy"],
 	"tshe-cy" : ["n", ""],
@@ -772,37 +775,37 @@ DefaultKeys = {
 	"chedesender-cy" : ["de-cy", "che-cy"],
 	"obarred-cy" : ["o", "o"],
 	"Alpha" : ["A", "A"],
-	"Beta" : ["B", "H"],
+	"Beta" : ["H", "B"],
 	"Gamma" : ["", "H"],
 	"Delta" : ["A", "A"],
-	"Epsilon" : ["E", "H"],
+	"Epsilon" : ["H", "E"],
 	"Zeta" : ["Z", "Z"],
 	"Eta" : ["H", "H"],
 	"Theta" : ["O", "O"],
 	"Iota" : ["H", "H"],
-	"Kappa" : ["K", "H"],
+	"Kappa" : ["H", "K"],
 	"Lambda" : ["A", "A"],
 	"Mu" : ["M", "M"],
 	"Nu" : ["H", "H"],
 	"Omicron" : ["O", "O"],
 	"Pi" : ["H", "H"],
-	"Rho" : ["P", "H"],
+	"Rho" : ["H", "P"],
 	"Tau" : ["T", "T"],
 	"Upsilon" : ["Y", "Y"],
 	"Chi" : ["X", "X"],
-	"Alphatonos" : ["A", ""],
-	"Epsilontonos" : ["E", "Etatonos"],
-	"Etatonos" : ["H", ""],
-	"Iotatonos" : ["H", "Etatonos"],
+	"Alphatonos" : ["A", "A"],
+	"Epsilontonos" : ["E", "E"],
+	"Etatonos" : ["H", "H"],
+	"Iotatonos" : ["H", "H"],
 	"Iotadieresis" : ["H", "H"],
-	"Omicrontonos" : ["O", ""],
-	"Upsilontonos" : ["Y", ""],
+	"Omicrontonos" : ["O", "O"],
+	"Upsilontonos" : ["Y", "Y"],
 	"Upsilondieresis" : ["Y", "Y"],
-	"Omegatonos" : ["Omega", ""],
-	"beta" : ["", "h"],
+	"Omegatonos" : ["Omega", "Omega"],
+	"beta" : ["h", ""],
 	"eta" : ["n", "n"],
-	"kappa" : ["k", "n"],
-	"mu" : ["u", ""],
+	"kappa" : ["n", "k"],
+	"mu" : ["p", "u"],
 	"omicron" : ["o", "o"],
 	"rho" : ["rho", "o"],
 	"sigma" : ["o", ""],
@@ -810,7 +813,7 @@ DefaultKeys = {
 	"alphatonos" : ["alpha", "alpha"],
 	"epsilontonos" : ["epsilon", "epsilon"],
 	"etatonos" : ["n", "n"],
-	"iotadieresis" : ["", ""],
+	"iotadieresis" : ["i", "i"],
 	"omicrontonos" : ["o", "o"],
 	"upsilontonos" : ["upsilon", "upsilon"],
 	"upsilondieresistonos" : ["upsilon", "upsilon"],
@@ -832,14 +835,20 @@ DefaultKeys = {
 	"endash" : ["hyphen", "hyphen"],
 	"emdash" : ["hyphen", "hyphen"],
 	"periodcentered" : ["anoteleia", "anoteleia"],
-	"cent" : ["c", "o"],
-	"onesuperior" : ["", ""],
+	"cent" : ["o", "c"],
 	"perthousand" : ["percent", "percent"],
 	"semicolon" : ["colon", "colon"],
 	"quotedblbase" : ["period", "period"],
+	"oe.sc" : ["o.sc", "e.sc"],
+	"ae.sc" : ["a.sc", "e.sc"],
+	"eng" : ["n", "j"],
+	"alef-ar" : ["alef-ar", "alef-ar"],
+	
 }
 
 def KeysForGlyph(Glyph):
+	if Glyph == None:
+		return []
 	global DefaultKeys
 	LeftKey = False
 	RightKey = False
@@ -891,7 +900,8 @@ def updateKeyGlyphsForSelected():
 						if Component.transform[0] == 1:
 							componentGlyph = Component.component
 					elif Component.component.category != "Mark":
-						componentGlyph = None
+						#componentGlyph = None
+						pass
 				except:
 					pass
 			if componentGlyph:
@@ -900,16 +910,21 @@ def updateKeyGlyphsForSelected():
 					RightKey = componentGlyph.name
 		
 		elif len(LigatureComponents) > 1:
-			print LigatureComponents
 			LeftGlyph = Font.glyphs[LigatureComponents[0]]
-			LeftKey = KeysForGlyph(LeftGlyph)[0]
+			if LeftGlyph != None:
+				LeftKey = KeysForGlyph(LeftGlyph)[0]
 			RightGlyph = Font.glyphs[LigatureComponents[-1]]
-			RightKey = KeysForGlyph(RightGlyph)[1]
-		
-		if LeftKey and not Font.glyphs[LeftKey].export:
-			LeftKey = False
-		if RightKey and not Font.glyphs[RightKey].export:
-			RightKey = False
+			if RightGlyph != None:
+				RightKey = KeysForGlyph(RightGlyph)[1]
+		if LeftKey:
+			try:
+				if LeftKey not in Font.glyphs and not Font.glyphs[LeftKey].export:
+					LeftKey = False
+			except:
+				LeftKey = False
+		if RightKey:
+			if RightKey not in Font.glyphs and not Font.glyphs[RightKey].export:
+				RightKey = False
 		if not LeftKey:
 			try:
 				LeftKey = DefaultKeys[Glyph.name][0]
