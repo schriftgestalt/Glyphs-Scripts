@@ -29,14 +29,9 @@ class GSPen(SegmentToPointPen):
 
 class GSPointPen(SegmentToPointPen):
 	
-	def __init__(self, r_glyph, masterIndex = 0):
+	def __init__(self, r_glyph, layer):
 		self._glyph = r_glyph
-		if self._glyph._object.parent:
-			self._layerID = self._glyph._object.parent.masters[masterIndex].id
-			self._layer = self._glyph._object.layerForKey_(self._layerID)
-		elif self._glyph._object.layers[masterIndex]:
-			self._layerID = self._glyph._object.layers[masterIndex].layerId
-			self._layer = self._glyph._object.layers[masterIndex]
+		self._layer = layer
 	
 	def beginPath(self):
 		_Path = GSPath()

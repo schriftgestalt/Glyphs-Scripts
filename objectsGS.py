@@ -362,13 +362,13 @@ class RFont(BaseFont):
 	
 	def newGlyph(self, glyphName, clear=True):
 		"""Make a new glyph"""
-		#global(Glyphs)
-		#if generate:
-		#	g = GenerateGlyph(self._object, glyphName, replace=clear)
-		#else:
-		g = GSGlyph(glyphName)
-		self._object.font.addGlyph_(g)
-		g = RGlyph(g)
+		g = self._object.font.glyphForName_(glyphName)
+		if g is None:
+			g = GSGlyph(glyphName)
+			self._object.font.addGlyph_(g)
+		elif clear:
+			g.layers[self._masterKey] = GSLayer()
+		g = RGlyph(g, self._master)
 		self._RGlyphs[glyphName] = g
 		return self.getGlyph(glyphName)
 	
@@ -773,7 +773,7 @@ class RGlyph(BaseGlyph):
 			del(sys.modules["GSPen"])
 		from GSPen import GSPointPen
 		
-		return GSPointPen(self)
+		return GSPointPen(self, self._layer)
 
 	def appendComponent(self, baseGlyph, offset=(0, 0), scale=(1, 1)):
 		"""append a component to the glyph"""
