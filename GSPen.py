@@ -1,4 +1,3 @@
-#MenuTitle: GSPen test
 """Pens for creating glyphs in Glyphs."""
 
 import sys
