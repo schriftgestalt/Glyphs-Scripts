@@ -1,4 +1,4 @@
-#MenuTitle: import SVG
+#MenuTitle: Import SVG
 # encoding: utf-8
 """
 Import SVG.py
