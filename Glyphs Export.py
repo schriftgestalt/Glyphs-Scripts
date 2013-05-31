@@ -12,6 +12,7 @@
 import os.path
 import math, time
 from plistlib import *
+import colorsys
 
 def makePlist(font):
 	f = fl.font
@@ -140,7 +141,12 @@ def makePlist(font):
 	}
 	
 	Sec = getattr(font.ttinfo, "head_creation")[0]
-	Font["date"] = time.strftime("%Y-%m-%d %H:%M:%S +0000", time.gmtime(Sec + 2212126081))#"2013-04-01 21:32:44 +0000";
+	if Sec < 0:
+		Font["date"] = time.strftime("%Y-%m-%d %H:%M:%S +0000", time.gmtime(Sec + 2212126081))#"2013-04-01 21:32:44 +0000";
+		
+		# head_creation [-2147483596,0] kleinster vorkommender Wert. 
+		# head_creation [ 2147483400,0] wenn fünf Minuten früher dann kommt das dabei heraus.
+		
 	Font["versionMajor"] = font.version_major
 	Font["versionMinor"] = font.version_minor
 	
@@ -382,6 +388,12 @@ def makePlist(font):
 		Glyph["layers"] = Layers
 		if glyph.unicode > 1:
 			Glyph["unicode"] = ("%.4X" % glyph.unicode)
+			
+		if glyph.mark > 0:
+			
+			r, g, b = colorsys.hsv_to_rgb(glyph.mark/256., 1., 1.)
+			Glyph["color"] = [int(r * 255), int(g*255), int(b*255), 1]
+		
 		Glyphs.append(Glyph)
 	Font["glyphs"] = Glyphs
 	Font["kerning"] = Kerning

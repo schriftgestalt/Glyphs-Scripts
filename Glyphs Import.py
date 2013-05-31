@@ -300,8 +300,8 @@ def setFontInfo(Font, Dict):
 					else:
 						BlueZones.append(Zone[0])
 						BlueZones.append(Zone[0] + Zone[1])
-				if len(BlueZones) > 14:
-					BlueZones = BlueZones[:14]
+				if len(BlueZones) >= 14:
+					BlueZones = BlueZones[:13]
 					print "Warning: There are to many Blue Zones."
 				if i == 0:
 					Font.blue_values_num = len(BlueZones)
