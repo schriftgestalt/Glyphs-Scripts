@@ -660,7 +660,7 @@ class RGlyph(BaseGlyph):
 		# 	anchor.setChanged(False)
 		# self.setChanged(False)
 	def _get_box(self):
-		bounds = self._layer.bounds()
+		bounds = self._layer.bounds
 		#print "__bounds", bounds.origin
 		bounds = (int(round(NSMinX(bounds))), int(round(NSMinY(bounds))), int(round(NSMaxX(bounds))), int(round(NSMaxY(bounds))))
 		return bounds
