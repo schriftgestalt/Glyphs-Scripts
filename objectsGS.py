@@ -29,6 +29,11 @@ GSSMOOTH = 4096
 
 LOCAL_ENCODING = "macroman"
 
+# This is for compatibility until the proper implementaion is shipped.
+if type(GSElement.parent) != type(GSGlyph.parent):
+	GSElement.parent = property(lambda self: self.valueForKey_("parent"))
+
+
 def CurrentFont():
 	"""Return a RoboFab font object for the currently selected font."""
 	if Glyphs.currentDocument:
@@ -202,9 +207,9 @@ class RFont(BaseFont):
 			return -1
 	
 	def __len__(self):
-		if self._object.font.glyphs() is None:
+		if self._object.font.glyphs is None:
 			return 0
-		return len(self._object.font.glyphs())
+		return len(self._object.font.glyphs)
 	
 	# def _get_info(self):
 	# 	return RInfo(self)
@@ -216,11 +221,11 @@ class RFont(BaseFont):
 		
 	def _get_lib(self):
 		# print "_get_lib", self._object.font.userData
-		return self._object.font.userData().objectForKey_("org.robofab.ufoLib")
+		return self._object.font.userData.objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
 		#print "_set_lib", self._object.font.userData, obj
-		self._object.font.userData().setObject_forKey_(obj, "org.robofab.ufoLib")
+		self._object.font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
 		
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
@@ -293,15 +298,23 @@ class RFont(BaseFont):
 	
 	def _get_kerning(self):
 		FontMaster = self._object.font.masters[self._master]
-		Kerning = self._object.font.kerning.objectForKey_(FontMaster.id)
-		RKerning = {}
-		if Kerning != None:
-			for LeftKey in Kerning.allKeys():
-				LeftKerning = Kerning.objectForKey_(LeftKey)
+		GSKerning = self._object.font.kerning.objectForKey_(FontMaster.id)
+		kerning = {}
+		if GSKerning != None:
+			for LeftKey in GSKerning.allKeys():
+				LeftKerning = GSKerning.objectForKey_(LeftKey)
+				if LeftKey[0] != '@':
+					LeftKey = self._object.font.glyphForId_(LeftKey).name
 				for RightKey in LeftKerning.allKeys():
-					RKerning[(LeftKey, RightKey)] = LeftKerning.objectForKey_(RightKey)
-		
-		return RKerning # self._object.font.kerning.objectForKey_(FontMaster.id)
+					RightKerning = LeftKerning.objectForKey_(RightKey)
+					if RightKey[0] != '@':
+						RightKey = self._object.font.glyphForId_(RightKey).name
+					kerning[(LeftKey, RightKey)] = RightKerning
+		print "___get_kerning", kerning
+		rk = RKerning(kerning)
+		rk.setParent(self)
+		return rk
+		# return RKerning # self._object.font.kerning.objectForKey_(FontMaster.id)
 	
 	def _set_kerning(self, kerning):
 		# print "kerning:", kerning
@@ -344,7 +357,7 @@ class RFont(BaseFont):
 			self._object.updateChangeCount_(NSChangeCleared)
 		self._object.close()
 
-	def getGlyph(self, glyphName):
+	def getGlyph__(self, glyphName):
 		# XXX getGlyph may have to become private, to avoid duplication
 		# with __getitem__
 		n = None
@@ -368,9 +381,7 @@ class RFont(BaseFont):
 			self._object.font.addGlyph_(g)
 		elif clear:
 			g.layers[self._masterKey] = GSLayer()
-		g = RGlyph(g, self._master)
-		self._RGlyphs[glyphName] = g
-		return self.getGlyph(glyphName)
+		return self[glyphName]
 	
 	def insertGlyph(self, glyph, newGlyphName=None):
 		"""returns a new glyph that has been inserted into the font"""
@@ -573,17 +584,19 @@ class RGlyph(BaseGlyph):
 	
 	def __init__(self, _GSGlyph = None, master = 0):
 		#BaseGlyph.__init__(self)
-		#print "_GSGlyph:", _GSGlyph
 		if _GSGlyph is None:
 			_GSGlyph = GSGlyph()
-			#raise RoboFabError, "RGlyph: there's nothing to wrap!?"
+
 		
 		self._object = _GSGlyph
 		self._layerID = None
-		if _GSGlyph.parent:
-			self._layerID = _GSGlyph.parent.masters[master].id
-		elif (_GSGlyph.layers[master]):
-			self._layerID = _GSGlyph.layers[master].layerId()
+		try:
+			if _GSGlyph.parent:
+				self._layerID = _GSGlyph.parent.masters[master].id
+			elif (_GSGlyph.layers[master]):
+				self._layerID = _GSGlyph.layers[master].layerId
+		except:
+			pass
 		self.masterIndex = master
 		if self._layerID:
 			self._layer = _GSGlyph.layerForKey_(self._layerID)
@@ -593,6 +606,8 @@ class RGlyph(BaseGlyph):
 			_GSGlyph.setLayer_forKey_(self._layer, self._layerID)
 			print "self._layer", _GSGlyph.layerForKey_(self._layerID), "self._layerID", self._layerID
 		self._contours = None
+		self.psHints = PostScriptGlyphHintValues()
+		self.psHints.setParent(self)
 	
 	def __repr__(self):
 		font = "unnamed_font"
@@ -698,7 +713,7 @@ class RGlyph(BaseGlyph):
 	name = property(_get_name, _set_name)
 	
 	def _get_unicodes(self):
-		if not self._object.unicode:
+		if self._object.unicode is not None:
 			print "_unicode:", self._object.unicode
 			return [int(self._object.unicode, 16)]
 		return []
@@ -708,7 +723,10 @@ class RGlyph(BaseGlyph):
 			raise RoboFabError, "unicodes must be a list"
 		#raise NotImplementedError
 		#print "setUnicodes:", value
-		self._object.setUnicode = value[0]
+		try:
+			self._object.setUnicode = value[0]
+		except:
+			pass
 		#self._hasChanged()
 	
 	unicodes = property(_get_unicodes, _set_unicodes, doc="all unicode values for the glyph")
@@ -730,6 +748,12 @@ class RGlyph(BaseGlyph):
 			raise(KeyError)
 	
 	unicode = property(_get_unicode, _set_unicode, doc="first unicode value for the glyph")
+	
+	index =  property(lambda self: self._object.parent.indexOfGlyph_(self._object))
+	
+	note = property(lambda self: self._object.valueForKey_("note"),
+					lambda self, value: self._object.setNote_(value))
+	
 	
 	def _get_leftMargin(self):
 		return self._layer.LSB
@@ -761,11 +785,8 @@ class RGlyph(BaseGlyph):
 	
 	components = property(getComponents, doc="List of components")
 	
-	# def getAnchors(self):
-	# 	#raise NotImplementedError
-	# 	return self.anchors
-		
-	#anchors = property(getAnchors, doc="List of anchors")
+	def getAnchors(self):
+		return self.anchors
 	
 	def getPointPen(self):
 		#print "Get GSPoint Pen"
@@ -777,8 +798,8 @@ class RGlyph(BaseGlyph):
 
 	def appendComponent(self, baseGlyph, offset=(0, 0), scale=(1, 1)):
 		"""append a component to the glyph"""
-		new = NewComponent(baseGlyph, offset, scale)
-		self._layer.addComponentCopy_(new)
+		new = GSComponent(baseGlyph, offset, scale)
+		self._layer.addComponent_(new)
 	
 	def appendAnchor(self, name, position, mark=None):
 		"""append an anchor to the glyph"""
@@ -874,6 +895,20 @@ class RGlyph(BaseGlyph):
 	def removeOverlap(self):
 		removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 		removeOverlapFilter.runFilterWithLayer_error_(self._layer, None)
+		
+	def _mathCopy(self):
+		# copy self without contour, component and anchor data
+		print "__mathCopy:", self
+		glyph = self._getMathDestination()
+		glyph.name = self.name
+		glyph.unicodes = list(self.unicodes)
+		glyph.width = self.width
+		glyph.note = self.note
+		try:
+			glyph.lib = dict(self.lib)
+		except:
+			pass
+		return glyph
 
 class RGlyphAnchorsProxy (object):
 	def __init__(self, Layer):
@@ -1032,9 +1067,9 @@ class RContour(BaseContour):
 					break
 		for i in range(len(self)):
 			Node = self._object.nodeAtIndex_(i)
-			if Node.type is LINE:
+			if Node.type == GSLINE:
 				pen.lineTo(Node.position)
-			elif Node.type is CURVE:
+			elif Node.type == GSCURVE:
 				pen.curveTo(self._object.nodeAtIndex_(i-2).position, self._object.nodeAtIndex_(i-1).position, Node.position)
 		if self._object.closed:
 			pen.closePath()
@@ -1139,9 +1174,11 @@ class RContour(BaseContour):
 			# 	segment[0].onCurve.type = "move"
 		# print "__segments", segments
 		if self._object.closed:
-			_Segment = RSegment(0, self, node)
-			_Segment.type = MOVE
-			segments.insert(0, _Segment)
+			# TODO fix this out properly. 
+			# _Segment = RSegment(0, self, node)
+			# _Segment.type = MOVE
+			# segments.insert(0, _Segment)
+			pass
 		else:
 			_Segment = RSegment(0, self, self._object.nodeAtIndex_(0))
 			_Segment.type = MOVE
@@ -1402,7 +1439,7 @@ class RSegment(BaseSegment):
 		self._hasChanged()
 		
 	def _get_points(self):
-		Path = self._object.parent()
+		Path = self._object.parent
 		index = Path.indexOfNode_(self._object)
 		points = []
 		if index < len(Path.nodes):
@@ -1507,7 +1544,6 @@ class RBPoint(BaseBPoint):
 	index = property(_get_index, doc="index of the bPoint on the contour")
 	
 	def _get_selected(self):
-		#print "_get_selected: self._object", self.getParent, "\n"
 		Path = self._object._object.parent
 		
 		Layer = Path.parent
@@ -1626,8 +1662,7 @@ class RPoint(BasePoint):
 	smooth = property(_get_smooth, _set_smooth, doc="")
 	
 	def _get_selected(self):
-		#print "_get_selected: self._object", self.getParent, "\n"
-		Path = self._object.parent()
+		Path = self._object.parent
 		Layer = Path.parent
 		# print "self._object", self._object, "Path", Path, "Layer", Layer, self._object in Layer.selection()
 		return self._object in Layer.selection()

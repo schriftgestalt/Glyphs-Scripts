@@ -19,11 +19,11 @@ def importfea_file(Doc, filePath):
 		f = open(filePath)
 		
 		
-		Font = Doc.font()
+		Font = Doc.font
 		FontMasterIndex = Doc.windowControllers()[0].masterIndex()
 		print FontMasterIndex
 		GlyphsInfo = GSGlyphsInfo.sharedManager()
-		FontMaster = Font.fontMasterAtIndex_(FontMasterIndex)
+		FontMaster = Font.masters[FontMasterIndex]
 		KerningLines = []
 		Line = f.readline()
 		while(len(Line) > 0):
@@ -54,7 +54,6 @@ def importfea_file(Doc, filePath):
 			
 			Line = f.readline()
 			
-		MasterKerning = Font.kerning().objectForKey_(FontMaster.id())
 		if len(KerningLines) > 0:
 			for i in range(len(KerningLines)-1, -1, -1):
 				
@@ -64,41 +63,26 @@ def importfea_file(Doc, filePath):
 				RightKey = Keys[2]
 				Value = Keys[3]
 				if LeftKey[0] == "@":
-					LeftKey = LeftKey.replace("_1ST", "").replace("@_", "")
-					LeftKey = GlyphsInfo.niceGlpyhNameForName_(LeftKey)
-					LeftKey = "@MMK_L_" + LeftKey
+					pass
 				else:
 					LeftKey = LeftKey.strip("[]")
-					LeftKey = GlyphsInfo.niceGlpyhNameForName_(LeftKey)
-					LeftKey = Font.glyphForName_(LeftKey).id()
+					LeftKey = Font.glyphs[LeftKey].id
 					
 				if RightKey[0] == "@":
-					RightKey = RightKey.replace("_2ND", "").replace("@_", "")
-					RightKey = GlyphsInfo.niceGlpyhNameForName_(RightKey)
-					RightKey = "@MMK_R_" + RightKey
+					pass
 				else:
 					RightKey = RightKey.strip("[]")
-					RightKey = GlyphsInfo.niceGlpyhNameForName_(RightKey)
-					RightKey = Font.glyphForName_(RightKey).id()
+					RightKey = Font.glyphs[RightKey].id
 					
 				Value = float(Value.replace(";", ""))
-				Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMaster.id(), LeftKey, RightKey, Value)
+				Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMaster.id, LeftKey, RightKey, Value)
 
 def main():
 	Doc = Glyphs.currentDocument
 	if (Doc):
-		openPanel = NSOpenPanel.openPanel()
-		openPanel.setCanChooseDirectories_(NO)
-		openPanel.setAllowsMultipleSelection_(NO)
-		openPanel.setCanCreateDirectories_(NO)
-		openPanel.setTitle_("Choose fea file.")
-		openPanel.setPrompt_("Import")
-		openPanel.setCanChooseFiles_(YES)
-		Doc = Glyphs.currentDocument
-		result = openPanel.runModalForDirectory_file_types_relativeToWindow_(objc.nil, objc.nil, ["fea"], Doc.windowForSheet())
-		if result == NSOKButton:
-			
-			importfea_file(Doc, openPanel.URLs().objectAtIndex_(0).path())
+		result = GetFile("Choose fea file.", False, ["fea"])
+		if result is not None:
+			importfea_file(Doc, result)
 	else:
 		Alert = NSAlert.alertWithMessageText_defaultButton_alternateButton_otherButton_informativeTextWithFormat_(objc.nil, objc.nil, objc.nil, objc.nil, "Please open a document")
 		Alert.runModal()
