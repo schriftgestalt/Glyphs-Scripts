@@ -803,7 +803,7 @@ class RGlyph(BaseGlyph):
 	
 	def appendAnchor(self, name, position, mark=None):
 		"""append an anchor to the glyph"""
-		new = NewAnchor(name=name, pt=position )
+		new = GSAnchor(name=name, pt=position )
 		#new.setParent(self)
 		self._layer.addAnchor_(new)
 	
@@ -837,7 +837,7 @@ class RGlyph(BaseGlyph):
 		# for i in range(len(self.components)):
 		# 	self.components[-1].decompose()
 		# self._hasChanged()
-			
+	
 	def clear(self, contours=True, components=True, anchors=True, guides=True):
 		"""Clear all items marked as True from the glyph"""
 		if contours:
