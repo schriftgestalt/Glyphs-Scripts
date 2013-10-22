@@ -458,7 +458,7 @@ def main():
 			return
 	path = os.path.splitext(path)[0]
 	path = path+".glyphs"
-	print "Will write font to:", path.decode("utf-8")
+	print "Will write font to:", path.decode("utf-8",'ignore')
 	Dict = makePlist(font)
 	Dict = writeFeatures(font, Dict)
 	Dict.write(path)
