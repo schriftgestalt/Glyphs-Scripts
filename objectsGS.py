@@ -357,7 +357,7 @@ class RFont(BaseFont):
 			self._object.updateChangeCount_(NSChangeCleared)
 		self._object.close()
 
-	def getGlyph__(self, glyphName):
+	def getGlyph(self, glyphName):
 		# XXX getGlyph may have to become private, to avoid duplication
 		# with __getitem__
 		n = None
@@ -702,13 +702,11 @@ class RGlyph(BaseGlyph):
 	def _get_name(self):
 		return self._object.name
 	
-	def _set_name(self, value):
+	def _set_name(self, newName):
 		prevName = self.name
-		newName = value
 		if newName == prevName:
 			return
-		self._name = newName
-		self.setChanged(True)
+		self._object.name = newName
 	
 	name = property(_get_name, _set_name)
 	
