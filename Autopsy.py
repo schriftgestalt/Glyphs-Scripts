@@ -80,8 +80,8 @@ graphrealnames = {
 
 
 pagemargin = Ddict(dict)
-pagemargin['left'] = 8
-pagemargin['right'] = 8
+pagemargin['left'] = 12
+pagemargin['right'] = 10
 pagemargin['top'] = 8
 pagemargin['bottom'] = 11
 scrapboard = Ddict(dict)
