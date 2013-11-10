@@ -24,9 +24,12 @@ import time, os, string, math, random
 
 from Quartz.CoreGraphics import *
 
-from vanilla import *
-from vanilla.dialogs import *
-
+try:
+	from vanilla import *
+	from vanilla.dialogs import *
+except:
+	Message("Missing Library", "Please install the vanilla library from https://github.com/typesupply/vanilla")
+	raise ImportError
 cm = 72/2.54
 mm = cm / 10
 A4 = (595.276, 841.89)
