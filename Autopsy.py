@@ -1,4 +1,4 @@
-#MenuTitle: Autopsy 1.1
+#MenuTitle: Autopsy 1.2
 # encoding: utf-8
 
 
@@ -6,10 +6,11 @@
 ########################################################################
 #
 #   Autopsy Visual Font Auditing
-#   1.1
+#   1.2
 #
 #   Version for Glyphs (glyphsapp.com)
 #   (c) 2009 by Yanone
+#   2013 Georg Seifert, porting to use CoreGraphics instead of RepordLab to write PDF
 #
 #   http://www.yanone.de/typedesign/autopsy/
 #
@@ -20,36 +21,35 @@
 
 from AppKit import *
 import time, os, string, math, random
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.lib.pagesizes import letter, A4
-from reportlab.lib.units import cm
+
+from Quartz.CoreGraphics import *
 
 from vanilla import *
 from vanilla.dialogs import *
+
+cm = 72/2.54
 mm = cm / 10
+A4 = (595.276, 841.89)
+letter = (612, 792)
 
 
 ##### Misc.
 
 class Ddict(dict):
-    def __init__(self, default=None):
-        self.default = default
-       
-    def __getitem__(self, key):
-        if not self.has_key(key):
-            self[key] = self.default()
-        return dict.__getitem__(self, key)
+	def __init__(self, default=None):
+		self.default = default
+	   
+	def __getitem__(self, key):
+		if not self.has_key(key):
+			self[key] = self.default()
+		return dict.__getitem__(self, key)
 
 def setup_binding_CheckBox(self, Object, KeyPath, options = objc.nil):
-	# print "__self", self, self._nsObject.subviews()[0]
-	# print "__Object", KeyPath
 	self._nsObject.subviews()[0].bind_toObject_withKeyPath_options_("value", Object, "values."+KeyPath, options)
 	
 CheckBox.binding = setup_binding_CheckBox
 
 def setup_binding_EditText(self, Object, KeyPath, options = objc.nil):
-	print "__self", self, self._nsObject
-	# print "__Object", KeyPath
 	self._nsObject.bind_toObject_withKeyPath_options_("value", Object, "values."+KeyPath, options)
 
 EditText.binding = setup_binding_EditText
@@ -62,8 +62,8 @@ CheckBox.unbind = del_binding
 ##### Settings
 
 programname = 'Autopsy'
-programversion = '1.101'
-releasedate = '201302101234'
+programversion = '1.2'
+releasedate = '201311100012'
 verbose = False
 
 availablegraphs = ('width', 'bboxwidth', 'bboxheight', 'highestpoint', 'lowestpoint', 'leftsidebearing', 'rightsidebearing')
@@ -209,8 +209,8 @@ class Report:
 		
 		if not Glyphs.boolDefaults["com_yanone_Autopsy_PageOrientation_landscape"]:
 			if Glyphs.boolDefaults["com_yanone_Autopsy_drawpointsvalues"] == 1:
-				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.left * mm + 1*mm, self.bottom * mm - 3*mm, int(mymin))
-				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm - 5*mm, self.bottom * mm - 3*mm, int(mymax))
+				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.left * mm + 1*mm, self.bottom * mm - 3*mm, str(int(mymin)))
+				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm - 5*mm, self.bottom * mm - 3*mm, str(int(mymax)))
 			
 			try:
 				localratio = (self.right - self.left) / (mymax - mymin)
@@ -232,8 +232,8 @@ class Report:
 			
 		else:
 			if Glyphs.boolDefaults["com_yanone_Autopsy_drawpointsvalues"] == 1:
-				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm + 1*mm, self.bottom * mm + 1*mm, int(mymin))
-				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm + 1*mm, self.top * mm - 3*mm, int(mymax))
+				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm + 1*mm, self.bottom * mm + 1*mm, str(int(mymin)))
+				DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, self.right * mm + 1*mm, self.top * mm - 3*mm, str(int(mymax)))
 #			DrawText(pdffont['Regular'], graphnamefontsize, self.gridcolour, self.left * mm + 1.7*mm, self.top * mm - 4*mm, graphrealnames[self.graphname])
 
 			try:
@@ -268,59 +268,7 @@ class Report:
 		DrawTableLines(pointslist, self.strokecolour, thickness)
 		DrawText(pdffont['Regular'], graphnamefontsize, self.gridcolour, self.left * mm + 1.7*mm, self.top * mm - 4*mm, graphrealnames[self.graphname])
 
-class PDFPath:
-	def __init__(self):
-		self.pathobject = pdf.beginPath()
-		self.fill = 1
-		self.fillcolour = (0,0,0,1)
-		self.stroke = 0
-		self.strokecolour = (0,0,0,1)
-		self.strokewidth = 1
-#
-#
-#		self.pathobject = pdf.beginPath()
-#		self.stroke = stroke
-#		self.fill = fill
-#		self.strokecolour = strokecolour
-#		self.fillcolour = fillcolour
-#		self.strokewidth = strokewidth
-		pdf.setStrokeColorCMYK(self.strokecolour[0], self.strokecolour[1], self.strokecolour[2], self.strokecolour[3])
-		pdf.setFillColorCMYK(self.fillcolour[0], self.fillcolour[1], self.fillcolour[2], self.fillcolour[3])
-		pdf.setLineWidth(self.strokewidth)
-		self.dashed = (1)
 
-	def moveTo(self, x, y):
-		self.pathobject.moveTo(x, y)
-
-	def lineTo(self, x, y):
-
-		pdf.setLineWidth(self.strokewidth)
-		pdf.setStrokeColorCMYK(self.strokecolour[0], self.strokecolour[1], self.strokecolour[2], self.strokecolour[3])
-		pdf.setFillColorCMYK(self.fillcolour[0], self.fillcolour[1], self.fillcolour[2], self.fillcolour[3])
-
-		self.pathobject.lineTo(x, y)
-		
-	def curveTo(self, coords):
-		pdf.setLineWidth(self.strokewidth)
-		pdf.setStrokeColorCMYK(self.strokecolour[0], self.strokecolour[1], self.strokecolour[2], self.strokecolour[3])
-		pdf.setFillColorCMYK(self.fillcolour[0], self.fillcolour[1], self.fillcolour[2], self.fillcolour[3])
-		self.pathobject.curveTo(coords[1][0], coords[1][1], coords[2][0], coords[2][1], coords[0][0], coords[0][1])
-
-	def close(self):
-		pdf.setLineWidth(self.strokewidth)
-		pdf.setStrokeColorCMYK(self.strokecolour[0], self.strokecolour[1], self.strokecolour[2], self.strokecolour[3])
-		pdf.setFillColorCMYK(self.fillcolour[0], self.fillcolour[1], self.fillcolour[2], self.fillcolour[3])
-		self.pathobject.close()
-
-	def draw(self):
-		pdf.setLineWidth(self.strokewidth)
-		pdf.setStrokeColorCMYK(self.strokecolour[0], self.strokecolour[1], self.strokecolour[2], self.strokecolour[3])
-		pdf.setFillColorCMYK(self.fillcolour[0], self.fillcolour[1], self.fillcolour[2], self.fillcolour[3])
-		pdf.setDash(self.dashed)
-		pdf.drawPath(self.pathobject, stroke = self.stroke, fill = self.fill)
-
-		
-		
 #################################
 
 def SetScrapBoard(pageratio):
@@ -355,40 +303,13 @@ def SetScrapBoard(pageratio):
 #
 
 
-# Load PDF object
-def loadPDF(path):
-	global pagewidth, pageheight, cm
-	global myDialog
-
-	if not Glyphs.defaults["com_yanone_Autopsy_PageOrientation_landscape"]:
-		if not Glyphs.defaults["com_yanone_Autopsy_PageSize_a4"]:
-			pagewidth = letter[0]
-			pageheight = letter[1]
-		else:
-			pagewidth = A4[0]
-			pageheight = A4[1]
-	else:
-		if not Glyphs.defaults["com_yanone_Autopsy_PageSize_a4"]:
-			pagewidth = letter[1]
-			pageheight = letter[0]
-		else:
-			pagewidth = A4[1]
-			pageheight = A4[0]
-	
-	return Canvas(path, pagesize = (pagewidth, pageheight))
-
-
-
 def DrawText(font, fontsize, fontcolour, x, y, text):
-	#print 'font', font
-	pdf.setFont(font, fontsize)
-	pdf.setFillColorCMYK(fontcolour[0], fontcolour[1], fontcolour[2], fontcolour[3])
-	pdf.drawString(x, y, str(text))
-
+	attributes = {NSFontAttributeName : NSFont.fontWithName_size_(font, fontsize), NSForegroundColorAttributeName: NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(fontcolour[0], fontcolour[1], fontcolour[2], fontcolour[3], 1)}
+	String = NSAttributedString.alloc().initWithString_attributes_(text, attributes)
+	String.drawAtPoint_((x, y))
 
 def DrawTableLines(list, colour, thickness):
 
-	from reportlab.graphics.shapes import Circle
 	global myDialog
 
 	for i, point in enumerate(list):
@@ -398,12 +319,11 @@ def DrawTableLines(list, colour, thickness):
 		except:
 			pass
 
-		pdf.setFillColorCMYK(colour[0], colour[1], colour[2], colour[3])
-		pdf.circle(point[1]*mm, point[2]*mm, thickness, 0, 1)
-		
+		NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(colour[0], colour[1], colour[2], colour[3], 1).set()
+		Rect = NSMakeRect(point[1]*mm-(thickness), point[2]*mm-(thickness), thickness*2, thickness*2)
+		NSBezierPath.bezierPathWithOvalInRect_(Rect).fill()
 		if Glyphs.defaults["com_yanone_Autopsy_drawpointsvalues"] == 1:
-			DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, point[1]*mm + (thickness/6+1)*mm, point[2]*mm - (thickness/6+2.5)*mm, int(point[0]))
-
+			DrawText(pdffont['Regular'], pointsvaluefontsize, glyphcolour, point[1]*mm + (thickness/6+1)*mm, point[2]*mm - (thickness/6+2.5)*mm, str(int(round(point[0]))))
 
 def DrawHeadlineIntoPage(text):
 
@@ -416,19 +336,19 @@ def DrawMetrics(f, glyph, xoffset, yoffset, ratio):
 	g = glyph.layers[0]
 	mywidth = g.width
 	if mywidth == 0:
-		mywidth = g.bounds().size.width
+		mywidth = g.bounds.size.width
 		
-	
 	# Draw metrics
 	if Glyphs.defaults["com_yanone_Autopsy_drawmetrics"] == 1:
 		# Versalhöhe
-		drawline(xoffset*mm, yoffset*mm - descender(f)*ratio + capheight(f) * ratio, xoffset*mm + mywidth*ratio, yoffset*mm - descender(f)*ratio + capheight(f) * ratio, metricscolour, metricslinewidth, None)
+		drawline(xoffset*mm, yoffset*mm + capheight(f) * ratio, xoffset*mm + mywidth*ratio, yoffset*mm + capheight(f) * ratio, metricscolour, metricslinewidth, None)
 		# x-Höhe
-		drawline(xoffset*mm, yoffset*mm - descender(f)*ratio + xheight(f) * ratio, xoffset*mm + mywidth*ratio, yoffset*mm - descender(f)*ratio + xheight(f) * ratio, metricscolour, metricslinewidth, None)
+		drawline(xoffset*mm, yoffset*mm + xheight(f) * ratio,   xoffset*mm + mywidth*ratio, yoffset*mm + xheight(f) * ratio, metricscolour, metricslinewidth, None)
 		# Grundlinie
-		drawline(xoffset*mm, yoffset*mm - descender(f)*ratio, xoffset*mm + mywidth*ratio, yoffset*mm - descender(f)*ratio, metricscolour, metricslinewidth, None)
+		drawline(xoffset*mm, yoffset*mm,                        xoffset*mm + mywidth*ratio, yoffset*mm, metricscolour, metricslinewidth, None)
+
 		# Bounding Box
-		drawrect(xoffset*mm, yoffset*mm - descender(f)*ratio + descender(f)*ratio, xoffset*mm + mywidth*ratio, yoffset*mm - descender(f)*ratio + ascender(f)*ratio, '', metricscolour, metricslinewidth, None, 0)
+		drawrect(xoffset*mm, yoffset*mm + descender(f)*ratio,   xoffset*mm + mywidth*ratio, yoffset*mm + ascender(f)*ratio, '', metricscolour, metricslinewidth, None, 0)
 
 	# Draw guidelines
 	if Glyphs.boolDefaults["com_yanone_Autopsy_drawguidelines"] == 1 and False: #GSNotImplemented
@@ -524,45 +444,18 @@ def PSCommandsFromGlyph(glyph):
 
 	return CommandsList
 
-def ReturnPathObject(fillcolour, strokecolour, strokewidth, dashed):
-	p = PDFPath()
-	if fillcolour:
-		p.fill = 1
-		p.fillcolour = fillcolour
-	else:
-		p.fill = 0
-	if strokecolour:
-		p.stroke = 1
-		p.strokecolour = strokecolour
-		p.strokewidth = strokewidth
-	else:
-		p.stroke = 0
-		p.strokewidth = 0
-	if dashed:
-		p.dashed = dashed
-	return p
-
-
-
 def DrawGlyph(f, glyph, PSCommands, xoffset, yoffset, ratio, fillcolour, strokecolour, strokewidth, dashed):
-
-	global myDialog
+	
 	if not PSCommands:
-
+		
 		type = "glyph"
-
+		
 		# Copy glyph into memory (so remove overlap won't affect the current font)
 		g = glyph.layers[0]
-		# g = Glyph(glyph)
-		# if Glyphs.defaults["com_yanone_Autopsy_outline"] == 'filled':
-		# 	output('RemoveOverlap()')
-		# 	g.RemoveOverlap()
-	
-		# Glyph has components.
-		# Iterate through them and draw them first.
 		if len(g.components) > 0:
 			for component in g.components:
-				DrawGlyph(f, component.Get(f), None, xoffset, yoffset, ratio, fillcolour, strokecolour, strokewidth, dashed)
+				position = component.position
+				DrawGlyph(f, component.component, None, xoffset+(position.x*ratio/mm), yoffset+(position.y*ratio/mm), ratio, fillcolour, strokecolour, strokewidth, dashed)
 	
 		# Glyph has nodes of its own
 		if len(g.paths):
@@ -576,22 +469,7 @@ def DrawGlyph(f, glyph, PSCommands, xoffset, yoffset, ratio, fillcolour, strokec
 
 
 	if PSCommands:
-
-		p = PDFPath()
-		if fillcolour:
-			p.fill = 1
-			p.fillcolour = fillcolour
-		else:
-			p.fill = 0
-		if strokecolour:
-			p.stroke = 1
-			p.strokecolour = strokecolour
-			p.strokewidth = strokewidth
-		else:
-			p.stroke = 0
-			p.strokewidth = 0
-		if dashed:
-			p.dashed = dashed
+		p = NSBezierPath.bezierPath()
 		
 		for command in PSCommands:
 		
@@ -603,70 +481,64 @@ def DrawGlyph(f, glyph, PSCommands, xoffset, yoffset, ratio, fillcolour, strokec
 	
 				x = xoffset*mm + command[1][0] * ratio
 				y = yoffset*mm + command[1][1] * ratio
-				p.moveTo(x, y)
+				p.moveToPoint_((x, y))
 				#print "('moveTo', (%s, %s))," % (command[1][0], command[1][1])
 	
 			if command[0] == 'lineTo':
 				x = xoffset*mm + command[1][0] * ratio
 				y = yoffset*mm + command[1][1] * ratio
-				p.lineTo(x, y)
+				p.lineToPoint_((x, y))
 				#print "('lineTo', (%s, %s))," % (command[1][0], command[1][1])
 	
 			if command[0] == 'curveTo':
 	
 				points = []
-				#	pointsnaked = []
-				#	print command[1]
 				
 				for point in command[1:]:
-				#	print point
 					points.append( (xoffset*mm + point[0] * ratio, yoffset*mm + point[1] * ratio) )
-				#	pointsnaked.append( (point.x, point.y) )
-				#print "('curveTo', %s)," % (pointsnaked)
 				
-				p.curveTo(points)
+				p.curveToPoint_controlPoint1_controlPoint2_(points[0], points[1], points[2])
 	
-		p.close()
-		p.draw()
+		p.closePath()
+		if fillcolour:
+			NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(fillcolour[0], fillcolour[1], fillcolour[2], fillcolour[3], 1).set()
+			p.fill()
+		if strokecolour:
+			NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(strokecolour[0], strokecolour[1], strokecolour[2], strokecolour[3], 1).set()
+			if dashed:
+				p.setLineDash_count_phase_(dashed, 2, 0.0)
+			p.setLineWidth_(strokewidth)
+			p.stroke()
 
 
 
 
-
-######### draw primitives		
+######### draw primitives
 
 def drawline(x1, y1, x2, y2, colour, strokewidth, dashed):
 
-	pdf.setStrokeColorCMYK(colour[0], colour[1], colour[2], colour[3])
-	pdf.setLineWidth(strokewidth)
+	NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(colour[0], colour[1], colour[2], colour[3], 1).set()
+	Path = NSBezierPath.bezierPath()
+	Path.moveToPoint_((x1, y1))
+	Path.lineToPoint_((x2, y2))
+	Path.setLineWidth_(strokewidth)
+	
 	if dashed:
-		pdf.setDash(dashed[0], dashed[1])
-	else:
-		pdf.setDash(1)
-	pdf.line(x1, y1, x2, y2)
+		Path.setLineDash_count_phase_(dashed, 2, 0.0)
+	Path.stroke()
 
 def drawrect(x1, y1, x2, y2, fillcolour, strokecolour, strokewidth, dashed, rounded):
-
-	if strokecolour:
-		pdf.setStrokeColorCMYK(strokecolour[0], strokecolour[1], strokecolour[2], strokecolour[3])
-	if strokewidth:
-		pdf.setLineWidth(strokewidth)
-		strokebool = 1
-	else:
-		strokebool = 0
-	if dashed:
-		pdf.setDash(dashed[0], dashed[1])
-	else:
-		pdf.setDash(1)
-
+	Rect = NSMakeRect(x1, y1, x2 - x1, y2 - y1)
+	Path = NSBezierPath.bezierPathWithRoundedRect_xRadius_yRadius_(Rect, rounded, rounded)
 	if fillcolour:
-		pdf.setFillColorCMYK(fillcolour[0], fillcolour[1], fillcolour[2], fillcolour[3])
-		fillbool = 1
-	else:
-		pdf.setFillColorCMYK(0, 0, 0, 0)
-		fillbool = 0
-
-	pdf.roundRect(x1, y1, x2 - x1, y2 - y1, rounded, stroke = strokebool,  fill = fillbool)
+		NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(fillcolour[0], fillcolour[1], fillcolour[2], fillcolour[3], 1).set()
+		Path.fill()
+	if strokecolour:
+		Path.setLineWidth_(strokewidth)
+		if dashed:
+			Path.setLineDash_count_phase_(dashed, 2, 0.0)
+		NSColor.colorWithDeviceCyan_magenta_yellow_black_alpha_(strokecolour[0], strokecolour[1], strokecolour[2], strokecolour[3], 1).set()
+		Path.stroke()
 
 # collects the glyphs that should be displayed
 # and returns list of glyph names
@@ -722,7 +594,6 @@ def CheckForUpdates():
 
 def main():
 
-	global pdf
 	global ratio
 	global myDialog
 	global errors, errorstexts
@@ -733,7 +604,7 @@ def main():
 	
 	# Clear console
 	if verbose:
-		fl.output = ''
+		Glyphs.clearLog()
 	output('-- main --')
 	
   # Dialog stuff
@@ -871,7 +742,9 @@ Extra Black	1000'''
 					# 	familyname = f.family_name
 					# else:
 					# 	familyname = '__default__'
-					familyname = f.familyName+" "+f.instances[0].name
+					familyname = f.familyName
+					if len(f.instances) > 0:
+						familyname += " "+f.instances[0].name
 					
 					FontList.append((width, weight, familyname))
 			
@@ -886,18 +759,15 @@ Extra Black	1000'''
 			familyname = f.familyName+" "+f.masters[0].name
 			NameList.append(f)
 
-	print "__FontList", FontList
 	# Some error handling
 #	if not NameList:
 #		raiseerror("No fonts open in FontLab.")
 
 	
 	# Call Dialog
-	print "__NameList", NameList
 	if NameList and not errors:
 		myDialog = _listMultiSelect(mode, NameList)
 		Result = myDialog.Run()
-		print "__Result", Result
 		if Result == NSOKButton:
 			NameList = myDialog.selection
 			if NameList:
@@ -938,15 +808,29 @@ Extra Black	1000'''
 	
 		starttime = time.time()
 
-		# PDF Init stuff
-		filename = NSUserDefaults.standardUserDefaults()["com_yanone_Autopsy_filename"]
-		pdf = loadPDF(filename)
-	
-	
+		
+		global pagewidth, pageheight
+		#global myDialog
+
+		if not Glyphs.defaults["com_yanone_Autopsy_PageOrientation_landscape"]:
+			if not Glyphs.defaults["com_yanone_Autopsy_PageSize_a4"]:
+				pagewidth = letter[0]
+				pageheight = letter[1]
+			else:
+				pagewidth = A4[0]
+				pageheight = A4[1]
+		else:
+			if not Glyphs.defaults["com_yanone_Autopsy_PageSize_a4"]:
+				pagewidth = letter[1]
+				pageheight = letter[0]
+			else:
+				pagewidth = A4[1]
+				pageheight = A4[0]
+		
 		#############
 		#
-		# 	Collect information about the glyphs
-		# 	
+		# Collect information about the glyphs
+		#
 	
 		# Dimensions
 		reports = Ddict(dict)
@@ -985,7 +869,7 @@ Extra Black	1000'''
 
 					widthforgraph = glyphwidth[glyph]
 					if widthforgraph == 0:
-						widthforgraph = g.bounds().size.width
+						widthforgraph = g.bounds.size.width
 					heightforgraph = height
 	
 					# width of kegel
@@ -1004,38 +888,38 @@ Extra Black	1000'''
 						maxheight = reports[glyph]['height'].sum
 					if reports[glyph]['height'].max > maxsingleheight:
 						maxsingleheight = reports[glyph]['height'].max
-		
+					
 					# BBox
 					overthetop = 20000
 					
-					bbox = g.bounds()
-
+					bbox = g.bounds
+					
 					if bbox.size.width < -1*overthetop or bbox.size.width > overthetop:
 						reports[glyph]['bboxwidth'].addvalue((0, widthforgraph, heightforgraph))
 					else:
 						reports[glyph]['bboxwidth'].addvalue((bbox.size.width, widthforgraph, heightforgraph))
-
+					
 					if bbox.size.height < -1*overthetop or bbox.size.height > overthetop:
 						reports[glyph]['bboxheight'].addvalue((0, widthforgraph, heightforgraph))
 					else:
 						reports[glyph]['bboxheight'].addvalue((bbox.size.height, widthforgraph, heightforgraph))
-
-
+					
+					
 					if (bbox.origin.y + bbox.size.height) < -1*overthetop or (bbox.origin.y + bbox.size.height) > overthetop:
 						reports[glyph]['highestpoint'].addvalue((0, widthforgraph, heightforgraph))
 					else:
 						reports[glyph]['highestpoint'].addvalue((bbox.origin.y + bbox.size.height, widthforgraph, heightforgraph))
-
+					
 					if bbox.origin.y < -1*overthetop or bbox.origin.y > overthetop:
 						reports[glyph]['lowestpoint'].addvalue((0, widthforgraph, heightforgraph))
 					else:
 						reports[glyph]['lowestpoint'].addvalue((bbox.origin.y, widthforgraph, heightforgraph))
-
+					
 					# L + R sidebearing
 					reports[glyph]['leftsidebearing'].addvalue((g.LSB, widthforgraph, heightforgraph))
 					reports[glyph]['rightsidebearing'].addvalue((g.RSB, widthforgraph, heightforgraph))
 
-
+		
 
 		# Recalculate drawing boards
 		numberoftables = 0
@@ -1070,18 +954,31 @@ Extra Black	1000'''
 				ratio = maxratio
 			if ratio > ratio2:
 				ratio = ratio2
-	
-		# Open Progress Bar
-		# tick = True
-		# fl.BeginProgress('%s working heavily on %s glyphs' % (programname, str(len(glyphs) * len(fonts))), len(glyphs) * len(fonts)) 
-
-		# Draw front page
-		output('-- font page --')
-
+		
+		
 		xoffset = pagewidth/mm * 1/1.61
 		yoffset = pageheight/mm * 1.61
 		
-
+		# PDF Init stuff
+		filename = NSUserDefaults.standardUserDefaults()["com_yanone_Autopsy_filename"]
+		tempFileName = NSTemporaryDirectory()+"%d.pdf"%random.randint(1000,100000)
+		
+		pageRect = CGRectMake (0, 0, pagewidth, pageheight)
+		
+		fileURL = NSURL.fileURLWithPath_(tempFileName)
+		pdfContext = CGPDFContextCreateWithURL(fileURL, pageRect, None)
+		
+		CGPDFContextBeginPage(pdfContext, None)
+		pdfNSGraphicsContext = NSGraphicsContext.graphicsContextWithGraphicsPort_flipped_(pdfContext, False)
+		NSGraphicsContext.saveGraphicsState()
+		NSGraphicsContext.setCurrentContext_(pdfNSGraphicsContext)
+		
+		NSRectFill(((-100, -100), (200, 200)))
+		
+		
+		# Draw front page
+		output('-- font page --')
+		
 		drawrect(-3*mm, -3*mm, pagewidth + 3*mm, pageheight + 3*mm, pdfcolour, None, None, None, 0)
 
 
@@ -1114,9 +1011,12 @@ Extra Black	1000'''
 					g = fonts[0][gi]
 			
 		
-		bbox = g.layers[0].bounds()
-		localratio = .65 / bbox.size.height * (pageheight - yoffset)
-
+		bbox = g.layers[0].bounds
+		if bbox.size.height > 1:
+			localratio = .65 / bbox.size.height * (pageheight - yoffset)
+		else:
+			print "____NO height____"
+			localratio = .65 / 300
 
 
 		# draw logo and name
@@ -1193,16 +1093,13 @@ Extra Black	1000'''
 			yoffset -= line[4] * linesratio
 			DrawText(line[0], line[1] * linesratio, line[2], line[3], yoffset, line[5])
 
-		pdf.showPage()
-
-
-
-
-
+		CGPDFContextEndPage(pdfContext)
+		
 		### MAIN PAGES ###
-
-
+		
+		
 		for i, glyph in enumerate(glyphs):
+			CGPDFContextBeginPage(pdfContext, None)
 			output('-- ' + glyph + ' --')
 	
 			# if not tick:
@@ -1237,7 +1134,7 @@ Extra Black	1000'''
 			# Draw Metrics
 
 			xoffset = xoffsetinitial
-			yoffset = yoffsetinitial
+			yoffset = yoffsetinitial - descender(fonts[0])*ratio/mm
 
 
 			for i_f, font in enumerate(fonts):
@@ -1246,7 +1143,7 @@ Extra Black	1000'''
 					g = font.glyphs[glyph]
 				elif not font.glyphs.has_key(glyph) and fonts[i_f-1].glyphs.has_key(glyph):
 					g = fonts[i_f-1].glyphs[glyph]
-
+				
 				DrawMetrics(font, g, xoffset, yoffset, ratio)
 	
 				# increase offset
@@ -1254,7 +1151,7 @@ Extra Black	1000'''
 					yoffset -= (ascender(font) - descender(font)) / mm * ratio
 				else:
 					if g.layers[0].width == 0:
-						xoffset += g.layers[0].bounds().size.width / mm * ratio
+						xoffset += g.layers[0].bounds.size.width / mm * ratio
 					else:
 						xoffset += g.layers[0].width / mm * ratio
 					
@@ -1304,7 +1201,7 @@ Extra Black	1000'''
 					yoffset -= (ascender(font) - descender(font)) / mm * ratio
 				else:
 					if g.layers[0].width == 0:
-						xoffset += g.layers[0].bounds().size.width / mm * ratio
+						xoffset += g.layers[0].bounds.size.width / mm * ratio
 					else:
 						xoffset += g.layers[0].width / mm * ratio
 
@@ -1313,9 +1210,7 @@ Extra Black	1000'''
 			# Aggregate graph objects into a list
 	
 			tableobjects = []
-			#print "__availablegraphs", availablegraphs
 			for table in availablegraphs:
-				#print "__Glyphs.boolDefaults[com_yanone_Autopsy_graph_"+table+"]", Glyphs.boolDefaults["com_yanone_Autopsy_graph_"+table]
 				if Glyphs.boolDefaults["com_yanone_Autopsy_graph_"+table]:
 				#if eval('myDialog.graph_' + table):
 					reports[glyph][table].glyphname = glyph
@@ -1329,7 +1224,6 @@ Extra Black	1000'''
 					else:
 						reports[glyph][table].strokecolour = graphcolour['__default__']
 					tableobjects.append(reports[glyph][table])
-			#print "__tableobjects", tableobjects
 		
 			# Calculate bbox for graphs an draw them
 
@@ -1356,22 +1250,18 @@ Extra Black	1000'''
 				table.draw()
 
 			# PDF Bookmarks
-			pdf.bookmarkPage(glyph)
-			pdf.addOutlineEntry(None, glyph, 0, 0)
+#			pdf.bookmarkPage(glyph)
+#			pdf.addOutlineEntry(None, glyph, 0, 0)
 
 			# End page
-			pdf.showPage()
+			CGPDFContextEndPage(pdfContext)
 	
 	
-		# PDF save stuff
-		try:
-			pdf.save()
-		except:
-			raiseerror("%s has no write access to the file %s. Maybe the file is opened by another application?" % (programname, filename))
+		# close PDF
+		NSGraphicsContext.restoreGraphicsState()
+		CGPDFContextClose(pdfContext)
+		
 		output("time: " + str(time.time() - starttime) + "sec, ca." + str((time.time() - starttime) / len(glyphs)) + "sec per glyph")
-	
-		#fl.EndProgress()
-	
 
 
 	if errors:
@@ -1380,8 +1270,14 @@ Extra Black	1000'''
 			dlg = message(error)
 			
 	# if not errors and fonts and myDialog.openPDF:
-	# 	launchfile(myDialog.filename)
-			
+	if not errors and fonts:
+		try:
+			os.rename(tempFileName, filename)
+		except:
+			dlg = message("Problem copying final pdf")
+		if Glyphs.defaults["com_yanone_Autopsy_openPDF"]:
+			launchfile(filename)
+	
 
 
 def launchfile(path):
@@ -1400,11 +1296,6 @@ def launchfile(path):
 # 		if os.path.exists(thePath):
 # 			return thePath
 # 	return None
-
-
-
-
-
 
 
 # Settings
@@ -1484,17 +1375,17 @@ def LoadSettings():
 	
 #	preferences['appearance']['colour'] = (0,0.05,1,0)
 
-def RegisterTTFont(internalname, folder, ttf):
-	from reportlab.pdfbase import pdfmetrics
-	from reportlab.pdfbase.ttfonts import TTFont
-	pdfmetrics.registerFont(TTFont(internalname, os.path.join(folder, ttf)))
-
-def RegisterPFBFont(internalname, fullname, folder, afm, pfb):
-	from reportlab.pdfbase import pdfmetrics
-	newfontface = pdfmetrics.EmbeddedType1Face(os.path.join(folder, afm), os.path.join(folder, pfb))
-	pdfmetrics.registerTypeFace(newfontface)
-	newfont = pdfmetrics.Font(internalname, fullname, 'WinAnsiEncoding')
-	pdfmetrics.registerFont(newfont)
+# def RegisterTTFont(internalname, folder, ttf):
+# 	from reportlab.pdfbase import pdfmetrics
+# 	from reportlab.pdfbase.ttfonts import TTFont
+# 	pdfmetrics.registerFont(TTFont(internalname, os.path.join(folder, ttf)))
+# 
+# def RegisterPFBFont(internalname, fullname, folder, afm, pfb):
+# 	from reportlab.pdfbase import pdfmetrics
+# 	newfontface = pdfmetrics.EmbeddedType1Face(os.path.join(folder, afm), os.path.join(folder, pfb))
+# 	pdfmetrics.registerTypeFace(newfontface)
+# 	newfont = pdfmetrics.Font(internalname, fullname, 'WinAnsiEncoding')
+# 	pdfmetrics.registerFont(newfont)
 
 
 
@@ -1503,6 +1394,19 @@ def RegisterPFBFont(internalname, fullname, folder, afm, pfb):
 #
 #  Dialogs
 #
+
+def Orientation_Radio_Callback(sender):
+	print "__sender", sender
+	Defaults = NSUserDefaults.standardUserDefaults()
+	Defaults.setBool_forKey_(not sender.get(), 'com_yanone_Autopsy_PageOrientation_landscape')
+def outline_filled_Radio_Callback(sender):
+	print "__sender", sender
+	Defaults = NSUserDefaults.standardUserDefaults()
+	Defaults.setBool_forKey_(not sender.get(), 'com_yanone_Autopsy_outline_filled')
+def PageSize_Radio_Callback(sender):
+	print "__sender", sender
+	Defaults = NSUserDefaults.standardUserDefaults()
+	Defaults.setBool_forKey_(not sender.get(), 'com_yanone_Autopsy_PageSize_a4')
 
 class _listMultiSelect:
 	def __init__(self, mode, OptList=None):
@@ -1519,11 +1423,10 @@ class _listMultiSelect:
 		self.returnValue = NSCancelButton
 		
 		self.d = Window((621, 610))
-		
 		self.d.ok_button = Button((510,  567,  90,  22), "Autopsy", callback=self.on_ok)
 		self.d.ok_button.bind("\r", [])
 		self.d.cancel_button = Button((410,  567,  90,  22), "Cancel", callback=self.on_cancel)
-		self.d.cancel_button.bind("\e", [])
+		self.d.cancel_button.bind(chr(0x1B), [])
 		self.d.center()
 		self.d.title = title
 		if mode == 'normal':
@@ -1542,39 +1445,41 @@ class _listMultiSelect:
 			self.d.Label3 = TextBox(( 15,  15,  559,  231), 'Values for ' + str(OptList[0]) + ' Multiple Master instances')
 			self.d.MMvalues = EditText(( 15,  31,  559,  22), "")
 		
-		self.d.Label5 = TextBox(( 15,  495,  287,  511), 'Path to PDF (will overwrite without asking)')
-		self.d.filename = EditText(( 15,  512,  523,  22), '')
+		self.d.Label5 = TextBox(( 15,  499,  287,  22), 'Path to PDF (will overwrite without asking)')
+		self.d.filename = EditText(( 15,  516,  523,  22), '')
 		self.d.filename.binding(DefaultsController, 'com_yanone_Autopsy_filename')
-		self.d.browse_file = Button(( 543,  512,  55,  22), '...', callback=self.on_browse_file)
-		self.d._label2 = TextBox(( 15,  455,  191,  22), 'Page size')
-		self.d.pagesize_letter = CheckBox(( 87,  471,  72,  22), 'Letter')
-		self.d.pagesize_letter.binding(DefaultsController, 'com_yanone_Autopsy_PageSize_a4', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.pagesize_a4 = CheckBox(( 15,  471,  72,  22), 'A4')
-		self.d.pagesize_a4.binding(DefaultsController, 'com_yanone_Autopsy_PageSize_a4')
+		self.d.browse_file = Button(( 543,  516,  55,  22), '...', callback=self.on_browse_file)
+		self.d._label2 = TextBox(( 15,  454,  191,  22), 'Page size')
+		self.d.pagesize_letter = RadioGroup(( 107,  454,  72,  40), ['A4', 'Letter'], callback=PageSize_Radio_Callback)
+		self.d.pagesize_letter.set(not Defaults.boolForKey_('com_yanone_Autopsy_PageSize_a4'))
+		# self.d.pagesize_a4 = CheckBox(( 15,  471,  72,  22), 'A4')
+		# self.d.pagesize_a4.binding(DefaultsController, 'com_yanone_Autopsy_PageSize_a4')
 		# Page Orientation
 #		self.d. = TextBox(( 15,  15,  191,  31), 'Label1', STYLE_LABEL, 'Page Orientation')
 #		self.d.CheckBox(( 15,  31,  100,  50), 'orientation_portrait', STYLE_CHECKBOX, 'Portrait')
 #		self.d.CheckBox(( 107,  31,  200,  50), 'orientation_landscape', STYLE_CHECKBOX, 'Landscape')
-		self.d.Label1 = TextBox(( 15,  31,  90,  22), 'Orientation')
-		self.d.orientation_portrait = CheckBox(( 107,  31,  90,  22), 'Portrait')
-		self.d.orientation_portrait.binding(DefaultsController, 'com_yanone_Autopsy_PageOrientation_landscape', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.orientation_landscape = CheckBox(( 190,  31,  90,  22), 'Landscape')
-		self.d.orientation_landscape.binding(DefaultsController, 'com_yanone_Autopsy_PageOrientation_landscape')
+		self.d.Label1 = TextBox(( 15,  21,  90,  22), 'Orientation')
+		self.d.orientation_portrait = RadioGroup(( 107,  21,  90,  40), ['Landscape', 'Portrait'], callback=Orientation_Radio_Callback)
+		self.d.orientation_portrait.set(not Defaults.boolForKey_('com_yanone_Autopsy_PageOrientation_landscape'))
+		
+		# self.d.orientation_portrait.binding(DefaultsController, 'com_yanone_Autopsy_PageOrientation_landscape', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
+		# self.d.orientation_landscape = CheckBox(( 190,  31,  90,  22), 'Landscape')
+		# self.d.orientation_landscape.binding(DefaultsController, 'com_yanone_Autopsy_PageOrientation_landscape')
 		# Outline mode
-		self.d.Label1_ = TextBox(( 15,  81,  191,  100), 'Glyph outline')
-		self.d.outline_filled = CheckBox(( 107,  79,  180,  98), 'filled')
-		self.d.outline_filled.binding(DefaultsController, 'com_yanone_Autopsy_outline_filled')
-		self.d.outline_xray = CheckBox(( 190,  79,  300,  98), 'X-RAY')
-		self.d.outline_xray.binding(DefaultsController, 'com_yanone_Autopsy_outline_filled', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
+		self.d.Label1_ = TextBox(( 15,  71,  191,  22), 'Glyph outline')
+		self.d.outline_filled = RadioGroup(( 107,  71,  180,  40), ['filled', 'X-RAY'], callback=outline_filled_Radio_Callback)
+		self.d.outline_filled.set(not Defaults.boolForKey_('com_yanone_Autopsy_outline_filled'))
+		# self.d.outline_xray = CheckBox(( 190,  79,  300,  98), 'X-RAY')
+		# self.d.outline_xray.binding(DefaultsController, 'com_yanone_Autopsy_outline_filled', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
 		
 		
-		self.d.drawmetrics = CheckBox(( 15,  103,  230,  122), 'Draw metrics')
+		self.d.drawmetrics = CheckBox(( 15,  113,  230,  22), 'Draw metrics')
 		self.d.drawmetrics.binding(DefaultsController, 'com_yanone_Autopsy_drawmetrics')
-		self.d.drawguidelines = CheckBox(( 15,  127,  230,  146), 'Draw guidelines')
+		self.d.drawguidelines = CheckBox(( 15,  137,  230,  22), 'Draw guidelines')
 		self.d.drawguidelines.binding(DefaultsController, 'com_yanone_Autopsy_drawguidelines')
-		self.d.drawpointsvalues = CheckBox(( 15,  151,  230,  170), 'Draw graph values')
+		self.d.drawpointsvalues = CheckBox(( 15,  161,  230,  22), 'Draw graph values')
 		self.d.drawpointsvalues.binding(DefaultsController, 'com_yanone_Autopsy_drawpointsvalues')
-		self.d.fontnamesunderglyph = CheckBox(( 15,  175,  230,  194), 'Fontnames under glyph')
+		self.d.fontnamesunderglyph = CheckBox(( 15,  185,  230,  22), 'Fontnames under glyph')
 		self.d.fontnamesunderglyph.binding(DefaultsController, 'com_yanone_Autopsy_fontnamesunderglyph')
 
 		self.d.openPDF = CheckBox(( 15,  538,  206,  557), 'Open PDF in Reader')
@@ -1585,8 +1490,8 @@ class _listMultiSelect:
 		# #if os.path.exists(os.path.join(fl.path, 'Macros', 'Autopsy User Guide.pdf')):
 		# 	self.d.Button(( 543,  15,  599,  47), 'user_guide', STYLE_BUTTON, '?')
 		
-		self.d.Label7 = TextBox(( 416,  15,  456,  22), 'Local')
-		self.d.Label8 = TextBox(( 455,  15,  495,  22), 'Global')
+		self.d.Label7 = TextBox(( 413,  13,  456,  22), 'Local')
+		self.d.Label8 = TextBox(( 452,  13,  495,  22), 'Global')
 		
 		self.d.graph_width_scope_local = CheckBox(( 431,  31,  22,  22), '')
 		self.d.graph_width_scope_local.binding(DefaultsController, 'com_yanone_Autopsy_graph_width_scope_local')
@@ -1606,7 +1511,7 @@ class _listMultiSelect:
 		self.d.graph_bboxheight_scope_local.binding(DefaultsController, 'com_yanone_Autopsy_graph_bboxheight_scope_local')
 		self.d.graph_bboxheight_scope_global = CheckBox(( 455,  79,  22,  22), '')
 		self.d.graph_bboxheight_scope_global.binding(DefaultsController, 'com_yanone_Autopsy_graph_bboxheight_scope_local', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.Label9 = TextBox(( 311,  15,  90,  22), 'Graphs')
+		self.d.Label9 = TextBox(( 308,  13,  90,  22), 'Graphs')
 		self.d.graph_lowestpoint = CheckBox(( 311,  127,  110,  22), 'BBox Lowest')
 		self.d.graph_lowestpoint.binding(DefaultsController, 'com_yanone_Autopsy_graph_lowestpoint')
 		self.d.graph_highestpoint = CheckBox(( 311,  103,  110,  22), 'BBox Highest')
@@ -1631,7 +1536,7 @@ class _listMultiSelect:
 		self.d.graph_rightsidebearing_scope_local.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local')
 		self.d.graph_rightsidebearing_scope_global = CheckBox(( 455,  175,  22,  22), '')
 		self.d.graph_rightsidebearing_scope_global.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.1 by Yanone.')
+		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.2 by Yanone.')
 
 		if mode == 'MM': 
 			self.customdata = Ddict(dict)
@@ -1647,7 +1552,6 @@ class _listMultiSelect:
 		# Check for previously loaded fonts and append to the option list
 		try:
 			if mode == 'normal' and Defaults['com_yanone_Autopsy_fontselection'] is not None:
-				print "__Defaults['com_yanone_Autopsy_fontselection']", Defaults['com_yanone_Autopsy_fontselection']
 				for i, sel in enumerate(NSUserDefaults.standardUserDefaults()['com_yanone_Autopsy_fontselection']):
 					if sel in self.d.List_opt:
 						self.d.List_sel.append(sel)
@@ -1658,7 +1562,6 @@ class _listMultiSelect:
 		
 		
 	def addfonts(self):
-		print "__self.OptList", self.OptList
 		self.d.List_opt.set(self.OptList)
 		self.d.List_sel.set([])
 		self.selection = []
@@ -1749,14 +1652,12 @@ class _listMultiSelect:
 	def on_browse_file(self, code):
 		Directory = NSUserDefaults.standardUserDefaults()["com_yanone_Autopsy_filename"]
 		FileName = os.path.basename(Directory)
-		print "__FileName", FileName
 		file = putFile('', title='pdf', directory=Directory, fileName=FileName, fileTypes=['pdf'])
 		if file:
 			NSUserDefaults.standardUserDefaults()["com_yanone_Autopsy_filename"] = file
 	
 	def on_ok(self, code):
 		self.returnValue = NSOKButton
-		print "__on_ok", self.returnValue
 		if self.mode == 'normal':
 			#self.d.GetValue('List_sel')
 			self.selection = self.d.List_sel
@@ -1780,7 +1681,6 @@ class _listMultiSelect:
 	def on_cancel(self, code):
 		NSApp().stopModal()
 		self.returnValue = NSCancelButton
-		print "__on_cancel", self.returnValue
 		self.cleanup()
 	
 	def on_user_guide(self, code):
@@ -1799,7 +1699,9 @@ class _listMultiSelect:
 def getFontByFullname(TheName):
 	result = None
 	for f in Glyphs.fonts:
-		familyname = f.familyName+" "+f.instances[0].name
+		familyname = f.familyName
+		if len(f.instances) > 0:
+			familyname += " "+f.instances[0].name
 		if familyname == TheName:
 			result = f
 	return result
@@ -1827,24 +1729,6 @@ for better handling of missing glyphs and zero-width glyphs:
 
 '''
 
-# cruft to support booleans in Python <= 2.3
-import sys
-if sys.version_info[:2] < (2, 3):
-    # Python 2.2 and earlier: no booleans
-    # Python 2.2.x: booleans are ints
-    class bool(int):
-        """Imitation of the Python 2.3 bool object."""
-        def __new__(cls, value):
-            return int.__new__(cls, not not value)
-        def __repr__(self):
-            if self:
-                return "True"
-            else:
-                return "False"
-    True = bool(1)
-    False = bool(0)
-
 
 LoadSettings()
 main()
-SaveSettings()
