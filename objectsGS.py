@@ -70,9 +70,9 @@ def OpenFont(path=None, note=None):
 	"""Open a font from a path."""
 	if path == None:
 		#from robofab.interface.all.dialogs import GetFile
-		path = GetFile(note)
+		path = GetFile(note, filetypes=["ufo", "glyphs", "otf", "ttf"])
 	if path:
-		if path[-7:].lower() == '.glyphs':
+		if path[-7:].lower() == '.glyphs' or path[-3:].lower() in ["ufo", "otf", "ttf"]:
 			doc = Glyphs.openDocumentWithContentsOfFile_display_(path, False) #chrashed !!
 			print "__doc", doc
 			if doc != None:
