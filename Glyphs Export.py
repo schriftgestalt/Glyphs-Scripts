@@ -130,7 +130,11 @@ def makePlist(font):
 	for FLKey, GlyphsKey in FontInfoMapping.iteritems():
 		Value = getattr(font, FLKey)
 		if Value and len(Value) > 0:
-			Font[GlyphsKey] = Value.decode('UTF-8')
+			try:
+				Font[GlyphsKey] = Value.decode("UTF-8")
+			except:
+				print "!! invalid charcter or encoding in Font Info field: ", FLKey
+				print "    Usually just selecting the hole string and cmd+x cmd+v solves the problem"
 	CustomParametersMapping = {
 		"trademark":"trademark",
 		"notice":"openTypeNameDescription",
