@@ -313,7 +313,31 @@ def setFontInfo(Font, Dict):
 				for j in range(Font.other_blues_num):
 					Font.other_blues[i][j] = OtherZones[j]
 	return True
+
+def applicationSupportFolder(appname=u"Glyphs"):
+	paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,True)
+	basePath = (len(paths) > 0 and paths[0]) or NSTemporaryDirectory()
+	fullPath = basePath.stringByAppendingPathComponent_(appname)
+	if not os.path.exists(fullPath):
+		return None
+	return fullPath
+
+def parseGlyphDataFile(Path):
+	try:
+	from xml.etree import ElementTree as ET
+		element = ET.parse(Path)
 	
+	for subelement in element.getiterator():
+		Attribs = subelement.attrib
+		if "legacy" in Attribs:
+			Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
+		if "category" in Attribs:
+			Name2Category[Attribs["name"]] = Attribs["category"]
+		if "subCategory" in Attribs:
+			Name2SubCategory[Attribs["name"]] = Attribs["subCategory"]
+	except:
+		print "there was a problem reading the GlyphData.xml file. Probably because you did not have a copy of Glyphs in the application folder.(%s)" % Path
+
 def loadGlyphsInfo():
 	try:
 		GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
@@ -329,17 +353,13 @@ def loadGlyphsInfo():
 		GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
 		WeightCodesPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/weights.plist"
 	
-	from xml.etree import ElementTree as ET
-	element = ET.parse(GlyphsInfoPath)
+	parseGlyphDataFile(GlyphsInfoPath)
 	
-	for subelement in element.getiterator():
-		Attribs = subelement.attrib
-		if "legacy" in Attribs:
-			Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
-		if "category" in Attribs:
-			Name2Category[Attribs["name"]] = Attribs["category"]
-		if "subCategory" in Attribs:
-			Name2SubCategory[Attribs["name"]] = Attribs["subCategory"]
+	CustomGlyphsInfoPath = applicationSupportFolder()
+	if CustomGlyphsInfoPath:
+		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
+		parseGlyphDataFile(CustomGlyphsInfoPath)
+	
 	global weightCodes
 	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
 	
