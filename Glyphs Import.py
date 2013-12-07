@@ -17,6 +17,7 @@ import MacOS
 import Carbon.File
 from plistlib import *
 
+convertName = True
 Nice2Legacy = {}
 Name2Category = {}
 Name2SubCategory = {}
@@ -27,7 +28,7 @@ def NotNiceName(Name):
 	Suffix = ""
 	if "." in Name:
 		Name, Suffix = Name.split(".", 1)
-	if Name in Nice2Legacy:
+	if convertName and Name in Nice2Legacy:
 		Name = Nice2Legacy[Name]
 	else:
 		Name = Name.replace("-", "")
@@ -884,6 +885,11 @@ def readGlyphsFile(filePath):
 	dest = os.path.join(folder, base)
 	f = Font(  )
 	fl.Add(f)
+	global convertName
+	try:
+		convertName = GlyphsDoc["disablesNiceNames"] != None
+	except:
+		pass
 	if not setFontInfo(f, GlyphsDoc):
 		return False
 	readGlyphs(f, GlyphsDoc)
