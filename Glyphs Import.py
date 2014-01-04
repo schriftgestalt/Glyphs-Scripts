@@ -369,6 +369,56 @@ def fixNodes(Nodes):
 		Nodes.insert(0, Nodes.pop(Nodes.index(Node)))
 	return Nodes
 	
+def _isNonSpacingMark(Name):
+	try:
+		Category = Name2Category[Name]
+		SubCategory = Name2SubCategory[Name]
+	except:
+		try:
+			Name = Name[:Name.find(".")]
+			Category = Name2Category[Name]
+			SubCategory = Name2SubCategory[Name]
+		except:
+			return False
+	
+	return Category == "Mark" and SubCategory == "Nonspacing"
+
+def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
+	ComponentCount = len(glyph.components)
+	DidDecompose = False
+	for ComponentIndex in range(ComponentCount-1, -1, -1):
+		component = glyph.components[ComponentIndex]
+		ComponentGlyph = Font.glyphs[component.index]
+		if len(ComponentGlyph.components) > 0:
+			
+			print "__ needs decompostion", glyph.name
+			for ComponentGlyphComponent in ComponentGlyph.components:
+				CopyComponent = Component(ComponentGlyphComponent)
+				print "__ComponentGlyphComponent", ComponentGlyphComponent
+				for masterIndex in range(MasterCount):
+					print "Decompose", CopyComponent.deltas[masterIndex].x, component.scales[masterIndex].x, component.deltas[masterIndex].x
+					CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
+					CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
+					CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
+					CopyComponent.deltas[masterIndex].y = (CopyComponent.deltas[masterIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
+				glyph.components.append(CopyComponent)
+			del(glyph.components[ComponentIndex])
+			
+			ComponentGlyphPath = ComponentGlyph.nodes
+			NewPath = []
+			for node in ComponentGlyphPath:
+				NewPath.append(Node(node))
+			
+			for ComponentNode in ComponentGlyph.nodes:
+				node = Node(ComponentNode)
+				for masterIndex in range(MasterCount):
+					for pointIndex in range(node.count):
+						node.Layer(masterIndex)[pointIndex].x = (node.Layer(masterIndex)[pointIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
+						node.Layer(masterIndex)[pointIndex].y = (node.Layer(masterIndex)[pointIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
+				glyph.Insert(node, len(glyph))
+			DidDecompose = True
+	return DidDecompose
+
 def readGlyphs(Font, Dict):
 	Glyphs = Dict["glyphs"]
 	GlyphsCount = len(Glyphs)
@@ -602,6 +652,7 @@ def readGlyphs(Font, Dict):
 				
 		Font.glyphs.append(glyph)
 		GlyphIndexes[glyph.name] = len(Font.glyphs)-1
+	
 	# Read the components. 
 	for i in range(GlyphsCount):
 		glyph = Font.glyphs[i]
@@ -622,17 +673,24 @@ def readGlyphs(Font, Dict):
 						except:
 							continue
 						ShiftNodes = 0
+						
 						# reconstruct the correct positioning of Nonspacing marks. They where set to zero width on outline import.
 						try:
-							isNonSpacingMark = Name2Category[componentDict['name']] == "Mark" and Name2SubCategory[componentDict['name']] == "Nonspacing"
-							if isNonSpacingMark:
+							isNonSpacingMarkComponent = _isNonSpacingMark(componentDict['name'])
+							if isNonSpacingMarkComponent:
 								ComponentIndex = GlyphIndexes[componentDict['name']]
 								ComponentGlyphDict = Glyphs[ComponentIndex]
-								#print "__componentDict['name']", componentDict['name'], ComponentGlyphDict['layers'][masterIndex]["width"]
 								ShiftNodes = float(str(ComponentGlyphDict['layers'][masterIndex]["width"]))
 						except:
 							pass
 						
+						# if the glyph itself is a nonspacing mark, move the component
+						try:
+							isNonSpacingMark = _isNonSpacingMark(glyph.name)
+							if isNonSpacingMark:
+								ShiftNodes -= float(str(Layer["width"]))
+						except Exception, e:
+							print e
 						componentTransformString = componentDict["transform"][1:-1]
 						componentTransformList = componentTransformString.split(", ")
 						
@@ -652,7 +710,7 @@ def readGlyphs(Font, Dict):
 				print "There was a problem reading the components for glyph:", glyph.name
 				
 	# Resolve nested components.
-	GlyphsWithNestedComponemts = []
+	GlyphsWithNestedComponemts = set()
 	
 	for glyph in Font.glyphs:
 		ComponentCount = len(glyph.components)
@@ -683,36 +741,13 @@ def readGlyphs(Font, Dict):
 					glyph.Insert(node, len(glyph))
 	
 	for glyph in Font.glyphs:
-		ComponentCount = len(glyph.components)
-		for ComponentIndex in range(ComponentCount-1, -1, -1):
-			component = glyph.components[ComponentIndex]
-			ComponentGlyph = Font.glyphs[component.index]
-			if len(ComponentGlyph.components) > 0:
-				GlyphsWithNestedComponemts.append(glyph.name)
-				for ComponentGlyphComponent in ComponentGlyph.components:
-					CopyComponent = Component(ComponentGlyphComponent)
-					for masterIndex in range(MasterCount):
-						CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
-						CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
-						CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
-						CopyComponent.deltas[masterIndex].y = (CopyComponent.deltas[masterIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
-					glyph.components.append(CopyComponent)
-				del(glyph.components[ComponentIndex])
+		if checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
+			GlyphsWithNestedComponemts.add(glyph.name)
+			checkForNestedComponentsAndDecompose(Font, glyph, MasterCount) # run it again to get double nests.
+
 				
-				ComponentGlyphPath = ComponentGlyph.nodes
-				NewPath = []
-				for node in ComponentGlyphPath:
-					NewPath.append(Node(node))
-				
-				for ComponentNode in ComponentGlyph.nodes:
-					node = Node(ComponentNode)
-					for masterIndex in range(MasterCount):
-						for pointIndex in range(node.count):
-							node.Layer(masterIndex)[pointIndex].x = (node.Layer(masterIndex)[pointIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
-							node.Layer(masterIndex)[pointIndex].y = (node.Layer(masterIndex)[pointIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
-					glyph.Insert(node, len(glyph))
 	if len(GlyphsWithNestedComponemts) > 0:
-		print "The font has nested components. They are not supported in FontLab and were decomposed.\n(%s)" % ", ".join(GlyphsWithNestedComponemts)
+		print "The font has nested components. They are not supported in FontLab and were decomposed.\n(%s)" % ", ".join(sorted(GlyphsWithNestedComponemts))
 	fl.UpdateFont()
 	
 def readKerning(Font, Dict):
