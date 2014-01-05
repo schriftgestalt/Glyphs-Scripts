@@ -197,7 +197,7 @@ def makePlist(font):
 	
 	Font["disablesAutomaticAlignment"] = True
 
-	print "Font is written with "Disables Automatic Alignment" activated. Please review this setting in Font Info.
+	print "Font is written with \"Disables Automatic Alignment\" activated. Please review this setting in Font Info."
 
 	MasterCount = font[0].layers_number
 	for i in range(MasterCount):
