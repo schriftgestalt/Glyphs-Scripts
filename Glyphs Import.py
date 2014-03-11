@@ -324,17 +324,17 @@ def applicationSupportFolder(appname=u"Glyphs"):
 
 def parseGlyphDataFile(Path):
 	try:
-	from xml.etree import ElementTree as ET
+		from xml.etree import ElementTree as ET
 		element = ET.parse(Path)
-	
-	for subelement in element.getiterator():
-		Attribs = subelement.attrib
-		if "legacy" in Attribs:
-			Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
-		if "category" in Attribs:
-			Name2Category[Attribs["name"]] = Attribs["category"]
-		if "subCategory" in Attribs:
-			Name2SubCategory[Attribs["name"]] = Attribs["subCategory"]
+		
+		for subelement in element.getiterator():
+			Attribs = subelement.attrib
+			if "legacy" in Attribs:
+				Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
+			if "category" in Attribs:
+				Name2Category[Attribs["name"]] = Attribs["category"]
+			if "subCategory" in Attribs:
+				Name2SubCategory[Attribs["name"]] = Attribs["subCategory"]
 	except:
 		print "there was a problem reading the GlyphData.xml file. Probably because you did not have a copy of Glyphs in the application folder.(%s)" % Path
 
