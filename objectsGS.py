@@ -1940,10 +1940,12 @@ class RInfo(BaseInfo):
 			gsFont = self._object._object.font
 			value = gsFont.valueForKey_(attr)
 			
-			if value is None and attr == "postscriptFullName":
+			if value is None:
 				Instance = gsFont.instanceAtIndex_(self._object._master)
-				value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
-				
+				if attr == "postscriptFullName":
+					value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
+				elif attr == "styleName":
+					value = Instance.valueForKey_("name")
 			if needValueConversionTo1:
 				oldAttr, value = ufoLib.convertFontInfoValueForAttributeFromVersion2ToVersion1(attr, value)
 			return value
