@@ -74,7 +74,6 @@ def OpenFont(path=None, note=None):
 	if path:
 		if path[-7:].lower() == '.glyphs' or path[-3:].lower() in ["ufo", "otf", "ttf"]:
 			doc = Glyphs.openDocumentWithContentsOfFile_display_(path, False) #chrashed !!
-			print "__doc", doc
 			if doc != None:
 				return RFont(doc)
 	return None
@@ -310,7 +309,6 @@ class RFont(BaseFont):
 					if RightKey[0] != '@':
 						RightKey = self._object.font.glyphForId_(RightKey).name
 					kerning[(LeftKey, RightKey)] = RightKerning
-		print "___get_kerning", kerning
 		rk = RKerning(kerning)
 		rk.setParent(self)
 		return rk
@@ -896,7 +894,6 @@ class RGlyph(BaseGlyph):
 		
 	def _mathCopy(self):
 		# copy self without contour, component and anchor data
-		print "__mathCopy:", self
 		glyph = self._getMathDestination()
 		glyph.name = self.name
 		glyph.unicodes = list(self.unicodes)
@@ -1901,7 +1898,6 @@ class RInfo(BaseInfo):
 		 	raise AttributeError("Unknown attribute %s." % attr)
 	
 	def __getattr__(self, attr):
-		#print "1 __getattr__", attr
 		_baseAttributes = ["_object", "changed", "selected", "getParent"]
 		_renameAttributes = {
 							 "openTypeNameManufacturer": "manufacturer",
