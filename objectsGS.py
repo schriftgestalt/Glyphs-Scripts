@@ -1596,7 +1596,17 @@ class RPoint(BasePoint):
 						#try:
 						FontName = Font.valueForKey_("familyName")
 						#except AttributeError: pass
-		return "<RPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object.position.x, self._object.position.y, FontName, GlyphName, pathIndex, nodeIndex)
+		Type = ""
+		if self._type == MOVE:
+			Type = "MOVE"
+		elif self._object.type == GSOFFCURVE:
+			Type ="OFFCURVE"
+		elif self._object.type == GSCURVE:
+			Type ="CURVE"
+		else:
+			Type ="LINE"
+		#return "<RPoint (%.1f, %.1f %s) for %s.%s[%d][%d]>"%( self._object.position.x, self._object.position.y, Type, FontName, GlyphName, pathIndex, nodeIndex)
+		return "<RPoint (%.1f, %.1f %s)>"%( self._object.position.x, self._object.position.y, Type)
 	
 	def _get_x(self):
 		return self._object.x
