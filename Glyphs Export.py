@@ -1,7 +1,7 @@
 #FLM: Glyphs Export
 # -*- coding: utf8 -*-
-# Version 0.3
-# copyright Georg Seifert 2011, schriftgestaltung.de
+# Version 0.6 (1. April 2014)
+# copyright Georg Seifert 2014, schriftgestaltung.de
 # 
 # please install it to: /Library/Application Support/FontLab/Studio 5/Macros/Glyphs Export.py
 # 
@@ -133,8 +133,9 @@ def makePlist(font):
 			try:
 				Font[GlyphsKey] = Value.decode("UTF-8")
 			except:
-				print "!! invalid charcter or encoding in Font Info field: ", FLKey
-				print "    Usually just selecting the hole string and cmd+x cmd+v solves the problem"
+				print "!!  invalid character or encoding in Font Info field: ", FLKey
+				print "    please check the value in Glyphs"
+				Font[GlyphsKey] = Value.decode("UTF-8", 'ignore')
 	CustomParametersMapping = {
 		"trademark":"trademark",
 		"notice":"openTypeNameDescription",
@@ -166,7 +167,12 @@ def makePlist(font):
 		else:
 			Value = getattr(font, FLKey)
 		if Value and len(Value) > 0:
-			CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8')})
+			try:
+				CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8')})
+			except:
+				print "!!! invalid character or encoding in Font Info field: ", FLKey
+				print "    please check the value in Glyphs"
+				CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8', 'ignore')})
 	
 	if font.vendor and len(font.vendor) > 0 and font.vendor.upper() != "PYRS":
 		CustomParameters.append({"name":"openTypeOS2VendorID", "value": font.vendor.decode('UTF-8')})
