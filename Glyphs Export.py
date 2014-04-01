@@ -138,9 +138,9 @@ def makePlist(font):
 				Font[GlyphsKey] = Value.decode("UTF-8", 'ignore')
 	CustomParametersMapping = {
 		"trademark":"trademark",
-		"notice":"openTypeNameDescription",
-		"license":"openTypeNameLicense",
-		"license_url":"openTypeNameLicenseURL",
+		"notice":"description",
+		"license":"license",
+		"license_url":"licenseURL",
 		#"vendor":"openTypeOS2VendorID",
 
 	}
