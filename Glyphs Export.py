@@ -14,6 +14,18 @@ import math, time
 from plistlib import *
 import colorsys
 
+
+def convertFLSToUnicode(Value):
+	Uni = None
+	try:
+		Uni = Value.decode("UTF-8")
+	except:
+		try:
+			Uni = unicode(Value, 'cp1252')
+		except:
+			pass
+	return Uni
+
 def makePlist(font):
 	f = fl.font
 	ClassesDict = {}
@@ -130,12 +142,12 @@ def makePlist(font):
 	for FLKey, GlyphsKey in FontInfoMapping.iteritems():
 		Value = getattr(font, FLKey)
 		if Value and len(Value) > 0:
-			try:
-				Font[GlyphsKey] = Value.decode("UTF-8")
-			except:
+			Value = convertFLSToUnicode(Value)
+			if Value is not None:
+				Font[GlyphsKey] = Value
+			else:
 				print "!!  invalid character or encoding in Font Info field: ", FLKey
-				print "    please check the value in Glyphs"
-				Font[GlyphsKey] = Value.decode("UTF-8", 'ignore')
+					
 	CustomParametersMapping = {
 		"trademark":"trademark",
 		"notice":"description",
@@ -167,12 +179,11 @@ def makePlist(font):
 		else:
 			Value = getattr(font, FLKey)
 		if Value and len(Value) > 0:
-			try:
-				CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8')})
-			except:
+			Value = convertFLSToUnicode(Value)
+			if Value is not None:
+				CustomParameters.append({"name":GlyphsKey, "value": Value})
+			else:
 				print "!!! invalid character or encoding in Font Info field: ", FLKey
-				print "    please check the value in Glyphs"
-				CustomParameters.append({"name":GlyphsKey, "value": Value.decode('UTF-8', 'ignore')})
 	
 	if font.vendor and len(font.vendor) > 0 and font.vendor.upper() != "PYRS":
 		CustomParameters.append({"name":"openTypeOS2VendorID", "value": font.vendor.decode('UTF-8')})
