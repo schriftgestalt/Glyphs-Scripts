@@ -1051,13 +1051,13 @@ class RContour(BaseContour):
 		if self._object.closed:
 			for i in range(len(self), -1, -1):
 				StartNode = self._object.nodeAtIndex_(i)
-				if StartNode.type is not OFFCURVE:
+				if StartNode.type != GSOFFCURVE:
 					pen.moveTo(StartNode.position)
 					break
 		else:
 			for i in range(len(self)):
 				StartNode = self._object.nodeAtIndex_(i)
-				if StartNode.type is not OFFCURVE:
+				if StartNode.type != GSOFFCURVE:
 					pen.moveTo(StartNode.position)
 					break
 		for i in range(len(self)):
