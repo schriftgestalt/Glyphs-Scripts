@@ -703,9 +703,9 @@ Extra Black	1000'''
 	
 	# Normal mode
 	if not errors:
-
+		f = Glyphs.fonts[0]
 		# Add fonts to NameList
-		if len(Glyphs.fonts[0].masters) == 1:
+		if len(f.masters) == 1:
 			mode = 'normal'
 		
 			widths = Ddict(dict)
@@ -755,13 +755,15 @@ Extra Black	1000'''
 			
 			for listentry in FontList:
 				NameList.append(listentry[2])
-	
+		
 		# MM-mode
-		elif len(Glyphs.fonts[0].masters) > 1:
+		elif len(f.masters) > 1:
+			Message("Problem", "Autopsy for Glyphs does not jet support multiple master Fonts.")
+			return
 			mode = 'MM'
 			familyname = f.familyName+" "+f.masters[0].name
 			NameList.append(f)
-
+	
 	# Some error handling
 #	if not NameList:
 #		raiseerror("No fonts open in FontLab.")
