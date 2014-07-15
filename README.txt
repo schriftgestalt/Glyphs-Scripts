@@ -1,7 +1,7 @@
-This are some sample scripts and the neseccary files to use robofab scripts from within Glyphs.
+These are some sample scripts and the necessary files to use Robofab scripts from within Glyphs.
+Copy the files to the Glyphs Scripts folder. To navigate there quickly, choose Open Scripts Folder from the Scripts menu.
+Feel free to organize files in subfolders.
 
-Copy the files to ~/Library/Application Support/Glyphs/Scripts/
-
-You may organize files with subfolders.
-
-Only two files ("Glyphs Export.py", "Glyphs Import.py") need to go the FontLab Macro Folder: ~/Library/Application Support/FontLab/Studio 5/Macros/ (copy the path, in Finder hit cup+shift+G and paste the path.)
+Only two files ("Glyphs Export.py", "Glyphs Import.py") need to go to the FontLab Macros Folder:
+~/Library/Application Support/FontLab/Studio 5/Macros/
+Copy the path, and in Finder, press cmd+shift+G and paste the path.
