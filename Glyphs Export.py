@@ -154,7 +154,6 @@ def makePlist(font):
 		"license":"license",
 		"license_url":"licenseURL",
 		#"vendor":"openTypeOS2VendorID",
-
 	}
 	
 	Sec = getattr(font.ttinfo, "head_creation")[0]
@@ -213,7 +212,6 @@ def makePlist(font):
 		Font["customParameters"] = CustomParameters
 	
 	Font["disablesAutomaticAlignment"] = True
-
 	print "Font is written with \"Disables Automatic Alignment\" activated. Please review this setting in Font Info."
 
 	MasterCount = font[0].layers_number
@@ -409,6 +407,40 @@ def makePlist(font):
 			if len(Anchors)>0:
 				Layer["anchors"] = Anchors
 				
+			# Read Background
+			Nodes = False
+			glyph = glyph.mask
+			Paths = []
+			for i in range(len(glyph)):
+				node = glyph.nodes[i].Layer(masterIndex)
+				if glyph.nodes[i].type == nMOVE:
+					if Nodes:
+						if Nodes[-1].find("CURVE") > 0:
+							LastParts = Nodes[-1].split(" ")
+							FirstParts = Nodes[0].split(" ")
+							if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+								Nodes.pop(0)
+						Paths.append({"nodes": Nodes, "closed":True})
+					Nodes = []
+				
+				if len(node) > 1:
+					Nodes.append(("%d %d OFFCURVE" % (node[1].x, node[1].y)))
+					Nodes.append(("%d %d OFFCURVE" % (node[2].x, node[2].y)))
+					Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
+				else:
+					Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
+				if (glyph.nodes[i].alignment != nSHARP):
+					Nodes[-1] = Nodes[-1] + " SMOOTH"
+			
+			if Nodes:
+				if Nodes[-1].find("CURVE") > 0:
+					LastParts = Nodes[-1].split(" ")
+					FirstParts = Nodes[0].split(" ")
+					if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+						Nodes.pop(0)
+				Paths.append({"nodes": Nodes, "closed":True})
+			if len(Paths) > 0:
+				Layer["background"] = {"paths" : Paths}
 			Layers.append(Layer)
 		Glyph["layers"] = Layers
 		if glyph.unicode > 1:
