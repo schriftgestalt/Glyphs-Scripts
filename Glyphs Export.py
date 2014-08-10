@@ -106,6 +106,8 @@ def makePlist(font):
 		Instance["name"] = font.pref_style_name
 	elif font.style_name is not None:
 		Instance["name"] = font.style_name
+	else: 
+		Instance["name"] = "Regular"
 	if font.weight and len(font.weight) > 0:
 		Instance["weightClass"] = font.weight
 	if font.width and len(font.width) > 0 and font.width in WidthMap.keys():
@@ -409,11 +411,12 @@ def makePlist(font):
 				
 			# Read Background
 			Nodes = False
-			glyph = glyph.mask
+			mask = glyph.mask
 			Paths = []
-			for i in range(len(glyph)):
-				node = glyph.nodes[i].Layer(masterIndex)
-				if glyph.nodes[i].type == nMOVE:
+			if mask is not None:
+				for i in range(len(mask)):
+					node = mask.nodes[i].Layer(masterIndex)
+					if mask.nodes[i].type == nMOVE:
 					if Nodes:
 						if Nodes[-1].find("CURVE") > 0:
 							LastParts = Nodes[-1].split(" ")
@@ -429,7 +432,7 @@ def makePlist(font):
 					Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
 				else:
 					Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
-				if (glyph.nodes[i].alignment != nSHARP):
+					if (mask.nodes[i].alignment != nSHARP):
 					Nodes[-1] = Nodes[-1] + " SMOOTH"
 			
 			if Nodes:
