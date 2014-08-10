@@ -112,7 +112,7 @@ def makePlist(font):
 		Instance["weightClass"] = font.weight
 	if font.width and len(font.width) > 0 and font.width in WidthMap.keys():
 		Instance["widthClass"] = WidthMap[font.width]
-
+	
 	CustomParameters = []
 	# if font.ttinfo.os2_us_weight_class != WeightValues[font.weight]: # There seems to be a bug, os2_us_weight_class is always 400
 	# 	CustomParameters.append({"name":"openTypeOS2WeightClass", "value": font.ttinfo.os2_us_weight_class})
@@ -365,7 +365,7 @@ def makePlist(font):
 						Nodes.pop(0)
 				Paths.append({"nodes": Nodes, "closed":True})
 			Layer["paths"] = Paths
-		
+			
 			Hints = []
 			for vhint in glyph.vhints:
 				Hint = {}
@@ -408,7 +408,7 @@ def makePlist(font):
 				Anchors.append(Anchor)
 			if len(Anchors)>0:
 				Layer["anchors"] = Anchors
-				
+			
 			# Read Background
 			Nodes = False
 			mask = glyph.mask
@@ -417,33 +417,33 @@ def makePlist(font):
 				for i in range(len(mask)):
 					node = mask.nodes[i].Layer(masterIndex)
 					if mask.nodes[i].type == nMOVE:
-					if Nodes:
-						if Nodes[-1].find("CURVE") > 0:
-							LastParts = Nodes[-1].split(" ")
-							FirstParts = Nodes[0].split(" ")
-							if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-								Nodes.pop(0)
-						Paths.append({"nodes": Nodes, "closed":True})
-					Nodes = []
+						if Nodes:
+							if Nodes[-1].find("CURVE") > 0:
+								LastParts = Nodes[-1].split(" ")
+								FirstParts = Nodes[0].split(" ")
+								if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+									Nodes.pop(0)
+							Paths.append({"nodes": Nodes, "closed":True})
+						Nodes = []
 				
-				if len(node) > 1:
-					Nodes.append(("%d %d OFFCURVE" % (node[1].x, node[1].y)))
-					Nodes.append(("%d %d OFFCURVE" % (node[2].x, node[2].y)))
-					Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
-				else:
-					Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
+					if len(node) > 1:
+						Nodes.append(("%d %d OFFCURVE" % (node[1].x, node[1].y)))
+						Nodes.append(("%d %d OFFCURVE" % (node[2].x, node[2].y)))
+						Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
+					else:
+						Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
 					if (mask.nodes[i].alignment != nSHARP):
-					Nodes[-1] = Nodes[-1] + " SMOOTH"
+						Nodes[-1] = Nodes[-1] + " SMOOTH"
 			
-			if Nodes:
-				if Nodes[-1].find("CURVE") > 0:
-					LastParts = Nodes[-1].split(" ")
-					FirstParts = Nodes[0].split(" ")
-					if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-						Nodes.pop(0)
-				Paths.append({"nodes": Nodes, "closed":True})
-			if len(Paths) > 0:
-				Layer["background"] = {"paths" : Paths}
+				if Nodes:
+					if Nodes[-1].find("CURVE") > 0:
+						LastParts = Nodes[-1].split(" ")
+						FirstParts = Nodes[0].split(" ")
+						if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+							Nodes.pop(0)
+					Paths.append({"nodes": Nodes, "closed":True})
+				if len(Paths) > 0:
+					Layer["background"] = {"paths" : Paths}
 			Layers.append(Layer)
 		Glyph["layers"] = Layers
 		if glyph.unicode > 1:
