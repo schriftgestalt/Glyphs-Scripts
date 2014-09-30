@@ -412,162 +412,15 @@ class RFont(BaseFont):
 		# the removeGlyph method? the addComponent method
 		# of the various pens? somewhere else? hm... tricky.
 		#
-		#we won't actually remove it, we will just store it for removal
+		# we won't actually remove it, we will just store it for removal
 		# but only if the glyph does exist
-		if self.has_key(glyphName) and glyphName not in self._scheduledForDeletion:
-			self._scheduledForDeletion.append(glyphName)
+		# if self.has_key(glyphName) and glyphName not in self._scheduledForDeletion:
+		# 	self._scheduledForDeletion.append(glyphName)
 		# now delete the object
 		if self._object.has_key(glyphName):
 			del self._object[glyphName]
 		self._hasChanged()
 	
-	def readUFO(self, path, doProgress=False, doHints=False, doInfo=True, doKerning=True, doGroups=True, doLib=True, doFeatures=True, glyphs=None):
-		
-		"""read a .ufo into the font"""
-		from GSPen import GSPointPen
-		from robofab.interface.all.dialogs import ProgressBar
-		# start up the reader
-		reader = ufoLib.UFOReader(path)
-		glyphSet = reader.getGlyphSet()
-		# get a list of glyphs that should be imported
-		if glyphs is None:
-			glyphs = glyphSet.keys()
-		# set up the progress bar
-		nonGlyphCount = [doInfo, doKerning, doGroups, doLib, doFeatures].count(True)
-		bar = None
-		if doProgress:
-			bar = ProgressBar("Importing UFO", nonGlyphCount + len(glyphs))
-		# start reading
-		try:
-			fontLib = reader.readLib()
-			# info
-			if doInfo:
-				# print "reader.readInfo", reader.readInfo(self.info)
-				if bar:
-					bar.tick()
-			# glyphs
-			count = 1
-			glyphOrder = self._getGlyphOrderFromLib(fontLib, glyphSet)
-			for glyphName in glyphOrder:
-				if glyphName not in glyphs:
-					continue
-				glyph = self.newGlyph(glyphName, clear=True)
-				
-				pen = GSPointPen(glyph)
-				glyphSet.readGlyph(glyphName=glyphName, glyphObject=glyph, pointPen=pen)
-				if doHints:
-					hintData = glyph.lib.get(postScriptHintDataLibKey)
-					if hintData:
-						_dictHintsToGlyph(glyph.naked(), hintData)
-					# now that the hints have been extracted from the glyph
-					# there is no reason to keep the location in the lib.
-					if glyph.lib.has_key(postScriptHintDataLibKey):
-						del glyph.lib[postScriptHintDataLibKey]
-				glyph.update()
-				if bar and not count % 10:
-					bar.tick(count)
-				count = count + 1
-			# features
-			if doFeatures:
-				if reader.formatVersion == 1:
-					self._readOpenTypeFeaturesFromLib(fontLib)
-				else:
-					featureText = reader.readFeatures()
-					self.features.text = featureText
-				if bar:
-					bar.tick()
-			else:
-				# remove features stored in the lib
-				self._readOpenTypeFeaturesFromLib(fontLib, setFeatures=False)
-			# kerning
-			if doKerning:
-				#self.kerning.clear()
-				self.kerning = reader.readKerning()
-				if bar:
-					bar.tick()
-			# groups
-			if doGroups:
-				#self.groups.clear()
-				self.groups = reader.readGroups()
-				if bar:
-					bar.tick()
-			# hints in format version 1
-			if doHints and reader.formatVersion == 1:
-				self.psHints._loadFromLib(fontLib)
-			else:
-				# remove hint data stored in the lib
-				if fontLib.has_key(postScriptHintDataLibKey):
-					del fontLib[postScriptHintDataLibKey]
-			# lib
-			if doLib:
-				#self.lib.clear()
-				# print "readUFO lib:", fontLib, self._object.font.userData
-				self.lib = fontLib
-				if bar:
-					bar.tick()
-		# only blindly stop if the user says to
-		except KeyboardInterrupt:
-			bar.close()
-			bar = None
-		# kill the bar
-		if bar:
-			bar.close()
-	def writeUFO(self, path=None, doProgress=False, glyphNameToFileNameFunc=None, doHints=False, doInfo=True, doKerning=True, doGroups=True, doLib=True, doFeatures=True, glyphs=None, formatVersion=2):
-		if (path != None):
-			Plugin = GlyphsFileFormatUFO.alloc().init()
-			Plugin.writeFont_toURL_error_(self._object.font, NSURL.fileURLWithPath_(path), None)
-	
-	
-	def _getGlyphOrderFromLib(self, fontLib, glyphSet):
-		glyphOrder = fontLib.get("org.robofab.glyphOrder")
-		if glyphOrder is not None:
-			# no need to keep track if the glyph order in lib once the font is loaded.
-			del fontLib["org.robofab.glyphOrder"]
-			glyphNames = []
-			done = {}
-			for glyphName in glyphOrder:
-				if glyphName in glyphSet:
-					glyphNames.append(glyphName)
-					done[glyphName] = 1
-			allGlyphNames = glyphSet.keys()
-			allGlyphNames.sort()
-			for glyphName in allGlyphNames:
-				if glyphName not in done:
-					glyphNames.append(glyphName)
-		else:
-			glyphNames = glyphSet.keys()
-			glyphNames.sort()
-		return glyphNames
-	def _readOpenTypeFeaturesFromLib(self, fontLib, setFeatures=True):
-		# setFeatures may be False. in this case, this method
-		# should only clear the data from the lib.
-		classes = fontLib.get("org.robofab.opentype.classes")
-		if classes is not None:
-			del fontLib["org.robofab.opentype.classes"]
-			if setFeatures:
-				self._object.font.setClasses_( classes )
-		features = fontLib.get("org.robofab.opentype.features")
-		if features is not None:
-			order = fontLib.get("org.robofab.opentype.featureorder")
-			if order is None:
-				# for UFOs saved without the feature order, do the same as before.
-				order = features.keys()
-				order.sort()
-			else:
-				del fontLib["org.robofab.opentype.featureorder"]
-			del fontLib["org.robofab.opentype.features"]
-			#features = features.items()
-			orderedFeatures = []
-			for tag in order:
-				oneFeature = features.get(tag)
-				if oneFeature is not None:
-					orderedFeatures.append((tag, oneFeature))
-			if setFeatures:
-				self._object.font.setFeatures_(objc.nil)
-				for tag, src in orderedFeatures:
-					Feature = GSFeature(tag)
-					Feature.setCode_(src)
-					self._object.font.addFeature_(Feature)
 	def _get_selection(self):
 		# return a list of glyph names for glyphs selected in the font window
 		l=[]
@@ -728,7 +581,6 @@ class RGlyph(BaseGlyph):
 			self._object.setUnicode = value[0]
 		except:
 			pass
-		#self._hasChanged()
 	
 	unicodes = property(_get_unicodes, _set_unicodes, doc="all unicode values for the glyph")
 	
