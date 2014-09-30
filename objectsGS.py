@@ -728,9 +728,7 @@ class RGlyph(BaseGlyph):
 	unicodes = property(_get_unicodes, _set_unicodes, doc="all unicode values for the glyph")
 	
 	def _get_unicode(self):
-		if len(self._object.unicode) == 0:
-			return None
-		return int(self._object.unicode, 16)
+		return self._object.unicodeChar()
 	
 	def _set_unicode(self, value):
 		if type(value) == str:
