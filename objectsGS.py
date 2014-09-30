@@ -355,6 +355,11 @@ class RFont(BaseFont):
 			self._object.updateChangeCount_(NSChangeCleared)
 		self._object.close()
 
+	def _get_glyphOrder(self):
+		return self._object.font.valueForKeyPath_("glyphs.name")
+	
+	glyphOrder = property(_get_glyphOrder, doc="groups")
+	
 	def getGlyph(self, glyphName):
 		# XXX getGlyph may have to become private, to avoid duplication
 		# with __getitem__
