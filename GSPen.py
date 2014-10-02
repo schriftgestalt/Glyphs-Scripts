@@ -31,6 +31,7 @@ class GSPointPen(SegmentToPointPen):
 	def __init__(self, r_glyph, layer):
 		self._glyph = r_glyph
 		self._layer = layer
+		self._path = None
 	
 	def beginPath(self):
 		_Path = GSPath()
@@ -40,6 +41,15 @@ class GSPointPen(SegmentToPointPen):
 	def endPath(self):
 		self._glyph._invalidateContours()
 	
+	def moveTo(self, pt):
+		self._path = GSPath()
+		self._path.closed = True
+		self._layer.paths.append( self._path )
+		self.addPoint( pt, "move" )
+		
+	def lineTo(self, pt):
+		self.addPoint( pt, "line" )
+		
 	def addPoint(self, pt, segmentType=None, smooth=None, name=None, **kwargs):
 		if name is not None:
 			_Anchor = NewAnchor(pt, name)
@@ -60,7 +70,7 @@ class GSPointPen(SegmentToPointPen):
 				_Node.setType_(GSOFFCURVE)
 			if smooth:
 				_Node.setConnection_(GSSMOOTH)
-			self._layer.paths[-1].nodes.append(_Node)
+			self._path.nodes.append(_Node)
 	
 	def addComponent(self, baseName, transformation):
 		xx, xy, yx, yy, dx, dy = transformation
@@ -79,10 +89,8 @@ class GSPointPen(SegmentToPointPen):
 		self._layer.addComponent_(_Component)
 	
 	def closePath(self):
-		print "__closePath__", self._layer.paths
-		Path = self._layer.paths[-1]
-		if Path != None:
-			self._layer.paths[-1].setClosePath_(1)
+		if self._path is not None:
+			self._path.setClosePath_(1)
 
 def test():
 	g = Glyphs.currentDocument.windowControllers()[0].activeLayer().parent
