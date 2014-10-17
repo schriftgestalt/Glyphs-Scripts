@@ -34,9 +34,9 @@ class GSPointPen(SegmentToPointPen):
 		self._path = None
 	
 	def beginPath(self):
-		_Path = GSPath()
-		_Path.closed = True
-		self._layer.paths.append( _Path )
+		self._path = GSPath()
+		self._path.closed = True
+		self._layer.paths.append( self._path )
 	
 	def endPath(self):
 		self._glyph._invalidateContours()
@@ -52,7 +52,7 @@ class GSPointPen(SegmentToPointPen):
 		
 	def addPoint(self, pt, segmentType=None, smooth=None, name=None, **kwargs):
 		if name is not None:
-			_Anchor = NewAnchor(pt, name)
+			_Anchor = GSAnchor(name=name, pt=pt)
 			self._layer.addAnchor_(_Anchor)
 		else:
 			_Node = GSNode(pt)

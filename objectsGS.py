@@ -504,6 +504,12 @@ class RGlyph(BaseGlyph):
 	def __len__(self):
 		return len(self._layer.paths)
 	
+	def copy(self):
+		Copy = RGlyph(self._object.copy(), self.masterIndex)
+		Copy._layerID = self._layerID
+		Copy._layer = Copy._object.layerForKey_(self._layerID)
+		return Copy
+		
 	#def _get_contour(self, index):
 	#	return RContour(self._layer.pathAtIndex_(index))
 	
@@ -631,8 +637,11 @@ class RGlyph(BaseGlyph):
 	width = property(_get_width, _set_width, doc="width")
 	
 	def getComponents(self):
-		#raise NotImplementedError
-		return () #self._layer.components()
+		Components = []
+		for c in self._layer.components:
+			T = c.transformStruct()
+			Components.append(RComponent( baseGlyphName=c.componentName, offset=(T[4], T[5]), scale=(T[0], T[3])))
+		return Components
 	
 	components = property(getComponents, doc="List of components")
 	
