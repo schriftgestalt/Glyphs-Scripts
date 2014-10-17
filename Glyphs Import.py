@@ -1,6 +1,6 @@
 #FLM: Glyphs Import
 # -*- coding: utf8 -*-
-# Version 0.2
+# Version 0.3
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
 # The script will read a .glyphs file and import it into FontLab.
@@ -435,11 +435,7 @@ def readGlyphs(Font, Dict):
 		if "export" in GlyphDict.keys() and str(GlyphDict["export"]) == "0":
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
-		isNonSpacingMark = False
-		try:
-			isNonSpacingMark = Name2Category[glyph.name] == "Mark" and Name2SubCategory[glyph.name] == "Nonspacing"
-		except:
-			pass
+		isNonSpacingMark = _isNonSpacingMark(glyph.name)
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
 			Layer = None
