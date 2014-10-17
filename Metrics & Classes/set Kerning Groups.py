@@ -923,8 +923,11 @@ def updateKeyGlyphsForSelected():
 			except:
 				LeftKey = False
 		if RightKey:
+			try:
 			if RightKey not in Font.glyphs and not Font.glyphs[RightKey].export:
 				RightKey = False
+			except:
+				pass
 		if not LeftKey:
 			try:
 				LeftKey = DefaultKeys[Glyph.name][0]
