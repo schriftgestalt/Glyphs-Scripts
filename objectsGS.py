@@ -251,13 +251,13 @@ class RFont(BaseFont):
 		for currGlyph in self._object.font.glyphs:
 			#print currGlyph
 			if currGlyph.leftKerningGroupId():
-				Group = Dictionary[currGlyph.leftKerningGroupId()]
+				Group = Dictionary.get(currGlyph.leftKerningGroupId(), None)
 				if not Group:
 					Group = []
 					Dictionary[currGlyph.leftKerningGroupId()] = Group
 				Group.append(currGlyph.name)
 			if currGlyph.rightKerningGroupId():
-				Group = Dictionary[currGlyph.rightKerningGroupId()]
+				Group = Dictionary.get(currGlyph.rightKerningGroupId(), None)
 				if not Group:
 					Group = []
 					Dictionary[currGlyph.rightKerningGroupId()] = Group
