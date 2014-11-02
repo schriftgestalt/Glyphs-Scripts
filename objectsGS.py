@@ -48,7 +48,6 @@ def AllFonts():
 	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
-		#print "__doc.windowController()", doc.windowController().masterIndex()
 		all.append(RFont(doc, doc.windowController().masterIndex()))
 	return all
 
@@ -56,8 +55,6 @@ def AllFonts():
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
 	Doc = Glyphs.currentDocument
-	#print Doc.selectedLayers()
-	#Font = CurrentFont()
 	try:
 		Layer = Doc.selectedLayers()[0]
 		return RGlyph(Layer.parent)
@@ -80,7 +77,6 @@ def OpenFont(path=None, note=None):
 
 def NewFont(familyName=None, styleName=None):
 	"""Make a new font"""
-	#from GS import GS, Font
 	doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
 	rf = RFont(doc)
 	if familyName:
@@ -158,8 +154,7 @@ class RFont(BaseFont):
 		
 		self._supportHints = False
 		self._RGlyphs = {}
-		#print "RFont.init self:", self
-
+	
 	def keys(self):
 		keys = {}
 		for glyph in self._object.font.glyphs:
@@ -211,37 +206,24 @@ class RFont(BaseFont):
 		return len(self._object.font.glyphs)
 	
 	# def _get_info(self):
-	# 	return RInfo(self)
-	# 
-	# info = property(_get_info, doc="font info object")
+
 	def close(self):
 		print "RFont close"
 		self._object.close()
 		
 	def _get_lib(self):
-		# print "_get_lib", self._object.font.userData
 		return self._object.font.userData.objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
-		#print "_set_lib", self._object.font.userData, obj
 		self._object.font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
 		
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
 	def _hasNotChanged(self, doGlyphs=True):
 		raise NotImplementedError
-		#set the changed state of the font
-		# if doGlyphs:
-		# 	for glyph in self:
-		# 		glyph._hasNotChanged()
-		# self.setChanged(False)
-	
-	#
-	# attributes
-	#
-	
+
 	def _get_path(self):
-		# print "_get_path", self._object.fileURL()
+
 		return self._object.fileName()
 	
 	path = property(_get_path, doc="path of the font")
@@ -249,7 +231,6 @@ class RFont(BaseFont):
 	def _get_groups(self):
 		Dictionary = {}
 		for currGlyph in self._object.font.glyphs:
-			#print currGlyph
 			if currGlyph.leftKerningGroupId():
 				Group = Dictionary.get(currGlyph.leftKerningGroupId(), None)
 				if not Group:
@@ -268,7 +249,6 @@ class RFont(BaseFont):
 	
 	def _set_groups(self, GroupsDict):
 		for currGroupKey in GroupsDict.keys():
-			#print "currGroupKey:", currGroupKey
 			if currGroupKey.startswith("@MMK_L_"):
 				Group = GroupsDict[currGroupKey]
 				if Group:
@@ -312,18 +292,13 @@ class RFont(BaseFont):
 		rk = RKerning(kerning)
 		rk.setParent(self)
 		return rk
-		# return RKerning # self._object.font.kerning.objectForKey_(FontMaster.id)
 	
 	def _set_kerning(self, kerning):
-		# print "kerning:", kerning
 		FontMasterID = self._object.font.masters[self._master].id
 		LeftKerning = NSMutableDictionary.alloc().init()
 		Font = self._object.font
 		for pair in kerning:
 			Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMasterID, pair[0], pair[1], kerning[pair])
-			
-		#	print "key:", pair, "Value:", kerning[pair]
-		#self._object.font.kerning.setObject_forKey_(kerning, FontMaster.id)
 	
 	kerning = property(_get_kerning, _set_kerning, doc="groups")
 	
@@ -354,7 +329,7 @@ class RFont(BaseFont):
 		else:
 			self._object.updateChangeCount_(NSChangeCleared)
 		self._object.close()
-
+	
 	def _get_glyphOrder(self):
 		return self._object.font.valueForKeyPath_("glyphs.name")
 	
@@ -422,7 +397,7 @@ class RFont(BaseFont):
 		self._hasChanged()
 	
 	def _get_selection(self):
-		# return a list of glyph names for glyphs selected in the font window
+		"""return a list of glyph names for glyphs selected in the font window """
 		l=[]
 		for Layer in self._object.selectedLayers():
 			l.append(Layer.parent.name)
@@ -439,7 +414,6 @@ class RGlyph(BaseGlyph):
 	_title = "GSGlyph"
 	
 	def __init__(self, _GSGlyph = None, master = 0):
-		#BaseGlyph.__init__(self)
 		if _GSGlyph is None:
 			_GSGlyph = GSGlyph()
 
@@ -462,9 +436,7 @@ class RGlyph(BaseGlyph):
 			_GSGlyph.setLayer_forKey_(self._layer, self._layerID)
 			print "self._layer", _GSGlyph.layerForKey_(self._layerID), "self._layerID", self._layerID
 		self._contours = None
-		self.psHints = PostScriptGlyphHintValues()
-		self.psHints.setParent(self)
-	
+		
 	def __repr__(self):
 		font = "unnamed_font"
 		glyph = "unnamed_glyph"
@@ -509,11 +481,6 @@ class RGlyph(BaseGlyph):
 		Copy._layerID = self._layerID
 		Copy._layer = Copy._object.layerForKey_(self._layerID)
 		return Copy
-		
-	#def _get_contour(self, index):
-	#	return RContour(self._layer.pathAtIndex_(index))
-	
-	#def _set_contour(self, value):
 	
 	def _get_contours(self):
 		if self._contours is None:
@@ -524,21 +491,9 @@ class RGlyph(BaseGlyph):
 	
 	def _hasNotChanged(self):
 		raise NotImplementedError
-		
-		# for contour in self.contours:
-		# 	contour.setChanged(False)
-		# 	for segment in contour.segments:
-		# 		segment.setChanged(False)
-		# 		for point in segment.points:
-		# 			point.setChanged(False)
-		# for component in self.components:
-		# 	component.setChanged(False)
-		# for anchor in self.anchors:
-		# 	anchor.setChanged(False)
-		# self.setChanged(False)
+	
 	def _get_box(self):
 		bounds = self._layer.bounds
-		#print "__bounds", bounds.origin
 		bounds = (int(round(NSMinX(bounds))), int(round(NSMinY(bounds))), int(round(NSMaxX(bounds))), int(round(NSMaxY(bounds))))
 		return bounds
 
@@ -649,7 +604,6 @@ class RGlyph(BaseGlyph):
 		return self.anchors
 	
 	def getPointPen(self):
-		#print "Get GSPoint Pen"
 		if "GSPen" in sys.modules.keys():
 			del(sys.modules["GSPen"])
 		from GSPen import GSPointPen
@@ -694,9 +648,6 @@ class RGlyph(BaseGlyph):
 	def decompose(self):
 		"""Decompose all components"""
 		self._layer.decomposeComponents()
-		# for i in range(len(self.components)):
-		# 	self.components[-1].decompose()
-		# self._hasChanged()
 	
 	def clear(self, contours=True, components=True, anchors=True, guides=True):
 		"""Clear all items marked as True from the glyph"""
@@ -712,8 +663,6 @@ class RGlyph(BaseGlyph):
 	
 	def clearContours(self):
 		"""clear all contours"""
-		#for path in self._layer.paths:
-		#	self._layer.removePath_(path)
 		while len(self._layer.paths) > 0:
 			self._layer.removePathAtIndex_(0)
 	
@@ -725,11 +674,6 @@ class RGlyph(BaseGlyph):
 	def clearAnchors(self):
 		"""clear all anchors"""
 		self._layer.setAnchors_(NSMutableDictionary.dictionary())
-		# while len(self._layer.anchors) > 0:
-		# 	self._layer.removeAnchorAtIndex_(0)
-		
-		#for anchor in self._layer.anchors:
-		#	self._layer.removeAnchor_(anchor)
 		
 	def clearHGuides(self):
 		"""clear all horizontal guides"""
@@ -771,21 +715,18 @@ class RGlyph(BaseGlyph):
 
 class RGlyphAnchorsProxy (object):
 	def __init__(self, Layer):
-		#print "__init__"
 		self._owner = Layer
 	def __getitem__(self, Key):
 		Anchor = self._owner.anchors[Key]
 		if Anchor is not None:
 			return RAnchor(Anchor)
 	def __setitem__(self, Key, Anchor):
-		#print "__setitem__", i, Node
 		if type(Key) is str:
 			Anchor.setName_(Key)
 			self._owner.addAnchor_(Anchor)
 		else:
 			raise TypeError
 	def __delitem__(self, Key):
-		#print "__delitem__", i
 		if type(Key) is str:
 			self._owner.removeAnchorWithName_(Key)
 		else:
@@ -796,7 +737,6 @@ class RGlyphAnchorsProxy (object):
 				yield RAnchor(Anchor)
 	
 	def append(self, Anchor):
-		#print "append", Node
 		self._owner.addAnchor_(Anchor)
 	def __len__(self):
 		return self._owner.anchorCount()
@@ -897,9 +837,7 @@ class RContour(BaseContour):
 		for segment in self.segments:
 			segType = segment.type
 			if segType == MOVE or segType == LINE or segType == CURVE:
-				# print "segType", segType, MOVE, LINE, CURVE
 				b = RBPoint(segment)
-				#b.setParent(segment)
 				bPoints.append(b)
 			else:
 				raise RoboFabError, "encountered unknown segment type"
@@ -909,8 +847,6 @@ class RContour(BaseContour):
 	
 	def draw(self, pen):
 		"""draw the object with a fontTools pen"""
-		
-		# print "contour.draw:", self.points[-1]
 		
 		if self._object.closed:
 			for i in range(len(self), -1, -1):
@@ -935,85 +871,6 @@ class RContour(BaseContour):
 		else:
 			pen.endPath()
 		
-		return
-		
-		firstOn = self.segments[0].onCurve
-		firstType = self.segments[0].type
-		lastOn = self.segments[-1].onCurve
-		# this is a special exception for FontLab
-		# FL can have a contour that does not contain a move.
-		# this will only happen if the contour begins with a qcurve.
-		# in this case, we move to the segment's on curve,
-		# then we iterate through the rest of the points,
-		# then we add the first qcurve and finally we
-		# close the path. after this, i say "ugh."
-		if firstType == QCURVE:
-			pen.moveTo((firstOn.x, firstOn.y))
-			for segment in self.segments[1:]:
-				segmentType = segment.type
-				pt = segment.onCurve.x, segment.onCurve.y
-				if segmentType == LINE:
-					pen.lineTo(pt)
-				elif segmentType == CURVE:
-					pts = [(point.x, point.y) for point in segment.points]
-					pen.curveTo(*pts)
-				elif segmentType == QCURVE:
-					pts = [(point.x, point.y) for point in segment.points]
-					pen.qCurveTo(*pts)
-				else:
-					assert 0, "unsupported segment type"
-			pts = [(point.x, point.y) for point in self.segments[0].points]
-			pen.qCurveTo(*pts)
-			pen.closePath()
-		else:
-			if firstType == MOVE and (firstOn.x, firstOn.y) == (lastOn.x, lastOn.y):
-				closed = True
-			else:
-				closed = True
-			for segment in self.segments:
-				segmentType = segment.type
-				pt = segment.onCurve.x, segment.onCurve.y
-				if segmentType == MOVE:
-					pen.moveTo(pt)
-				elif segmentType == LINE:
-					pen.lineTo(pt)
-				elif segmentType == CURVE:
-					pts = [(point.x, point.y) for point in segment.points]
-					pen.curveTo(*pts)
-				elif segmentType == QCURVE:
-					pts = [(point.x, point.y) for point in segment.points]
-					pen.qCurveTo(*pts)
-				else:
-					assert 0, "unsupported segment type"
-			if closed:
-				pen.closePath()
-			else:
-				pen.endPath()
-	
-	
-	# def _get_bPoints(self):
-	# 	'''not supported'''
-	# 	bPoints = []
-	# 	for segment in self.segments:
-	# 		segType = segment.type
-	# 		if segType == MOVE:
-	# 			bType = CORNER
-	# 		elif segType == LINE:
-	# 			bType = CORNER
-	# 		elif segType == CURVE:
-	# 			if segment.smooth:
-	# 				bType = CURVE
-	# 			else:
-	# 				bType = CORNER
-	# 		else:
-	# 			raise RoboFabError, "encountered unknown segment type"
-	# 		b = RBPoint()
-	# 		b.setParent(segment)
-	# 		bPoints.append(b)
-	# 	return bPoints
-	# 
-	# bPoints = property(_get_bPoints, doc="view the contour as a list of bPoints")
-	
 	def _get_segments(self):
 		if not len(self._object.nodes):
 			return []
@@ -1022,16 +879,12 @@ class RContour(BaseContour):
 		node = None
 		for i in range(len(self._object.nodes)):
 			node = self._object.nodeAtIndex_(i)
-			#print "_get_segments node", node
 			if node.type == GSLINE or node.type == GSCURVE:
 				_Segment = RSegment(index, self, node)
 				_Segment.parent = self
 				_Segment.index = index
 				segments.append(_Segment)
 				index += 1
-			# if not self._object.closed():
-			# 	segment[0].onCurve.type = "move"
-		# print "__segments", segments
 		if self._object.closed:
 			# TODO fix this out properly. 
 			# _Segment = RSegment(0, self, node)
@@ -1045,40 +898,10 @@ class RContour(BaseContour):
 			
 		return segments
 	
-	# def _get_segments_(self):
-	# 	points = self.points
-	# 	if not len(points):
-	# 		return []
-	# 	segments = [[]]
-	# 	lastWasOffCurve = False
-	# 	for point in points:
-	# 		segments[-1].append(point)
-	# 		if point.type is not None:
-	# 			segments.append([])
-	# 		lastWasOffCurve = point.type is None
-	# 	if len(segments[-1]) == 0:
-	# 		del segments[-1]
-	# 	if lastWasOffCurve:
-	# 		segment = segments.pop(-1)
-	# 		assert len(segments[0]) == 1
-	# 		segment.append(segments[0][0])
-	# 		del segments[0]
-	# 		segments.append(segment)
-	# 	elif segments[0][-1].type != "move":
-	# 		segment = segments.pop(0)
-	# 		segments.append(segment)
-	# 	segmentObjects = []
-	# 	for segment in segments:
-	# 		s = RSegment(points=segment)
-	# 		s.setParent(self)
-	# 		segmentObjects.append(s)
-	# 	return segmentObjects
-	
 	def _set_segments(self, segments):
 		points = []
 		for segment in segments:
 			points.append(segment.points)
-		# print points
 		
 	segments = property(_get_segments, _set_segments, doc="A list of all points in the contour organized into segments.")
 	
@@ -1104,19 +927,6 @@ class RContour(BaseContour):
 	def reverseContour(self):
 		"""reverse contour direction"""
 		self._object.reverse()
-		# from robofab.pens.reverseContourPointPen import ReverseContourPointPen
-		# index = self.index
-		# glyph = self.getParent()
-		# pen = glyph.getPointPen()
-		# reversePen = ReverseContourPointPen(pen)
-		# self.drawPoints(reversePen)
-		# # we've drawn the reversed contour onto our parent glyph,
-		# # so it sits at the end of the contours list:
-		# newContour = glyph.contours.pop(-1)
-		# for segment in newContour.segments:
-		# 	segment.setParent(self)
-		# self.segments = newContour.segments
-		# self._hasChanged()
 	
 	def setStartSegment(self, segmentIndex):
 		"""set the first segment on the contour"""
@@ -1162,7 +972,6 @@ class RContour(BaseContour):
 		Layer = self._object.parent
 		for node in nodes:
 			if node in Layer.selection():
-			#if node.selected == 1:
 				selected = 1
 				break
 		return selected
@@ -1184,12 +993,10 @@ class RSegment(BaseSegment):
 	#def __init__(self, index, points=[], smooth = False):
 	def __init__(self, index, contoure, node):
 		BaseSegment.__init__(self)
-		#self.type = segmentType
 		self._object = node
 		self.parent = contoure
 		self.index = index
 		self.isMove = False # to store if the segment is a move segment
-		#self.smooth = smooth
 	
 	def __repr__(self):
 		return "<RSegment %s (%d), r>"%(self.type, self.smooth)#, self.points)
@@ -1197,9 +1004,6 @@ class RSegment(BaseSegment):
 		return self.parent
 	
 	def _get_type(self):
-		
-		
-		#print "RSegment.get Type", nodeType, GSLINE, GSCURVE, GSOFFCURVE
 		if self.isMove: return MOVE
 		nodeType = self._object.type
 		if nodeType == GSLINE:
@@ -1397,7 +1201,6 @@ class RBPoint(BaseBPoint):
 	_nextOnCurve = property(_get__nextOnCurve, doc="")
 	
 	def _get_index(self):
-		#print "_get_index self._parentSegment", self._parentSegment, "\n"
 		return self._parentSegment.index
 	
 	index = property(_get_index, doc="index of the bPoint on the contour")
@@ -1406,16 +1209,12 @@ class RBPoint(BaseBPoint):
 		Path = self._object._object.parent
 		
 		Layer = Path.parent
-		# print "self._object", self._object, "Path", Path, "Layer", Layer, self._object in Layer.selection()
 		return self._object._object in Layer.selection()
-		#return self._parentSegment.selected
 	
 	def _set_selected(self, value):
-		#print "_set_selected self._object", self.getParent(), "\n"
 		Path = self._object.parent
 		Layer = Path.parent
 		Layer.selection().addObject_(self._object)
-		#self._parentSegment.selected = value
 		
 	selected = property(_get_selected, _set_selected, doc="")
 	
@@ -1533,16 +1332,12 @@ class RPoint(BasePoint):
 	def _get_selected(self):
 		Path = self._object.parent
 		Layer = Path.parent
-		# print "self._object", self._object, "Path", Path, "Layer", Layer, self._object in Layer.selection()
 		return self._object in Layer.selection()
-		#return self._parentSegment.selected
 	
 	def _set_selected(self, value):
-		#print "_set_selected self._object", self.getParent(), "\n"
 		Path = self._object.parent
 		Layer = Path.parent
 		Layer.selection().addObject_(self._object)
-		#self._parentSegment.selected = value
 		
 	selected = property(_get_selected, _set_selected, doc="")
 	
@@ -1709,26 +1504,18 @@ class RInfo(BaseInfo):
 							 "openTypeOS2StrikeoutPosition"]
 		# setting a known attribute
 		if attr in _masterAttributes:
-				#try:
-				if type(value) == type([]):
-					value = NSMutableArray.arrayWithArray_(value)
-				elif type(value) == type(1):
-					value = NSNumber.numberWithInt_(value)
-				elif type(value) == type(1.2):
-					value = NSNumber.numberWithFloat_(value)
+			if type(value) == type([]):
+				value = NSMutableArray.arrayWithArray_(value)
+			elif type(value) == type(1):
+				value = NSNumber.numberWithInt_(value)
+			elif type(value) == type(1.2):
+				value = NSNumber.numberWithFloat_(value)
+			
+			if attr in _renameAttributes:
+				attr = _renameAttributes[attr]
 				
-				if attr in _renameAttributes:
-					# print "rename Attr:", attr, "to:", _renameAttributes[attr]
-					attr = _renameAttributes[attr]
-					
-				# print "__setattr__", attr, "(", type(attr),")", value, "(", type(value), ")"
-				#print "self._object.font._object", self._object._object.font
-				#self._object._master.setValue_forKey_(value, attr)
-				self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
-				#except:
-				#print "sys.exc_info()", sys.exc_info()
-				#raise AttributeError("Unknown attribute %s." % attr)
-				return
+			self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
+			return
 			
 			
 		if attr not in _baseAttributes:
@@ -1741,33 +1528,15 @@ class RInfo(BaseInfo):
 					value = NSNumber.numberWithFloat_(value)
 				
 				if attr in _renameAttributes:
-					# print "rename Attr:", attr, "to:", _renameAttributes[attr]
 					attr = _renameAttributes[attr]
 					
-				# print "__setattr__", attr, "(", type(attr),")", value, "(", type(value), ")"
-				#print "self._object.font._object", self._object._object.font
 				self._object._object.font.setValue_forKey_(value, attr)
 			except:
-				#print "sys.exc_info()", sys.exc_info()
 				raise AttributeError("Unknown attribute %s." % attr)
 			return 
-		# if attr in self._infoAttributes or attr in self._environmentAttributes:
-		# 	# lightly test the validity of the value
-		# 	if value is not None:
-		# 		isValidValue = ufoLib.validateFontInfoVersion2ValueForAttribute(attr, value)
-		# 		if not isValidValue:
-		# 			raise RoboFabError("Invalid value (%s) for attribute (%s)." % (repr(value), attr))
-		# 	# use the environment specific info attr set
-		# 	# method if it is defined.
-		# 	if hasattr(self, "_environmentSetAttr"):
-		# 		self._environmentSetAttr(attr, value)
-		# 	# fallback to super
+
 	 	elif attr in self.__dict__ or attr in self._baseAttributes:
 			super(BaseInfo, self).__setattr__(attr, value)
-		# # unknown attribute, test to see if it is a python attr
-		# elif attr in self.__dict__ or attr in self._baseAttributes:
-		# 	super(BaseInfo, self).__setattr__(attr, value)
-		# # raise an attribute error
 		else:
 		 	raise AttributeError("Unknown attribute %s." % attr)
 	
@@ -1778,11 +1547,6 @@ class RInfo(BaseInfo):
 						  "openTypeNameManufacturerURL": "manufacturerURL",
 								 "openTypeNameDesigner": "designer",
 							  "openTypeNameDesignerURL": "designerURL",
-#								  "openTypeNameLicense": "license",
-#							   "openTypeNameLicenseURL": "licenseURL",
-#											"vendorURL": "manufacturerURL",
-#											 "uniqueID": "postscriptUniqueID",
-#											"otMacName": "openTypeNameCompatibleFullName" 
 							}
 		if attr in self._environmentOverrides:
 			return self._environmentGetAttr(attr)
@@ -1830,7 +1594,6 @@ class RFeatures(BaseFeatures):
 		if naked.classes:
 			for aClass in naked.classes:
 				features.append(aClass.name+" = ["+aClass.code+"];\n")
-		#print "naked.features.text()", naked.features.text()
 		features.append("\n")
 		features.append(naked.features.text())
 		return "".join(features)
