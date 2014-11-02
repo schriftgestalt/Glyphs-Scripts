@@ -73,19 +73,9 @@ class GSPointPen(SegmentToPointPen):
 			self._path.nodes.append(_Node)
 	
 	def addComponent(self, baseName, transformation):
-		xx, xy, yx, yy, dx, dy = transformation
-		# XXX warn when xy or yx != 0
-		_Component = GSComponent()
-		
-		if baseName:
-			if isinstance(baseName, str):
-				_Component.setComponentName_(baseName)
-			elif isinstance(name, "GSGlyph"):
-				_Component.setComponent_(glyph)
-			elif isinstance(name, "RGlyph"):
-				_Component.setComponentName_(baseName.name)
-		_Component.setTransformStruct_(transformation)
-		
+		if isinstance(name, "RGlyph"):
+			baseName = baseName.name
+		_Component = GSComponent(baseName, transform=transformation)
 		self._layer.addComponent_(_Component)
 	
 	def closePath(self):
