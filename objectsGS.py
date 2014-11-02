@@ -392,8 +392,8 @@ class RFont(BaseFont):
 		# if self.has_key(glyphName) and glyphName not in self._scheduledForDeletion:
 		# 	self._scheduledForDeletion.append(glyphName)
 		# now delete the object
-		if self._object.has_key(glyphName):
-			del self._object[glyphName]
+		if glyphName in self._object.font.glyphs:
+			del self._object.font[glyphName]
 		self._hasChanged()
 	
 	def _get_selection(self):
