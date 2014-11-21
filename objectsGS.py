@@ -574,7 +574,7 @@ class RGlyph(BaseGlyph):
 	
 	def _get_unicodes(self):
 		if self._object.unicode is not None:
-			print "_unicode:", self._object.unicode
+			#print "_unicode:", self._object.unicode
 			return [int(self._object.unicode, 16)]
 		return []
 	
