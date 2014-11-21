@@ -208,7 +208,6 @@ class RFont(BaseFont):
 	# def _get_info(self):
 
 	def close(self):
-		print "RFont close"
 		self._object.close()
 		
 	def _get_lib(self):
@@ -434,7 +433,6 @@ class RGlyph(BaseGlyph):
 			self._layerID = "undefined"
 			self._layer = GSLayer()
 			_GSGlyph.setLayer_forKey_(self._layer, self._layerID)
-			print "self._layer", _GSGlyph.layerForKey_(self._layerID), "self._layerID", self._layerID
 		self._contours = None
 		
 	def __repr__(self):
@@ -529,15 +527,12 @@ class RGlyph(BaseGlyph):
 	
 	def _get_unicodes(self):
 		if self._object.unicode is not None:
-			#print "_unicode:", self._object.unicode
 			return [int(self._object.unicode, 16)]
 		return []
 	
 	def _set_unicodes(self, value):
 		if not isinstance(value, list):
 			raise RoboFabError, "unicodes must be a list"
-		#raise NotImplementedError
-		#print "setUnicodes:", value
 		try:
 			self._object.setUnicode = value[0]
 		except:
@@ -1082,15 +1077,6 @@ class RSegment(BaseSegment):
 		
 	
 	smooth = property(_get_smooth, _set_smooth, doc="smooth of the segment")
-	
-	# def _get_index(self):
-	# 	parent = self.getParent()
-	# 	print "\nparent.segments", parent.segments, "----", parent.segments
-	# 	return 0 #parent.segments.index(self)
-	# 
-	# def _
-	# 
-	# index = property(_get_index, _set_index, doc="index of the segment")
 	
 	def insertPoint(self, index, pointType, point):
 		x, y = point
