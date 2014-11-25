@@ -377,6 +377,7 @@ def makePlist(font):
 				if hhint.widths[masterIndex] == -20:
 					Hint["target"] = "down"
 				if hhint.widths[masterIndex] == -21:
+					Hint["place"] = "{%d, %d}" % (hhint.positions[masterIndex]-21, -hhint.widths[masterIndex])
 					Hint["target"] = "up"
 				Hint["horizontal"] = True
 				Hints.append(Hint)
