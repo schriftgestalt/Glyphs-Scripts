@@ -1,6 +1,6 @@
 #FLM: Glyphs Import
 # -*- coding: utf8 -*-
-# Version 0.3
+# Version 0.4
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
 # The script will read a .glyphs file and import it into FontLab.
@@ -649,7 +649,7 @@ def readGlyphs(Font, Dict):
 		Font.glyphs.append(glyph)
 		GlyphIndexes[glyph.name] = len(Font.glyphs)-1
 	
-	# Read the components. 
+	# Read the components.
 	for i in range(GlyphsCount):
 		glyph = Font.glyphs[i]
 		GlyphDict = Glyphs[i]
@@ -687,7 +687,12 @@ def readGlyphs(Font, Dict):
 								ShiftNodes -= float(str(Layer["width"]))
 						except Exception, e:
 							print e
-						componentTransformString = componentDict["transform"][1:-1]
+						
+						try:
+							componentTransformString = componentDict["transform"][1:-1]
+						except:
+							componentTransformString = u"1, 0, 0, 1, 0, 0"
+							
 						componentTransformList = componentTransformString.split(", ")
 						
 						if masterIndex == 0:
