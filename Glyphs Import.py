@@ -8,8 +8,7 @@
 # if you find any bugs, please report to info@glyphsapp.com
 
 from FL import *
-from Foundation import *
-from objc import *
+from Foundation import NSOpenPanel, NSAutoreleasePool, NSDictionary
 import os.path
 import math, time
 import Nav
