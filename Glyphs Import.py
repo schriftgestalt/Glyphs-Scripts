@@ -361,13 +361,13 @@ def loadGlyphsInfo():
 	
 	global weightCodes
 	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
-	
+
 def fixNodes(Nodes):
 	while "OFFCURVE" in Nodes[-1]:
 		Node = Nodes[-1]
 		Nodes.insert(0, Nodes.pop(Nodes.index(Node)))
 	return Nodes
-	
+
 def _isNonSpacingMark(Name):
 	try:
 		Category = Name2Category[Name]
@@ -435,6 +435,7 @@ def readGlyphs(Font, Dict):
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
 		isNonSpacingMark = _isNonSpacingMark(glyph.name)
+		
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
 			Layer = None
