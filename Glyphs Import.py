@@ -357,7 +357,8 @@ def loadGlyphsInfo():
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
 		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
-		parseGlyphDataFile(CustomGlyphsInfoPath)
+		if os.path.isfile(CustomGlyphsInfoPath):
+			parseGlyphDataFile(CustomGlyphsInfoPath)
 	
 	global weightCodes
 	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
