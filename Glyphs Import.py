@@ -419,6 +419,8 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 			DidDecompose = True
 	return DidDecompose
 
+Color2Mark = [5, 18, 29, 44, 63, 85, 139, 166, 195, 234, 0, 0]
+
 def readGlyphs(Font, Dict):
 	Glyphs = Dict["glyphs"]
 	GlyphsCount = len(Glyphs)
@@ -436,6 +438,16 @@ def readGlyphs(Font, Dict):
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
 		isNonSpacingMark = _isNonSpacingMark(glyph.name)
+		
+		if "color" in GlyphDict.keys():
+			try:
+				ColorIndex = int(GlyphDict["color"])
+				Mark = Color2Mark[ColorIndex]
+				if Mark == 0:
+					print "The gray mark colors are not supported by FontLab and are ignored."
+				glyph.mark = Mark
+			except:
+				pass
 		
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
