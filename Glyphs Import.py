@@ -15,6 +15,7 @@ import Nav
 import MacOS
 import Carbon.File
 from plistlib import *
+import colorsys
 
 convertName = True
 Nice2Legacy = {}
@@ -441,11 +442,19 @@ def readGlyphs(Font, Dict):
 		
 		if "color" in GlyphDict.keys():
 			try:
-				ColorIndex = int(GlyphDict["color"])
-				Mark = Color2Mark[ColorIndex]
-				if Mark == 0:
-					print "The gray mark colors are not supported by FontLab and are ignored."
-				glyph.mark = Mark
+				Color = GlyphDict["color"]
+				if type(Color) == type([]) or Color.__class__.__name__ == "__NSArrayM":
+					r = float(Color[0])
+					g = float(Color[1])
+					b = float(Color[2])
+					h, s, v = colorsys.rgb_to_hsv(r, g, b)
+					glyph.mark = int(round(h * 255))
+				else:
+					ColorIndex = int(Color)
+					Mark = Color2Mark[ColorIndex]
+					if Mark == 0:
+						print "The gray mark colors are not supported by FontLab and are ignored."
+					glyph.mark = Mark
 			except:
 				pass
 		

@@ -451,9 +451,17 @@ def makePlist(font):
 			Glyph["unicode"] = ("%.4X" % glyph.unicode)
 			
 		if glyph.mark > 0:
-			
-			r, g, b = colorsys.hsv_to_rgb(glyph.mark/256., 1., 1.)
-			Glyph["color"] = [int(r * 255), int(g*255), int(b*255), 1]
+			Mark = glyph.mark
+			Color2Mark = [5, 18, 29, 44, 63, 85, 139, 166, 195, 234]
+			FoundColorIndex = False
+			for i, j in enumerate(Color2Mark):
+				if abs(j - Mark) < 5:
+					Glyph["color"] = i
+					FoundColorIndex = True
+					break
+			if not FoundColorIndex:
+				r, g, b = colorsys.hsv_to_rgb(Mark/256., 1., 1.)
+				Glyph["color"] = [int(r * 255), int(g*255), int(b*255), 1]
 		
 		Glyphs.append(Glyph)
 	Font["glyphs"] = Glyphs
