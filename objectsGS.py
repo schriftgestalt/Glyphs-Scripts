@@ -185,7 +185,9 @@ class RFont(BaseFont):
 	def __getitem__(self, glyphName):
 		GGlyph = self._object.font.glyphForName_(glyphName)
 		if GGlyph is not None:
-			return RGlyph(GGlyph, self._master)
+			glyph = RGlyph(GGlyph, self._master)
+			glyph.setParent(self)
+			return glyph
 		return None
 	
 	def __cmp__(self, other):
