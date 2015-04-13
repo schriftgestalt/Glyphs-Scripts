@@ -187,7 +187,9 @@ class RFont(BaseFont):
 		if GGlyph is None:
 			raise KeyError("Glyph '%s' not in font." % glyphName)
 		else:
-			return RGlyph(GGlyph, self._master)
+			glyph = RGlyph(GGlyph, self._master)
+			glyph.setParent(self)
+			return glyph
 	
 	def __cmp__(self, other):
 		if not hasattr(other, '_object'):
