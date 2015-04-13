@@ -184,11 +184,12 @@ class RFont(BaseFont):
 	
 	def __getitem__(self, glyphName):
 		GGlyph = self._object.font.glyphForName_(glyphName)
-		if GGlyph is not None:
+		if GGlyph is None:
+			raise KeyError("Glyph '%s' not in font." % glyphName)
+		else:
 			glyph = RGlyph(GGlyph, self._master)
 			glyph.setParent(self)
 			return glyph
-		return None
 	
 	def __cmp__(self, other):
 		if not hasattr(other, '_object'):
