@@ -73,7 +73,7 @@ class GSPointPen(SegmentToPointPen):
 			self._path.nodes.append(_Node)
 	
 	def addComponent(self, baseName, transformation):
-		if isinstance(baseName, "RGlyph"):
+		if isinstance(baseName, RGlyph):
 			baseName = baseName.name
 		_Component = GSComponent(baseName, transform=transformation)
 		self._layer.addComponent_(_Component)
