@@ -659,8 +659,7 @@ class RGlyph(BaseGlyph):
 	
 	def clearComponents(self):
 		"""clear all components"""
-		for component in self._layer.components:
-			self._layer.removeComponent_(component)
+		self._layer.setComponents_(NSMutableArray.array())
 	
 	def clearAnchors(self):
 		"""clear all anchors"""
