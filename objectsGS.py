@@ -160,7 +160,13 @@ class RFont(BaseFont):
 		for glyph in self._object.font.glyphs:
 			glyphName = glyph.name
 			if glyphName in keys:
-				raise KeyError, "Duplicate glyph name in RFont: %r" % glyphName
+				n = 1
+				while ("%s#%s" % (glyphName, n)) in keys:
+					n += 1
+				newGlyphName = "%s#%s" % (glyphName, n)
+				print "RoboFab encountered a duplicate glyph name, renaming %r to %r" % (glyphName, newGlyphName)
+				glyphName = newGlyphName
+				glyph.setName_(glyphName)
 			keys[glyphName] = None
 		return keys.keys()
 
