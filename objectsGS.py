@@ -84,7 +84,6 @@ def NewFont(familyName=None, styleName=None):
 	if styleName:
 		rf.info.styleName = styleName
 	return rf
-	
 
 class PostScriptFontHintValues(BasePostScriptFontHintValues):
 	"""	Font level PostScript hints object for objectsRF usage.
@@ -94,7 +93,6 @@ class PostScriptFontHintValues(BasePostScriptFontHintValues):
 		The psHints attribute for objectsRF.RFont is basically just the
 		data read from the Lib. When the object saves to UFO, the 
 		hints are written back to the lib, which is then saved.
-		
 	"""
 	
 	def __init__(self, aFont=None, data=None):
@@ -121,7 +119,6 @@ class PostScriptGlyphHintValues(BasePostScriptGlyphHintValues):
 	"""	Glyph level PostScript hints object for objectsRF usage.
 		If there are values in the lib, use those.
 		If there are no values in the lib, be empty.
-		
 	"""
 	def __init__(self, aGlyph=None, data=None):
 		# read the data from the glyph.lib, it won't be anywhere else
@@ -208,24 +205,21 @@ class RFont(BaseFont):
 			return 0
 		return len(self._object.font.glyphs)
 	
-	# def _get_info(self):
-
 	def close(self):
 		self._object.close()
-		
+	
 	def _get_lib(self):
 		return self._object.font.userData.objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
 		self._object.font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
-		
+	
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
 	def _hasNotChanged(self, doGlyphs=True):
 		raise NotImplementedError
-
+	
 	def _get_path(self):
-
 		return self._object.fileName()
 	
 	path = property(_get_path, doc="path of the font")
@@ -272,8 +266,6 @@ class RFont(BaseFont):
 				newClass.setCode_( " ".join(GroupsDict[currGroupKey]))
 				newClass.setAutomatic_( False )
 				self._object.font.addClass_(newClass)
-				
-	
 	
 	groups = property(_get_groups, _set_groups, doc="groups")
 	
@@ -323,7 +315,7 @@ class RFont(BaseFont):
 		else:
 			self._object.setFilePath_( path )
 		self._object.saveDocument_(None)
-
+	
 	def close(self, save=False):
 		"""Close the font, saving is optional."""
 		if save:
@@ -404,7 +396,7 @@ class RFont(BaseFont):
 		for Layer in self._object.selectedLayers():
 			l.append(Layer.parent.name)
 		return l
-
+	
 	def _set_selection(self, list):
 		raise NotImplementedError
 		return
@@ -418,7 +410,6 @@ class RGlyph(BaseGlyph):
 	def __init__(self, _GSGlyph = None, master = 0):
 		if _GSGlyph is None:
 			_GSGlyph = GSGlyph()
-
 		
 		self._object = _GSGlyph
 		self._layerID = None
@@ -497,9 +488,9 @@ class RGlyph(BaseGlyph):
 		bounds = self._layer.bounds
 		bounds = (int(round(NSMinX(bounds))), int(round(NSMinY(bounds))), int(round(NSMaxX(bounds))), int(round(NSMaxY(bounds))))
 		return bounds
-
+	
 	box = property(_get_box, doc="the bounding box of the glyph: (xMin, yMin, xMax, yMax)")
-
+	
 	#
 	# attributes
 	#
@@ -577,18 +568,18 @@ class RGlyph(BaseGlyph):
 		
 	def _get_rightMargin(self):
 		return self._layer.RSB
-
+	
 	def _set_rightMargin(self, value):
 		self._layer.setRSB_(value)
-		
+	
 	rightMargin = property(_get_rightMargin, _set_rightMargin, doc="Right Side Bearing")
-
+	
 	def _get_width(self):
 		return self._layer.width
-
+	
 	def _set_width(self, value):
 		self._layer.setWidth_(value)
-		
+	
 	width = property(_get_width, _set_width, doc="width")
 	
 	def getComponents(self):
@@ -695,13 +686,13 @@ class RGlyph(BaseGlyph):
 	
 	def correctDirection(self, trueType=False):
 		self._layer.correctPathDirection()
-		
+	
 	def removeOverlap(self):
 		removeOverlapFilter = NSClassFromString("GlyphsFilterRemoveOverlap").alloc().init()
 		removeOverlapFilter.runFilterWithLayer_error_(self._layer, None)
 		
 	def _mathCopy(self):
-		# copy self without contour, component and anchor data
+		""" copy self without contour, component and anchor data """
 		glyph = self._getMathDestination()
 		glyph.name = self.name
 		glyph.unicodes = list(self.unicodes)
@@ -735,7 +726,6 @@ class RGlyphAnchorsProxy (object):
 		if self._owner.anchorCount() > 0:
 			for Anchor in self._owner.pyobjc_instanceMethods.anchors().allValues():
 				yield RAnchor(Anchor)
-	
 	def append(self, Anchor):
 		self._owner.addAnchor_(Anchor)
 	def __len__(self):
@@ -1504,7 +1494,7 @@ class RInfo(BaseInfo):
 			
 			if attr in _renameAttributes:
 				attr = _renameAttributes[attr]
-				
+			
 			self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
 			return
 			
