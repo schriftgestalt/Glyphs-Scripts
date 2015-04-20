@@ -220,7 +220,7 @@ class RFont(BaseFont):
 		raise NotImplementedError
 	
 	def _get_path(self):
-		return self._object.fileName()
+		return self._object.fileURL().path()
 	
 	path = property(_get_path, doc="path of the font")
 	
