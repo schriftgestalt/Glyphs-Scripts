@@ -1528,34 +1528,22 @@ class RInfo(BaseInfo):
 								 "openTypeNameDesigner": "designer",
 							  "openTypeNameDesignerURL": "designerURL",
 							}
-		if attr in self._environmentOverrides:
-			return self._environmentGetAttr(attr)
-		# check to see if the attribute has been
-		# deprecated. if so, warn the caller and
-		# flag the value as needing conversion.
-		needValueConversionTo1 = False
-		if attr in self._deprecatedAttributes:
-			oldAttr = attr
-			oldValue = attr
-			newAttr, x = ufoLib.convertFontInfoValueForAttributeFromVersion1ToVersion2(attr, None)
-			note = "The %s attribute has been deprecated. Use the new %s attribute." % (attr, newAttr)
-			warn(note, DeprecationWarning)
-			attr = newAttr
-			needValueConversionTo1 = True
-		if attr in _renameAttributes:
-			attr = _renameAttributes[attr]
 		try:
 			gsFont = self._object._object.font
 			value = gsFont.valueForKey_(attr)
-			
+			if value is None and attr in _renameAttributes:
+				value = gsFont.valueForKey_(_renameAttributes[attr])
 			if value is None:
 				Instance = gsFont.instanceAtIndex_(self._object._master)
-				if attr == "postscriptFullName":
-					value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
-				elif attr == "styleName":
-					value = Instance.valueForKey_("name")
-			if needValueConversionTo1:
-				oldAttr, value = ufoLib.convertFontInfoValueForAttributeFromVersion2ToVersion1(attr, value)
+				value = Instance.valueForKey_(attr)
+				if value is None and attr in _renameAttributes:
+					value = Instance.valueForKey_(_renameAttributes[attr])
+				if value is None:
+					if attr == "postscriptFullName" or attr == "fullName":
+						value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
+					elif attr == "postscriptFontName" or attr == "fontName":
+						value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
+						value = value.replace(" ", "")
 			return value
 		except:
 			raise AttributeError("Unknown attribute %s." % attr)
