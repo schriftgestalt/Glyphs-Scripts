@@ -1070,7 +1070,7 @@ Extra Black	1000'''
 		lines.append((pdffont['Regular'], 18, headlinefontcolour, xoffset, 30, patient + ':'))
 		yoffset -= 5
 		for myfont in fonts:
-			lines.append((pdffont['Bold'], 18, headlinefontcolour, xoffset, 20, str(myfont.familyName))) # + ' v' + str(myfont.version)))
+			lines.append((pdffont['Bold'], 18, headlinefontcolour, xoffset, 20, "%s %s" % (myfont.familyName, myfont.instances[0].name))) # + ' v' + str(myfont.version)))
 		# get designers(s)
 		designers = Ddict(dict)
 		for f in fonts:
