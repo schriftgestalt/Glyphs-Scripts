@@ -1598,14 +1598,6 @@ class _listMultiSelect:
 			self.d.move_up.enable(False)
 			self.d.move_dn.enable(False)
 
-	def on_List_opt(self, code):
-		self.d.GetValue('List_opt')
-#		log.debug('_listMultiSelect.on_List_opt %d', self.List_opt_index)
-
-	def on_List_opt_index(self, code):
-		self.d.GetValue('List_opt')
-#		log.debug('_listMultiSelect.List_opt_index %d', self.List_opt_index)
-
 	def on_add_one(self, code):
 		if self.d.List_opt:
 			item = self.d.List_opt[self.List_opt_index]
