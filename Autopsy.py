@@ -1437,8 +1437,8 @@ class _listMultiSelect:
 		self.d.title = title
 		if mode == 'normal':
 			self.d.Label3 = TextBox(( 15,  213,  191,  22),'Open Fonts')
-			self.d.List_opt = List(( 15,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_add_one)
-			self.d.List_sel = List(( 311,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_rem_one)
+			self.d.List_opt = List(( 15,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_add_one, selectionCallback=self.checkLists)
+			self.d.List_sel = List(( 311,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_rem_one, selectionCallback=self.checkLists)
 			self.d.Label4 = TextBox(( 311,  213,  191,  22), 'Use these fonts')
 			self.d.add_one = Button(( 247,  231,  55,  22), '>', callback=self.on_add_one)
 			self.d.add_all = Button(( 247,  261,  55,  22), '>>', callback=self.on_add_all)
@@ -1575,28 +1575,35 @@ class _listMultiSelect:
 	
 	### End auto-generated code ###
 	
-	def checkLists(self):
+	def checkLists(self, sender=None):
 		if len(self.d.List_opt) > 0:
-			self.d.add_one.enable(True)
 			self.d.add_all.enable(True)
-			#if self.List_opt_index == -1:
-			#	self.List_opt_index = len(self.List_opt) - 1
+		else:
+			self.d.add_all.enable(False)
+		
+		if len(self.d.List_opt.getSelection()) > 0:
+			self.d.add_one.enable(True)
 		else:
 			self.d.add_one.enable(False)
-			self.d.add_all.enable(False)
+		
 		if len(self.d.List_sel) > 0:
-			self.d.rem_one.enable(True)
 			self.d.rem_all.enable(True)
-			#if self.List_sel_index == -1:
-			#	self.List_sel_index = len(self.d.List_sel) - 1
-			self.d.move_up.enable(True)
-			self.d.move_dn.enable(True)
+			if len(self.d.List_sel) > 1:
+				self.d.move_up.enable(True)
+				self.d.move_dn.enable(True)
+			else:
+				self.d.move_up.enable(False)
+				self.d.move_dn.enable(False)
 		else:
-			self.d.rem_one.enable(False)
 			self.d.rem_all.enable(False)
 			self.d.move_up.enable(False)
 			self.d.move_dn.enable(False)
-
+		
+		if len(self.d.List_sel.getSelection()) > 0:
+			self.d.rem_one.enable(True)
+		else:
+			self.d.rem_one.enable(False)
+	
 	def on_add_one(self, code):
 		if self.d.List_opt:
 			i = self.d.List_opt.getSelection()
