@@ -1437,8 +1437,8 @@ class _listMultiSelect:
 		self.d.title = title
 		if mode == 'normal':
 			self.d.Label3 = TextBox(( 15,  213,  191,  22),'Open Fonts')
-			self.d.List_opt = List(( 15,  231,  224,  217), [])
-			self.d.List_sel = List(( 311,  231,  224,  217), [])
+			self.d.List_opt = List(( 15,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_add_one)
+			self.d.List_sel = List(( 311,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_rem_one)
 			self.d.Label4 = TextBox(( 311,  213,  191,  22), 'Use these fonts')
 			self.d.add_one = Button(( 247,  231,  55,  22), '>', callback=self.on_add_one)
 			self.d.add_all = Button(( 247,  261,  55,  22), '>>', callback=self.on_add_all)
@@ -1571,8 +1571,6 @@ class _listMultiSelect:
 		self.d.List_opt.set(self.OptList)
 		self.d.List_sel.set([])
 		self.selection = []
-		self.List_opt_index = 0
-		self.List_sel_index = -1
 		self.checkLists()
 	
 	### End auto-generated code ###
@@ -1581,16 +1579,16 @@ class _listMultiSelect:
 		if len(self.d.List_opt) > 0:
 			self.d.add_one.enable(True)
 			self.d.add_all.enable(True)
-			if self.List_opt_index == -1:
-				self.List_opt_index = len(self.List_opt) - 1
+			#if self.List_opt_index == -1:
+			#	self.List_opt_index = len(self.List_opt) - 1
 		else:
 			self.d.add_one.enable(False)
 			self.d.add_all.enable(False)
 		if len(self.d.List_sel) > 0:
 			self.d.rem_one.enable(True)
 			self.d.rem_all.enable(True)
-			if self.List_sel_index == -1:
-				self.List_sel_index = len(self.d.List_sel) - 1
+			#if self.List_sel_index == -1:
+			#	self.List_sel_index = len(self.d.List_sel) - 1
 			self.d.move_up.enable(True)
 			self.d.move_dn.enable(True)
 		else:
@@ -1601,11 +1599,9 @@ class _listMultiSelect:
 
 	def on_add_one(self, code):
 		if self.d.List_opt:
-			item = self.d.List_opt[self.List_opt_index]
-			sel_Items = self.d.List_sel.get()
-			sel_Items.append(item)
-			self.d.List_sel.set(sel_Items)
-			del self.d.List_opt[self.List_opt_index]
+			i = self.d.List_opt.getSelection()[0]
+			self.d.List_sel.append(self.d.List_opt[i])
+			del self.d.List_opt[i]
 		self.checkLists()
 	
 	def on_add_all(self, code):
@@ -1618,11 +1614,9 @@ class _listMultiSelect:
 
 	def on_rem_one(self, code):
 		if self.d.List_sel:
-			item = self.d.List_sel[self.List_sel_index]
-			sel_Items = self.d.List_opt.get()
-			sel_Items.append(item)
-			self.d.List_opt.set(sel_Items)
-			del self.d.List_sel[self.List_sel_index]
+			i = self.d.List_opt.getSelection()[0]
+			self.d.List_opt.append(self.d.List_sel[i])
+			del self.d.List_sel[i]
 		self.checkLists()
 
 	def on_rem_all(self, code):
