@@ -1599,9 +1599,10 @@ class _listMultiSelect:
 
 	def on_add_one(self, code):
 		if self.d.List_opt:
-			i = self.d.List_opt.getSelection()[0]
-			self.d.List_sel.append(self.d.List_opt[i])
-			del self.d.List_opt[i]
+			i = self.d.List_opt.getSelection()
+			if i != []:
+				self.d.List_sel.append(self.d.List_opt[i[0]])
+				del self.d.List_opt[i[0]]
 		self.checkLists()
 	
 	def on_add_all(self, code):
@@ -1614,9 +1615,10 @@ class _listMultiSelect:
 
 	def on_rem_one(self, code):
 		if self.d.List_sel:
-			i = self.d.List_opt.getSelection()[0]
-			self.d.List_opt.append(self.d.List_sel[i])
-			del self.d.List_sel[i]
+			i = self.d.List_sel.getSelection()
+			if i != []:
+				self.d.List_opt.append(self.d.List_sel[i[0]])
+				del self.d.List_sel[i[0]]
 		self.checkLists()
 
 	def on_rem_all(self, code):
