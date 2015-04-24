@@ -6,11 +6,12 @@
 ########################################################################
 #
 #   Autopsy Visual Font Auditing
-#   1.2
+#   1.2.1
 #
 #   Version for Glyphs (glyphsapp.com)
 #   (c) 2009 by Yanone
 #   2013 Georg Seifert, porting to use CoreGraphics instead of RepordLab to write PDF
+#   2015 Jens Kutilek, fixes
 #
 #   http://www.yanone.de/typedesign/autopsy/
 #
@@ -65,8 +66,8 @@ CheckBox.unbind = del_binding
 ##### Settings
 
 programname = 'Autopsy'
-programversion = '1.2'
-releasedate = '201311100012'
+programversion = '1.2.1'
+releasedate = '201504241241'
 verbose = False
 
 availablegraphs = ('width', 'bboxwidth', 'bboxheight', 'highestpoint', 'lowestpoint', 'leftsidebearing', 'rightsidebearing')
@@ -549,8 +550,9 @@ def collectglyphnames():
 	
 	glyphlist = []
 	Font = Glyphs.orderedDocuments()[0].font
-	for Layer in Font.selectedLayers:
-		glyphlist.append(Layer.parent.name)
+	if Font.selectedLayers is not None:
+		for Layer in Font.selectedLayers:
+			glyphlist.append(Layer.parent.name)
 	
 	return glyphlist
 
@@ -1069,7 +1071,7 @@ Extra Black	1000'''
 		lines.append((pdffont['Regular'], 18, headlinefontcolour, xoffset, 30, patient + ':'))
 		yoffset -= 5
 		for myfont in fonts:
-			lines.append((pdffont['Bold'], 18, headlinefontcolour, xoffset, 20, str(myfont.familyName))) # + ' v' + str(myfont.version)))
+			lines.append((pdffont['Bold'], 18, headlinefontcolour, xoffset, 20, "%s %s" % (myfont.familyName, myfont.instances[0].name))) # + ' v' + str(myfont.version)))
 		# get designers(s)
 		designers = Ddict(dict)
 		for f in fonts:
@@ -1436,8 +1438,8 @@ class _listMultiSelect:
 		self.d.title = title
 		if mode == 'normal':
 			self.d.Label3 = TextBox(( 15,  213,  191,  22),'Open Fonts')
-			self.d.List_opt = List(( 15,  231,  224,  217), [])
-			self.d.List_sel = List(( 311,  231,  224,  217), [])
+			self.d.List_opt = List(( 15,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_add_one, selectionCallback=self.checkLists)
+			self.d.List_sel = List(( 311,  231,  224,  217), [], allowsMultipleSelection=False, doubleClickCallback=self.on_rem_one, selectionCallback=self.checkLists)
 			self.d.Label4 = TextBox(( 311,  213,  191,  22), 'Use these fonts')
 			self.d.add_one = Button(( 247,  231,  55,  22), '>', callback=self.on_add_one)
 			self.d.add_all = Button(( 247,  261,  55,  22), '>>', callback=self.on_add_all)
@@ -1541,7 +1543,7 @@ class _listMultiSelect:
 		self.d.graph_rightsidebearing_scope_local.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local')
 		self.d.graph_rightsidebearing_scope_global = CheckBox(( 455,  175,  22,  22), '')
 		self.d.graph_rightsidebearing_scope_global.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.2 by Yanone.')
+		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.2.1 by Yanone.')
 
 		if mode == 'MM': 
 			self.customdata = Ddict(dict)
@@ -1570,49 +1572,51 @@ class _listMultiSelect:
 		self.d.List_opt.set(self.OptList)
 		self.d.List_sel.set([])
 		self.selection = []
-		self.List_opt_index = 0
-		self.List_sel_index = -1
 		self.checkLists()
 	
 	### End auto-generated code ###
 	
-	def checkLists(self):
+	def checkLists(self, sender=None):
 		if len(self.d.List_opt) > 0:
-			self.d.add_one.enable(True)
 			self.d.add_all.enable(True)
-			if self.List_opt_index == -1:
-				self.List_opt_index = len(self.List_opt) - 1
+		else:
+			self.d.add_all.enable(False)
+		
+		if len(self.d.List_opt.getSelection()) > 0:
+			self.d.add_one.enable(True)
 		else:
 			self.d.add_one.enable(False)
-			self.d.add_all.enable(False)
+		
 		if len(self.d.List_sel) > 0:
-			self.d.rem_one.enable(True)
 			self.d.rem_all.enable(True)
-			if self.List_sel_index == -1:
-				self.List_sel_index = len(self.d.List_sel) - 1
-			self.d.move_up.enable(True)
-			self.d.move_dn.enable(True)
+			if len(self.d.List_sel) > 1:
+				self.d.move_up.enable(True)
+				self.d.move_dn.enable(True)
+			else:
+				self.d.move_up.enable(False)
+				self.d.move_dn.enable(False)
 		else:
-			self.d.rem_one.enable(False)
 			self.d.rem_all.enable(False)
 			self.d.move_up.enable(False)
 			self.d.move_dn.enable(False)
-
-	def on_List_opt(self, code):
-		self.d.GetValue('List_opt')
-#		log.debug('_listMultiSelect.on_List_opt %d', self.List_opt_index)
-
-	def on_List_opt_index(self, code):
-		self.d.GetValue('List_opt')
-#		log.debug('_listMultiSelect.List_opt_index %d', self.List_opt_index)
-
+		
+		if len(self.d.List_sel.getSelection()) > 0:
+			self.d.rem_one.enable(True)
+		else:
+			self.d.rem_one.enable(False)
+	
 	def on_add_one(self, code):
 		if self.d.List_opt:
-			item = self.d.List_opt[self.List_opt_index]
-			sel_Items = self.d.List_sel.get()
-			sel_Items.append(item)
-			self.d.List_sel.set(sel_Items)
-			del self.d.List_opt[self.List_opt_index]
+			i = self.d.List_opt.getSelection()
+			if i != []:
+				i = i[0]
+				self.d.List_sel.append(self.d.List_opt[i])
+				del self.d.List_opt[i]
+				if len(self.d.List_opt) > i:
+					self.d.List_opt.setSelection([i])
+				else:
+					if len(self.d.List_opt) > 0:
+						self.d.List_opt.setSelection([len(self.d.List_opt) - 1])
 		self.checkLists()
 	
 	def on_add_all(self, code):
@@ -1625,11 +1629,16 @@ class _listMultiSelect:
 
 	def on_rem_one(self, code):
 		if self.d.List_sel:
-			item = self.d.List_sel[self.List_sel_index]
-			sel_Items = self.d.List_opt.get()
-			sel_Items.append(item)
-			self.d.List_opt.set(sel_Items)
-			del self.d.List_sel[self.List_sel_index]
+			i = self.d.List_sel.getSelection()
+			if i != []:
+				i = i[0]
+				self.d.List_opt.append(self.d.List_sel[i])
+				del self.d.List_sel[i]
+				if len(self.d.List_sel) > i:
+					self.d.List_sel.setSelection([i])
+				else:
+					if len(self.d.List_sel) > 0:
+						self.d.List_sel.setSelection([len(self.d.List_sel) - 1])
 		self.checkLists()
 
 	def on_rem_all(self, code):
