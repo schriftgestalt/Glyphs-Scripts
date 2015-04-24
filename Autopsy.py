@@ -6,11 +6,12 @@
 ########################################################################
 #
 #   Autopsy Visual Font Auditing
-#   1.2
+#   1.2.1
 #
 #   Version for Glyphs (glyphsapp.com)
 #   (c) 2009 by Yanone
 #   2013 Georg Seifert, porting to use CoreGraphics instead of RepordLab to write PDF
+#   2015 Jens Kutilek, fixes
 #
 #   http://www.yanone.de/typedesign/autopsy/
 #
@@ -65,8 +66,8 @@ CheckBox.unbind = del_binding
 ##### Settings
 
 programname = 'Autopsy'
-programversion = '1.2'
-releasedate = '201311100012'
+programversion = '1.2.1'
+releasedate = '201504241241'
 verbose = False
 
 availablegraphs = ('width', 'bboxwidth', 'bboxheight', 'highestpoint', 'lowestpoint', 'leftsidebearing', 'rightsidebearing')
@@ -1542,7 +1543,7 @@ class _listMultiSelect:
 		self.d.graph_rightsidebearing_scope_local.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local')
 		self.d.graph_rightsidebearing_scope_global = CheckBox(( 455,  175,  22,  22), '')
 		self.d.graph_rightsidebearing_scope_global.binding(DefaultsController, 'com_yanone_Autopsy_graph_rightsidebearing_scope_local', {NSValueTransformerNameBindingOption:"NSNegateBoolean"})
-		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.2 by Yanone.')
+		self.d.Label10 = TextBox(( 15,  567,  209,  22), 'Autopsy 1.2.1 by Yanone.')
 
 		if mode == 'MM': 
 			self.customdata = Ddict(dict)
