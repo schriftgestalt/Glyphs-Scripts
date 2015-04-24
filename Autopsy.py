@@ -549,8 +549,9 @@ def collectglyphnames():
 	
 	glyphlist = []
 	Font = Glyphs.orderedDocuments()[0].font
-	for Layer in Font.selectedLayers:
-		glyphlist.append(Layer.parent.name)
+	if Font.selectedLayers is not None:
+		for Layer in Font.selectedLayers:
+			glyphlist.append(Layer.parent.name)
 	
 	return glyphlist
 
