@@ -404,8 +404,13 @@ def makePlist(font):
 			for currAnchor in glyph.anchors:
 				Anchor = {}
 				Position = currAnchor.Layer(masterIndex)
+				if abs(Position.x) > 2000 or abs(Position.y) > 2000:
+					print "There is a suspicious anchor at: {%d, %d} in glyph: %s" % (Position.x, Position.y, glyph.name)
 				Anchor["position"] = "{%d, %d}" % (Position.x, Position.y)
-				Anchor["name"] = currAnchor.name
+				try:
+					Anchor["name"] = currAnchor.name.encode('unicode-escape')
+				except:
+					Anchor["name"] = "unknown %d" % len(Anchors)
 				Anchors.append(Anchor)
 			if len(Anchors)>0:
 				Layer["anchors"] = Anchors
