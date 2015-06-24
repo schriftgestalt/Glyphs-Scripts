@@ -9,7 +9,7 @@ from Foundation import *
 
 from robofab import RoboFabError, RoboFabWarning, ufoLib
 from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseInfo, BaseFeatures, BaseLib,\
-		BaseGlyph, BaseContour, BaseSegment, BasePoint, BaseBPoint, BaseAnchor, BaseGuide, BaseComponent, \
+		BaseGlyph, BaseContour, BaseSegment, BasePoint, BaseBPoint, BaseAnchor, BaseGuide, \
 		relativeBCPIn, relativeBCPOut, absoluteBCPIn, absoluteBCPOut, _box,\
 		_interpolate, _interpolatePt, roundPt, addPt,\
 		MOVE, LINE, CORNER, CURVE, QCURVE, OFFCURVE,\
@@ -157,13 +157,7 @@ class RFont(BaseFont):
 		for glyph in self._object.font.glyphs:
 			glyphName = glyph.name
 			if glyphName in keys:
-				n = 1
-				while ("%s#%s" % (glyphName, n)) in keys:
-					n += 1
-				newGlyphName = "%s#%s" % (glyphName, n)
-				print "RoboFab encountered a duplicate glyph name, renaming %r to %r" % (glyphName, newGlyphName)
-				glyphName = newGlyphName
-				glyph.setName_(glyphName)
+				raise KeyError, "Duplicate glyph name in RFont: %r" % glyphName
 			keys[glyphName] = None
 		return keys.keys()
 
@@ -220,6 +214,8 @@ class RFont(BaseFont):
 		raise NotImplementedError
 	
 	def _get_path(self):
+		if self._object.fileURL() is None:
+			raise ValueError("Font is not saved yet")
 		return self._object.fileURL().path()
 	
 	path = property(_get_path, doc="path of the font")
@@ -384,7 +380,7 @@ class RFont(BaseFont):
 		# we won't actually remove it, we will just store it for removal
 		# but only if the glyph does exist
 		# if self.has_key(glyphName) and glyphName not in self._scheduledForDeletion:
-		# 	self._scheduledForDeletion.append(glyphName)
+		#	self._scheduledForDeletion.append(glyphName)
 		# now delete the object
 		if glyphName in self._object.font.glyphs:
 			del self._object.font[glyphName]
@@ -443,6 +439,9 @@ class RGlyph(BaseGlyph):
 		except AttributeError:
 			pass
 		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
+	
+	def getParent(self):
+		return self._object.parent
 	
 	def __getitem__(self, index):
 		return self.contours[index]
@@ -508,16 +507,13 @@ class RGlyph(BaseGlyph):
 		
 	lib = property(_get_lib, _set_lib, doc="Glyph Lib")
 	
-	def _get_name(self):
-		return self._object.name
-	
 	def _set_name(self, newName):
 		prevName = self.name
 		if newName == prevName:
 			return
 		self._object.name = newName
 	
-	name = property(_get_name, _set_name)
+	name = property(lambda self: self._object.name, _set_name)
 	
 	def _get_unicodes(self):
 		if self._object.unicode is not None:
@@ -556,73 +552,47 @@ class RGlyph(BaseGlyph):
 	
 	note = property(lambda self: self._object.valueForKey_("note"),
 					lambda self, value: self._object.setNote_(value))
-	
-	
-	def _get_leftMargin(self):
-		return self._layer.LSB
 
-	def _set_leftMargin(self, value):
-		self._layer.setLSB_(value)
+	leftMargin = property(lambda self: self._layer.LSB,
+						  lambda self, value: self._layer.setLSB_(value), doc="Left Side Bearing")
 	
-	leftMargin = property(_get_leftMargin, _set_leftMargin, doc="Left Side Bearing")
-		
-	def _get_rightMargin(self):
-		return self._layer.RSB
+	rightMargin = property(lambda self: self._layer.RSB,
+						   lambda self, value: self._layer.setRSB_(value), doc="Right Side Bearing")
 	
-	def _set_rightMargin(self, value):
-		self._layer.setRSB_(value)
-	
-	rightMargin = property(_get_rightMargin, _set_rightMargin, doc="Right Side Bearing")
-	
-	def _get_width(self):
-		return self._layer.width
-	
-	def _set_width(self, value):
-		self._layer.setWidth_(value)
-	
-	width = property(_get_width, _set_width, doc="width")
-	
-	def getComponents(self):
-		Components = []
-		for c in self._layer.components:
-			T = c.transformStruct()
-			Components.append(RComponent( baseGlyphName=c.componentName, offset=(T[4], T[5]), scale=(T[0], T[3])))
-		return Components
-	
-	components = property(getComponents, doc="List of components")
-	
-	def getAnchors(self):
-		return self.anchors
-	
-	def getPointPen(self):
-		if "GSPen" in sys.modules.keys():
-			del(sys.modules["GSPen"])
-		from GSPen import GSPointPen
-		
-		return GSPointPen(self, self._layer)
+	width = property(lambda self: self._layer.width,
+					 lambda self, value: self._layer.setWidth_(value), doc="width")
 
+	components = property(lambda self: self._layer.components, doc="List of components")
+
+	guides = property(lambda self: self._layer.guides, doc="List of guides")
+	
 	def appendComponent(self, baseGlyph, offset=(0, 0), scale=(1, 1)):
 		"""append a component to the glyph"""
 		new = GSComponent(baseGlyph, offset, scale)
 		self._layer.addComponent_(new)
+
+	def removeComponent(self, component):
+		"""remove  a specific component from the glyph"""
+		self._layer.removeComponent_(component)
+		
+	def getPointPen(self):
+		# if "GSPen" in sys.modules.keys():
+		# 	del(sys.modules["GSPen"])
+		from GSPen import GSPointPen
+		return GSPointPen(self, self._layer)
 	
 	def appendAnchor(self, name, position, mark=None):
 		"""append an anchor to the glyph"""
-		new = GSAnchor(name=name, pt=position )
-		#new.setParent(self)
+		new = GSAnchor(name=name, pt=position)
 		self._layer.addAnchor_(new)
-	
-	def removeContour(self, index):
-		"""remove  a specific contour from the glyph"""
-		self._layer.removePathAtIndex_(index)
 	
 	def removeAnchor(self, anchor):
 		"""remove  a specific anchor from the glyph"""
 		self._layer.removeAnchor_(anchor)
 	
-	def removeComponent(self, component):
-		"""remove  a specific component from the glyph"""
-		self._layer.removeComponent_(component)
+	def removeContour(self, index):
+		"""remove  a specific contour from the glyph"""
+		self._layer.removePathAtIndex_(index)
 	
 	def center(self, padding=None):
 		"""Equalise sidebearings, set to padding if wanted."""
@@ -649,8 +619,7 @@ class RGlyph(BaseGlyph):
 		if anchors:
 			self.clearAnchors()
 		if guides:
-			self.clearHGuides()
-			self.clearVGuides()
+			self.clearGuides()
 	
 	def clearContours(self):
 		"""clear all contours"""
@@ -665,19 +634,9 @@ class RGlyph(BaseGlyph):
 		"""clear all anchors"""
 		self._layer.setAnchors_(NSMutableDictionary.dictionary())
 		
-	def clearHGuides(self):
+	def clearGuides(self):
 		"""clear all horizontal guides"""
-		#raise NotImplementedError
-		pass
-		# self.hGuides = []
-		# self._hasChanged()
-	
-	def clearVGuides(self):
-		"""clear all vertical guides"""
-		#raise NotImplementedError
-		pass
-		# self.vGuides = []
-		# self._hasChanged()
+		self._layer.setGuideLines_(NSMutableArray.array())
 	
 	def update(self):
 		self._contours = None
@@ -703,49 +662,14 @@ class RGlyph(BaseGlyph):
 			pass
 		return glyph
 
-class RGlyphAnchorsProxy (object):
-	def __init__(self, Layer):
-		self._owner = Layer
-	def __getitem__(self, Key):
-		Anchor = self._owner.anchors[Key]
-		if Anchor is not None:
-			return RAnchor(Anchor)
-	def __setitem__(self, Key, Anchor):
-		if type(Key) is str:
-			Anchor.setName_(Key)
-			self._owner.addAnchor_(Anchor)
-		else:
-			raise TypeError
-	def __delitem__(self, Key):
-		if type(Key) is str:
-			self._owner.removeAnchorWithName_(Key)
-		else:
-			raise TypeError
-	def __iter__(self):
-		if self._owner.anchorCount() > 0:
-			for Anchor in self._owner.pyobjc_instanceMethods.anchors().allValues():
-				yield RAnchor(Anchor)
-	def append(self, Anchor):
-		self._owner.addAnchor_(Anchor)
-	def __len__(self):
-		return self._owner.anchorCount()
-	def __str__(self):
-		StringVal = "(\n"
-		for key in self._owner.pyobjc_instanceMethods.anchors().allKeys():
-			currAnchor = self._owner.anchorForName_(key)
-			StringVal += "	%s {%.0f, %.0f},\n" % (currAnchor.name, currAnchor.position.x, currAnchor.position.y)
-		StringVal += ")"
-		return StringVal
 
-RGlyph.anchors = property(lambda self: RGlyphAnchorsProxy(self._layer))
-
+RGlyph.anchors = property(lambda self: self._layer.anchors)
 
 class RContour(BaseContour):
 	
 	_title = "GSContour"
 	
 	def __init__(self, object=None):
-		#BaseContour.__init__(self)
 		self._object  = object #GSPath
 	
 	def __repr__(self):
@@ -979,7 +903,6 @@ class RContour(BaseContour):
 
 
 class RSegment(BaseSegment):
-	#def __init__(self, index, points=[], smooth = False):
 	def __init__(self, index, contoure, node):
 		BaseSegment.__init__(self)
 		self._object = node
@@ -1132,7 +1055,6 @@ class RBPoint(BaseBPoint):
 		self._object = segment;
 	
 	def __repr__(self):
-		FontName = "unnamed_font"
 		GlyphName = "unnamed_glyph"
 		pathIndex = -1
 		nodeIndex = -1
@@ -1151,12 +1073,7 @@ class RBPoint(BaseBPoint):
 					try:
 						GlyphName = Glyph.name
 					except AttributeError: pass
-					Font = Glyph.parent
-					if Font is not None:
-						#try:
-						FontName = Font.valueForKey_("familyName")
-						#except AttributeError: pass
-		return "<RBPoint (%.1f, %.1f) for %s.%s[%d][%d]>"%( self._object._object.position.x, self._object._object.position.y, FontName, GlyphName, pathIndex, nodeIndex)
+		return "<RBPoint (%.1f, %.1f) %s[%d][%d]>"%( self._object._object.position.x, self._object._object.position.y, GlyphName, pathIndex, nodeIndex)
 	
 	def getParent(self):
 		return self._object
@@ -1214,7 +1131,6 @@ class RPoint(BasePoint):
 		# self._smooth = False
 	
 	def __repr__(self):
-		FontName = "unnamed_font"
 		GlyphName = "unnamed_glyph"
 		pathIndex = -1
 		nodeIndex = -1
@@ -1234,11 +1150,6 @@ class RPoint(BasePoint):
 					try:
 						GlyphName = Glyph.name
 					except AttributeError: pass
-					Font = Glyph.parent
-					if Font is not None:
-						#try:
-						FontName = Font.valueForKey_("familyName")
-						#except AttributeError: pass
 		Type = ""
 		if self._type == MOVE:
 			Type = "MOVE"
@@ -1248,7 +1159,7 @@ class RPoint(BasePoint):
 			Type ="CURVE"
 		else:
 			Type ="LINE"
-		#return "<RPoint (%.1f, %.1f %s) for %s.%s[%d][%d]>"%( self._object.position.x, self._object.position.y, Type, FontName, GlyphName, pathIndex, nodeIndex)
+		#return "<RPoint (%.1f, %.1f %s) for %s[%d][%d]>"%( self._object.position.x, self._object.position.y, Type, GlyphName, pathIndex, nodeIndex)
 		return "<RPoint (%.1f, %.1f %s)>"%( self._object.position.x, self._object.position.y, Type)
 	
 	def _get_x(self):
@@ -1322,133 +1233,84 @@ class RPoint(BasePoint):
 	selected = property(_get_selected, _set_selected, doc="")
 	
 
-class RAnchor(BaseAnchor):
-	
-	_title = "RoboFabAnchor"
-	
-	def __init__(self, gs_point=None):
-		BaseAnchor.__init__(self)
-		self.selected = False
-		self.name = gs_point.name
-		position = gs_point.position
-		if position is None:
-			self.x = self.y = None
-		else:
-			self.x, self.y = position
-		
-	def _get_index(self):
-		if self.getParent() is None: return None
-		return self.getParent().anchors.index(self)
-	
-	index = property(_get_index, doc="index of the anchor")
-	
-	def _get_position(self):
-		return (self.x, self.y)
-	
-	def _set_position(self, value):
-		self.x = value[0]
-		self.y = value[1]
-		self._hasChanged()
-	
-	position = property(_get_position, _set_position, doc="position of the anchor")
-	
-	def move(self, (x, y)):
-		"""Move the anchor"""
-		self.x = self.x + x
-		self.y = self.y + y
-		self._hasChanged()
 
-class RComponent(BaseComponent):
-	
-	_title = "RoboFabComponent"
-	
-	def __init__(self, baseGlyphName=None, offset=(0,0), scale=(1,1)):
-		BaseComponent.__init__(self)
-		self.selected = False
-		self._baseGlyph = baseGlyphName
-		self._offset = offset
-		self._scale = scale
-		
-	def _get_index(self):
-		if self.getParent() is None: return None
-		return self.getParent().components.index(self)
-		
-	index = property(_get_index, doc="index of the component")
-	
-	def _get_baseGlyph(self):
-		return self._baseGlyph
-		
-	def _set_baseGlyph(self, glyphName):
-		# XXXX needs to be implemented in objectsFL for symmetricity's sake. Eventually.
-		self._baseGlyph = glyphName
-		self._hasChanged()
-		
-	baseGlyph = property(_get_baseGlyph, _set_baseGlyph, doc="")
+GSComponent.offset = property(lambda self: self.position)
 
-	def _get_offset(self):
-		return self._offset
+def __GSComponent_get_scale(self):
+	""" Return the scale components of the transformation."""
+	(xx, xy, yx, yy, dx, dy) = self.transformStruct()
+	return xx, yy
 	
-	def _set_offset(self, value):
-		self._offset = value
-		self._hasChanged()
-		
-	offset = property(_get_offset, _set_offset, doc="the offset of the component")
+def __GSComponent_set_scale(self, (xScale, yScale)):
+	""" Set the scale component of the transformation.
+		Note: setting this value effectively makes the xy and yx values meaningless.
+		We're assuming that if you're setting the xy and yx values, you will use
+		the transformation attribute rather than the scale and offset attributes.
+	"""
+	print self
+	Transform = NSAffineTransform.transform()
+	Transform.setTransformStruct_(self.transformStruct())
+	Transform.scaleXBy_yBy_(xScale, yScale)
+	self.setTransformStruct_(Transform.transformStruct())
+	
+GSComponent.scale = property(__GSComponent_get_scale, __GSComponent_set_scale, doc="the scale of the component")
 
-	def _get_scale(self):
-		return self._scale
-	
-	def _set_scale(self, (x, y)):
-		self._scale = (x, y)
-		self._hasChanged()
-		
-	scale = property(_get_scale, _set_scale, doc="the scale of the component")
-		
-	def move(self, (x, y)):
+transformation = property(lambda self: self.transformStruct(),
+						  lambda self, value: self.setTransformStruct_(value))
+
+def __GSComponent_move_(self, (x, y)):
 		"""Move the component"""
-		self.offset = (self.offset[0] + x, self.offset[1] + y)
-	
-	def decompose(self):
-		"""Decompose the component"""
-		baseGlyphName = self.baseGlyph
-		parentGlyph = self.getParent()
-		# if there is no parent glyph, there is nothing to decompose to
-		if baseGlyphName is not None and parentGlyph is not None:
-			parentFont = parentGlyph.getParent()
-			# we must have a parent glyph with the baseGlyph
-			# if not, we will simply remove the component from
-			# the parent glyph thereby decomposing the component
-			# to nothing.
-			if parentFont is not None and parentFont.has_key(baseGlyphName):
-				from robofab.pens.adapterPens import TransformPointPen
-				oX, oY = self.offset
-				sX, sY = self.scale
-				baseGlyph = parentFont[baseGlyphName]
-				for contour in baseGlyph.contours:
-					pointPen = parentGlyph.getPointPen()
-					transPen = TransformPointPen(pointPen, (sX, 0, 0, sY, oX, oY))
-					contour.drawPoints(transPen)
-			parentGlyph.components.remove(self)
-	
+	(xx, xy, yx, yy, dx, dy) = self.transformStruct()
+	self.setTransformStruct_((xx, xy, yx, yy, dx+x, dy+y))
+GSComponent.move = __GSComponent_move_
+
+GSComponent.baseGlyph = property(lambda self: self.componentName,
+								 lambda self, value: self.setComponentName_(value))
+
+def __GSComponent_get_index(self):
+	if self.parent is None:
+		return None
+	return self.parent.components.index(self)
+GSComponent.index = property(__GSComponent_get_index, doc="index of the component")
+
+def __GSComponent_get_box_(self):
+	Rect = self.bounds
+	return (NSMinX(Rect), NSMinY(Rect), NSMaxX(Rect), NSMaxY(Rect))
+GSComponent.box = property(__GSComponent_get_box_, doc="the bounding box of the component: (xMin, yMin, xMax, yMax)")
+
+def __GSComponent_round_(self):
+	(xx, xy, yx, yy, dx, dy) = self.transformStruct()
+	self.setTransformStruct_((xx, xy, yx, yy, int(round(dx)), int(round(dy))))
+GSComponent.round = __GSComponent_round_
+
+def __GSComponent_draw_(self, pen):
+	pen.addComponent(self.baseGlyph, self.transformation)
+	# else:
+	#	# It's an "old" 'Fab pen
+	#	pen.addComponent(self.baseGlyph, self.offset, self.scale)
+GSComponent.draw = __GSComponent_draw_
+
+GSComponent.drawPoints = __GSComponent_draw_
+
+def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
+	return GSComponent(baseGlyphName, offset, scale, transform)
 		
 class RKerning(BaseKerning):
 	
-	_title = "RoboFabKerning"
-
+	_title = "GlyphsKerning"
 		
 class RGroups(BaseGroups):
 	
-	_title = "RoboFabGroups"
+	_title = "GlyphsGroups"
 	
 class RLib(BaseLib):
 	
-	_title = "RoboFabLib"
-
+	_title = "GlyphsLib"
 		
 class RInfo(BaseInfo):
 	
 	_title = "GlyphsFontInfo"
 	
-
 	def __init__(self, RFontObject):
 		#BaseInfo.__init__(self)
 		self._object = RFontObject
@@ -1497,7 +1359,6 @@ class RInfo(BaseInfo):
 			self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
 			return
 			
-			
 		if attr not in _baseAttributes:
 			try:
 				if type(value) == type([]):
@@ -1514,7 +1375,6 @@ class RInfo(BaseInfo):
 			except:
 				raise AttributeError("Unknown attribute %s." % attr)
 			return 
-
 	 	elif attr in self.__dict__ or attr in self._baseAttributes:
 			super(BaseInfo, self).__setattr__(attr, value)
 		else:
@@ -1535,6 +1395,8 @@ class RInfo(BaseInfo):
 				value = gsFont.valueForKey_(_renameAttributes[attr])
 			if value is None:
 				Instance = gsFont.instanceAtIndex_(self._object._master)
+				if Instance is None:
+					raise ValueError("The font has no Instance")
 				value = Instance.valueForKey_(attr)
 				if value is None and attr in _renameAttributes:
 					value = Instance.valueForKey_(_renameAttributes[attr])
@@ -1548,10 +1410,9 @@ class RInfo(BaseInfo):
 		except:
 			raise AttributeError("Unknown attribute %s." % attr)
 	
-
 class RFeatures(BaseFeatures):
 
-	_title = "FLFeatures"
+	_title = "GlyphsFeatures"
 
 	def __init__(self, font):
 		super(RFeatures, self).__init__()
@@ -1565,6 +1426,7 @@ class RFeatures(BaseFeatures):
 		features.append("\n")
 		features.append(naked.features.text())
 		return "".join(features)
+	
 	def _set_text(self, value):
 		from robofab.tools.fontlabFeatureSplitter import splitFeaturesForFontLab
 		classes, features = splitFeaturesForFontLab(value)
