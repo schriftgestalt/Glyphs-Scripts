@@ -561,20 +561,20 @@ class RGlyph(BaseGlyph):
 	
 	width = property(lambda self: self._layer.width,
 					 lambda self, value: self._layer.setWidth_(value), doc="width")
-
+	
 	components = property(lambda self: self._layer.components, doc="List of components")
-
+	
 	guides = property(lambda self: self._layer.guides, doc="List of guides")
 	
 	def appendComponent(self, baseGlyph, offset=(0, 0), scale=(1, 1)):
 		"""append a component to the glyph"""
 		new = GSComponent(baseGlyph, offset, scale)
 		self._layer.addComponent_(new)
-
+	
 	def removeComponent(self, component):
 		"""remove  a specific component from the glyph"""
 		self._layer.removeComponent_(component)
-		
+	
 	def getPointPen(self):
 		# if "GSPen" in sys.modules.keys():
 		# 	del(sys.modules["GSPen"])
@@ -1259,7 +1259,7 @@ transformation = property(lambda self: self.transformStruct(),
 						  lambda self, value: self.setTransformStruct_(value))
 
 def __GSComponent_move_(self, (x, y)):
-		"""Move the component"""
+	"""Move the component"""
 	(xx, xy, yx, yy, dx, dy) = self.transformStruct()
 	self.setTransformStruct_((xx, xy, yx, yy, dx+x, dy+y))
 GSComponent.move = __GSComponent_move_
@@ -1294,19 +1294,16 @@ GSComponent.drawPoints = __GSComponent_draw_
 
 def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
 	return GSComponent(baseGlyphName, offset, scale, transform)
-		
+
 class RKerning(BaseKerning):
-	
 	_title = "GlyphsKerning"
-		
+
 class RGroups(BaseGroups):
-	
 	_title = "GlyphsGroups"
-	
+
 class RLib(BaseLib):
-	
 	_title = "GlyphsLib"
-		
+
 class RInfo(BaseInfo):
 	
 	_title = "GlyphsFontInfo"
@@ -1358,7 +1355,7 @@ class RInfo(BaseInfo):
 			
 			self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
 			return
-			
+		
 		if attr not in _baseAttributes:
 			try:
 				if type(value) == type([]):
@@ -1370,15 +1367,15 @@ class RInfo(BaseInfo):
 				
 				if attr in _renameAttributes:
 					attr = _renameAttributes[attr]
-					
+				
 				self._object._object.font.setValue_forKey_(value, attr)
 			except:
 				raise AttributeError("Unknown attribute %s." % attr)
-			return 
-	 	elif attr in self.__dict__ or attr in self._baseAttributes:
+			return
+		elif attr in self.__dict__ or attr in self._baseAttributes:
 			super(BaseInfo, self).__setattr__(attr, value)
 		else:
-		 	raise AttributeError("Unknown attribute %s." % attr)
+			raise AttributeError("Unknown attribute %s." % attr)
 	
 	def __getattr__(self, attr):
 		_baseAttributes = ["_object", "changed", "selected", "getParent"]
@@ -1409,11 +1406,10 @@ class RInfo(BaseInfo):
 			return value
 		except:
 			raise AttributeError("Unknown attribute %s." % attr)
-	
+
 class RFeatures(BaseFeatures):
-
 	_title = "GlyphsFeatures"
-
+	
 	def __init__(self, font):
 		super(RFeatures, self).__init__()
 		self._object = font
