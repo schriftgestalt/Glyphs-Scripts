@@ -322,6 +322,9 @@ def makePlist(font):
 			Layer["associatedMasterId"] = FontMasters[masterIndex]["id"]
 			Layer["layerId"] = FontMasters[masterIndex]["id"]
 			Layer["width"] = glyph.GetMetrics(masterIndex).x
+			vertWidth = glyph.GetMetrics(masterIndex).y
+			if vertWidth > 0:
+				Layer["vertWidth"] = vertWidth
 			if len(glyph.components) > 0:
 				Components = []
 				for component in glyph.components:
