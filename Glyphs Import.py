@@ -627,6 +627,8 @@ def readGlyphs(Font, Dict):
 						Origin, Size = HintDict["place"][1:-1].split(", ")
 						Origin = int(round(float(Origin)))
 						Size = int(round(float(Size)))
+						if abs(Origin) > 20000 or abs(Size) > 20000 or "type" in HintDict:
+							continue
 						if masterIndex == 0:
 							
 							if Horizontal:
@@ -729,6 +731,9 @@ def readGlyphs(Font, Dict):
 							component.scales[masterIndex].y = float(str(componentTransformList[3]))
 							component.deltas[masterIndex].x = round(float(str(componentTransformList[4])) + ShiftNodes)
 							component.deltas[masterIndex].y = round(float(str(componentTransformList[5])))
+						
+						if abs(float(str(componentTransformList[1]))) > 0.01 or abs(float(str(componentTransformList[2]))) > 0.01:
+							print "There are unsupported transformed components in letter:", glyph.name
 			except:
 				print "There was a problem reading the components for glyph:", glyph.name
 				
