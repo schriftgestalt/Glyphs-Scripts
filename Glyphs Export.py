@@ -523,14 +523,39 @@ def writeFeatures(font, Dict):
 	if len(Features) > 0:
 		Dict["features"] = Features
 	return Dict
+	
+def GetSaveFile(message=None, ProposedFileName=None, filetypes=None):
+	if filetypes is None:
+		filetypes = []
+	from Foundation import NSSavePanel
+	from AppKit import NSOKButton
+	Panel = NSSavePanel.savePanel().retain()
+	if message is not None:
+		Panel.setTitle_(message)
+	Panel.setCanChooseFiles_(True)
+	Panel.setCanChooseDirectories_(False)
+	Panel.setAllowedFileTypes_(filetypes)
+	if ProposedFileName is not None:
+		Panel.setNameFieldStringValue_(ProposedFileName)
+	pressedButton = Panel.runModalForTypes_(filetypes)
+	if pressedButton == NSOKButton:
+		return Panel.filename()
+	return None
+
 def main():
 	StartTime = time.clock()
 	font = fl.font
 	
 	path = font.file_name
 	if path is None:
-		from robofab.interface.all.dialogs import PutFile
-		path = PutFile("Please choose a name for the .glyph")
+		FamilyName = None
+		if font.pref_family_name is not None:
+			FamilyName = font.pref_family_name
+		elif font.family_name is not None:
+			FamilyName = font.family_name
+		if FamilyName is not None:
+			FamilyName = FamilyName + ".glyphs"
+		path = GetSaveFile(message="Please select a .glyphs file", ProposedFileName=FamilyName, filetypes=["glyphs"])
 		if path is None:
 			return
 	path = os.path.splitext(path)[0]
