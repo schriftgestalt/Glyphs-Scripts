@@ -8,7 +8,8 @@
 # if you find any bugs, please report to info@glyphsapp.com
 
 from FL import *
-from Foundation import NSOpenPanel, NSAutoreleasePool, NSDictionary
+from Foundation import NSOpenPanel, NSAutoreleasePool, NSDictionary, NSSearchPathForDirectoriesInDomains, NSApplicationSupportDirectory, NSUserDomainMask
+from AppKit import NSWorkspace
 import os.path
 import math, time
 import Nav
@@ -331,6 +332,8 @@ def parseGlyphDataFile(Path):
 			Attribs = subelement.attrib
 			if "legacy" in Attribs:
 				Nice2Legacy[Attribs["name"]] = Attribs["legacy"]
+			if "production" in Attribs:
+				Nice2Legacy[Attribs["name"]] = Attribs["production"]
 			if "category" in Attribs:
 				Name2Category[Attribs["name"]] = Attribs["category"]
 			if "subCategory" in Attribs:
@@ -340,7 +343,9 @@ def parseGlyphDataFile(Path):
 
 def loadGlyphsInfo():
 	try:
-		GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
+		GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs2")
+		if GlyphsPath is None:
+			GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
 		if GlyphsPath is None:
 			GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.schriftgestaltung.Glyphs")
 		if GlyphsPath is None:
