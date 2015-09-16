@@ -744,35 +744,6 @@ def readGlyphs(Font, Dict):
 				
 	# Resolve nested components.
 	GlyphsWithNestedComponemts = set()
-	
-	for glyph in Font.glyphs:
-		ComponentCount = len(glyph.components)
-		for ComponentIndex in range(ComponentCount-1, -1, -1):
-			component = glyph.components[ComponentIndex]
-			ComponentGlyph = Font.glyphs[component.index]
-			if ComponentGlyph.customdata == "Not Exported":
-				for ComponentGlyphComponent in ComponentGlyph.components:
-					CopyComponent = Component(ComponentGlyphComponent)
-					for masterIndex in range(MasterCount):
-						CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
-						CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
-						CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
-						CopyComponent.deltas[masterIndex].y = (CopyComponent.deltas[masterIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
-					glyph.components.append(CopyComponent)
-				del(glyph.components[ComponentIndex])
-				
-				ComponentGlyphPath = ComponentGlyph.nodes
-				NewPath = []
-				for node in ComponentGlyphPath:
-					NewPath.append(Node(node))
-				for ComponentNode in ComponentGlyph.nodes:
-					node = Node(ComponentNode)
-					for masterIndex in range(MasterCount):
-						for pointIndex in range(node.count):
-							node.Layer(masterIndex)[pointIndex].x = (node.Layer(masterIndex)[pointIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
-							node.Layer(masterIndex)[pointIndex].y = (node.Layer(masterIndex)[pointIndex].y * component.scales[masterIndex].y) + component.deltas[masterIndex].y
-					glyph.Insert(node, len(glyph))
-	
 	for glyph in Font.glyphs:
 		if checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 			GlyphsWithNestedComponemts.add(glyph.name)
