@@ -965,7 +965,10 @@ def readGlyphsFile(filePath):
 	print "Import Glyphs File"
 	pool = NSAutoreleasePool.alloc().init()
 	GlyphsDoc = NSDictionary.alloc().initWithContentsOfFile_(filePath)
-	
+	if GlyphsDoc is None:
+		print "Could not load .glyphs file."
+		pool.drain()
+		return
 	loadGlyphsInfo()
 	from FL import fl, Font
 	folder, base = os.path.split(filePath)
