@@ -36,9 +36,10 @@ if type(GSElement.parent) != type(GSGlyph.parent):
 
 def CurrentFont():
 	"""Return a RoboFab font object for the currently selected font."""
-	if Glyphs.currentDocument:
+	doc = Glyphs.currentDocument
+	if doc:
 		try:
-			return RFont( Glyphs.currentDocument, Glyphs.currentDocument.windowControllers()[0].masterIndex() )
+			return RFont( doc, doc.windowControllers()[0].masterIndex() )
 		except:
 			pass
 	return None
