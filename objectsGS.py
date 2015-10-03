@@ -39,7 +39,7 @@ def CurrentFont():
 	doc = Glyphs.currentDocument
 	if doc:
 		try:
-			return RFont( doc, doc.windowControllers()[0].masterIndex() )
+			return RFont(doc.font, doc.windowControllers()[0].masterIndex())
 		except:
 			pass
 	return None
@@ -49,7 +49,7 @@ def AllFonts():
 	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
-		all.append(RFont(doc, doc.windowController().masterIndex()))
+		all.append(RFont(doc.font, doc.windowController().masterIndex()))
 	return all
 
 
@@ -73,13 +73,13 @@ def OpenFont(path=None, note=None):
 		if path[-7:].lower() == '.glyphs' or path[-3:].lower() in ["ufo", "otf", "ttf"]:
 			doc = Glyphs.openDocumentWithContentsOfFile_display_(path, False) #chrashed !!
 			if doc != None:
-				return RFont(doc)
+				return RFont(doc.font)
 	return None
 
 def NewFont(familyName=None, styleName=None):
 	"""Make a new font"""
 	doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
-	rf = RFont(doc)
+	rf = RFont(doc.font)
 	if familyName:
 		rf.info.familyName = familyName
 	if styleName:
@@ -136,26 +136,29 @@ class RFont(BaseFont):
 	
 	_title = "GSFont"
 	
-	def __init__(self, doc=None, master=0):
+	def __init__(self, font=None, master=0):
 		BaseFont.__init__(self)
-		if doc is None:
-			doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
-		
-		if type(doc) == type(()):
-			doc = doc[0]
-		self._object = doc
+		if font != None:
+			doc = font.parent
+		else:
+			doc = None
+		self._document = doc
+		self._font = font
 		self._master = master
-		self._masterKey = doc.font.masters[master].id
-		self.features = RFeatures(doc.font)
+		self._masterKey = font.masters[master].id
+		self.features = RFeatures(font)
 		self._lib = {}
 		self.info = RInfo(self)
 		
 		self._supportHints = False
 		self._RGlyphs = {}
 	
+	def copy(self):
+		return RFont(self._font.copy())
+	
 	def keys(self):
 		keys = {}
-		for glyph in self._object.font.glyphs:
+		for glyph in self._font.glyphs:
 			glyphName = glyph.name
 			if glyphName in keys:
 				raise KeyError, "Duplicate glyph name in RFont: %r" % glyphName
@@ -163,7 +166,7 @@ class RFont(BaseFont):
 		return keys.keys()
 
 	def has_key(self, glyphName):
-		glyph = self._object.font.glyphForName_(glyphName)
+		glyph = self._font.glyphForName_(glyphName)
 		if glyph is None:
 			return False
 		else:
@@ -172,10 +175,10 @@ class RFont(BaseFont):
 	__contains__ = has_key
 	
 	def __setitem__(self, glyphName, glyph):
-		self._object.font.addGlyph_( glyph.naked() )
+		self._font.addGlyph_( glyph.naked() )
 	
 	def __getitem__(self, glyphName):
-		GGlyph = self._object.font.glyphForName_(glyphName)
+		GGlyph = self._font.glyphForName_(glyphName)
 		if GGlyph is None:
 			raise KeyError("Glyph '%s' not in font." % glyphName)
 		else:
@@ -184,10 +187,10 @@ class RFont(BaseFont):
 			return glyph
 	
 	def __cmp__(self, other):
-		if not hasattr(other, '_object'):
+		if not hasattr(other, '_document'):
 			return -1
 		return self._compare(other)
-		if self._object.fileName() == other._object.fileName():
+		if self._document.fileName() == other._document.fileName():
 			# so, names match.
 			# this will falsely identify two distinct "Untitled"
 			# let's check some more
@@ -196,18 +199,18 @@ class RFont(BaseFont):
 			return -1
 	
 	def __len__(self):
-		if self._object.font.glyphs is None:
+		if self._font.glyphs is None:
 			return 0
-		return len(self._object.font.glyphs)
+		return len(self._font.glyphs)
 	
 	def close(self):
-		self._object.close()
+		self._document.close()
 	
 	def _get_lib(self):
-		return self._object.font.userData.objectForKey_("org.robofab.ufoLib")
+		return self._font.userData.objectForKey_("org.robofab.ufoLib")
 	
 	def _set_lib(self, obj):
-		self._object.font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
+		self._font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
 	
 	lib = property(_get_lib, _set_lib, doc="font lib object")
 	
@@ -215,15 +218,15 @@ class RFont(BaseFont):
 		raise NotImplementedError
 	
 	def _get_path(self):
-		if self._object.fileURL() is None:
+		if self._document.fileURL() is None:
 			raise ValueError("Font is not saved yet")
-		return self._object.fileURL().path()
+		return self._document.fileURL().path()
 	
 	path = property(_get_path, doc="path of the font")
 	
 	def _get_groups(self):
 		Dictionary = {}
-		for currGlyph in self._object.font.glyphs:
+		for currGlyph in self._font.glyphs:
 			if currGlyph.leftKerningGroupId():
 				Group = Dictionary.get(currGlyph.leftKerningGroupId(), None)
 				if not Group:
@@ -236,7 +239,7 @@ class RFont(BaseFont):
 					Group = []
 					Dictionary[currGlyph.rightKerningGroupId()] = Group
 				Group.append(currGlyph.name)
-		for aClass in self._object.font.classes:
+		for aClass in self._font.classes:
 			Dictionary[aClass.name] = aClass.code.split(" ")
 		return Dictionary
 	
@@ -250,44 +253,44 @@ class RFont(BaseFont):
 							currGroupKey = ChangedGlyphNames[currGroupKey]
 						if ChangedGlyphNames.has_key(GlyphName): 
 							GlyphName = ChangedGlyphNames[GlyphName]
-						self._object.font.glyphForName_(GlyphName).setRightKerningGroupId_( currGroupKey )
+						self._font.glyphForName_(GlyphName).setRightKerningGroupId_( currGroupKey )
 			
 			elif currGroupKey.startswith("@MMK_R_"):
 				Group = GroupsDict[currGroupKey]
 				if Group:
 					for GlyphName in Group:
-						self._object.font.glyphForName_(GlyphName).setLeftKerningGroupId_(currGroupKey)
+						self._font.glyphForName_(GlyphName).setLeftKerningGroupId_(currGroupKey)
 			else:
 				newClass = GSClass()
 				newClass.setName_( currGroupKey )
 				newClass.setCode_( " ".join(GroupsDict[currGroupKey]))
 				newClass.setAutomatic_( False )
-				self._object.font.addClass_(newClass)
+				self._font.addClass_(newClass)
 	
 	groups = property(_get_groups, _set_groups, doc="groups")
 	
 	def _get_kerning(self):
-		FontMaster = self._object.font.masters[self._master]
-		GSKerning = self._object.font.kerning.objectForKey_(FontMaster.id)
+		FontMaster = self._font.masters[self._master]
+		GSKerning = self._font.kerning.objectForKey_(FontMaster.id)
 		kerning = {}
 		if GSKerning != None:
 			for LeftKey in GSKerning.allKeys():
 				LeftKerning = GSKerning.objectForKey_(LeftKey)
 				if LeftKey[0] != '@':
-					LeftKey = self._object.font.glyphForId_(LeftKey).name
+					LeftKey = self._font.glyphForId_(LeftKey).name
 				for RightKey in LeftKerning.allKeys():
 					RightKerning = LeftKerning.objectForKey_(RightKey)
 					if RightKey[0] != '@':
-						RightKey = self._object.font.glyphForId_(RightKey).name
+						RightKey = self._font.glyphForId_(RightKey).name
 					kerning[(LeftKey, RightKey)] = RightKerning
 		rk = RKerning(kerning)
 		rk.setParent(self)
 		return rk
 	
 	def _set_kerning(self, kerning):
-		FontMasterID = self._object.font.masters[self._master].id
+		FontMasterID = self._font.masters[self._master].id
 		LeftKerning = NSMutableDictionary.alloc().init()
-		Font = self._object.font
+		Font = self._font
 		for pair in kerning:
 			Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMasterID, pair[0], pair[1], kerning[pair])
 	
@@ -298,31 +301,31 @@ class RFont(BaseFont):
 	#
 	
 	def getWidth(self, glyphName):
-		if self._object.font.glyphForName_(glyphName):
-			return self._object.font.glyphForName_(glyphName).layerForKey_(self._masterKey).width()
+		if self._font.glyphForName_(glyphName):
+			return self._font.glyphForName_(glyphName).layerForKey_(self._masterKey).width()
 		raise IndexError		# or return None?
 	
 	def save(self, path=None):
 		"""Save the font, path is required."""
 		if not path:
-			if not self._object.filePath():
+			if not self._document.filePath():
 				raise RoboFabError, "No destination path specified."
 			else:
-				self._object.setFilePath_( self.filename )
+				self._document.setFilePath_( self.filename )
 		else:
-			self._object.setFilePath_( path )
-		self._object.saveDocument_(None)
+			self._document.setFilePath_( path )
+		self._document.saveDocument_(None)
 	
 	def close(self, save=False):
 		"""Close the font, saving is optional."""
 		if save:
 			self.save()
 		else:
-			self._object.updateChangeCount_(NSChangeCleared)
-		self._object.close()
+			self._document.updateChangeCount_(NSChangeCleared)
+		self._document.close()
 	
 	def _get_glyphOrder(self):
-		return self._object.font.valueForKeyPath_("glyphs.name")
+		return self._font.valueForKeyPath_("glyphs.name")
 	
 	glyphOrder = property(_get_glyphOrder, doc="groups")
 	
@@ -335,7 +338,7 @@ class RFont(BaseFont):
 			n = self._RGlyphs[glyphName]
 		else:
 			# haven't served it before, is it in the glyphSet then?
-			n = RGlyph( self._object.font.glyphForName_(glyphName) )
+			n = RGlyph( self._font.glyphForName_(glyphName) )
 			self._RGlyphs[glyphName] = n
 			
 		if n is None:
@@ -344,10 +347,10 @@ class RFont(BaseFont):
 	
 	def newGlyph(self, glyphName, clear=True):
 		"""Make a new glyph"""
-		g = self._object.font.glyphForName_(glyphName)
+		g = self._font.glyphForName_(glyphName)
 		if g is None:
 			g = GSGlyph(glyphName)
-			self._object.font.addGlyph_(g)
+			self._font.addGlyph_(g)
 		elif clear:
 			g.layers[self._masterKey] = GSLayer()
 		return self[glyphName]
@@ -383,14 +386,14 @@ class RFont(BaseFont):
 		# if self.has_key(glyphName) and glyphName not in self._scheduledForDeletion:
 		#	self._scheduledForDeletion.append(glyphName)
 		# now delete the object
-		if glyphName in self._object.font.glyphs:
-			del self._object.font[glyphName]
+		if glyphName in self._font.glyphs:
+			del self._font[glyphName]
 		self._hasChanged()
 	
 	def _get_selection(self):
 		"""return a list of glyph names for glyphs selected in the font window """
 		l=[]
-		for Layer in self._object.selectedLayers():
+		for Layer in self._document.selectedLayers():
 			l.append(Layer.parent.name)
 		return l
 	
@@ -1369,7 +1372,7 @@ class RInfo(BaseInfo):
 			if attr in _renameAttributes:
 				attr = _renameAttributes[attr]
 			
-			self._object._object.font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
+			self._object._font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
 			return
 		
 		if attr not in _baseAttributes:
@@ -1384,7 +1387,7 @@ class RInfo(BaseInfo):
 				if attr in _renameAttributes:
 					attr = _renameAttributes[attr]
 				
-				self._object._object.font.setValue_forKey_(value, attr)
+				self._object._font.setValue_forKey_(value, attr)
 			except:
 				raise AttributeError("Unknown attribute %s." % attr)
 			return
@@ -1402,7 +1405,7 @@ class RInfo(BaseInfo):
 							  "openTypeNameDesignerURL": "designerURL",
 							}
 		try:
-			gsFont = self._object._object.font
+			gsFont = self._object._font
 			value = gsFont.valueForKey_(attr)
 			if value is None and attr in _renameAttributes:
 				value = gsFont.valueForKey_(_renameAttributes[attr])
