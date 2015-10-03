@@ -663,8 +663,17 @@ class RGlyph(BaseGlyph):
 			pass
 		return glyph
 
-
+# for compatiblity with Glyphs version < 2.2
 RGlyph.anchors = property(lambda self: self._layer.anchors)
+
+from GlyphsApp import Proxy
+class __LayerSelectionProxy(Proxy):
+	def __getitem__(self, idx):
+		return self._owner.pyobjc_instanceMethods.selection()[idx]
+	def values(self):
+		return self._owner.pyobjc_instanceMethods.selection()
+
+GSLayer.selection = property(	lambda self: __LayerSelectionProxy(self))
 
 class RContour(BaseContour):
 	
@@ -885,7 +894,7 @@ class RContour(BaseContour):
 		nodes = self._object.nodes
 		Layer = self._object.parent
 		for node in nodes:
-			if node in Layer.selection():
+			if node in Layer.selection:
 				selected = 1
 				break
 		return selected
@@ -1026,9 +1035,9 @@ class RSegment(BaseSegment):
 		Layer = Path.parent
 		
 		if self._object.type == GSCURVE:
-			return Path.nodes[index-2] in Layer.selection() or Path.nodes[index-1] in Layer.selection() or Path.nodes[index] in Layer.selection()
+			return Path.nodes[index-2] in Layer.selection or Path.nodes[index-1] in Layer.selection or Path.nodes[index] in Layer.selection
 		elif self._object.type == GSLINE:
-			return Path.nodes[index] in Layer.selection()
+			return Path.nodes[index] in Layer.selection
 	
 	def _set_selected(self, select):
 		Path = self._object.parent
@@ -1105,14 +1114,13 @@ class RBPoint(BaseBPoint):
 	
 	def _get_selected(self):
 		Path = self._object._object.parent
-		
 		Layer = Path.parent
-		return self._object._object in Layer.selection()
+		return self._object._object in Layer.selection
 	
 	def _set_selected(self, value):
 		Path = self._object.parent
 		Layer = Path.parent
-		Layer.selection().addObject_(self._object)
+		Layer.addSelection_(self._object)
 		
 	selected = property(_get_selected, _set_selected, doc="")
 	
