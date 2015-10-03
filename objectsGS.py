@@ -1296,6 +1296,13 @@ GSComponent.drawPoints = __GSComponent_draw_
 def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
 	return GSComponent(baseGlyphName, offset, scale, transform)
 
+def __GSAnchor_draw_(self, pen):
+	"""draw the object with a point pen"""
+	pen.beginPath()
+	pen.addPoint((self.x, self.y), segmentType="move", smooth=False, name=self.name)
+	pen.endPath()
+GSAnchor.drawPoints = __GSAnchor_draw_
+
 class RKerning(BaseKerning):
 	_title = "GlyphsKerning"
 
