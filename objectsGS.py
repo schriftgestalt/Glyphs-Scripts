@@ -1224,12 +1224,12 @@ class RPoint(BasePoint):
 	def _get_selected(self):
 		Path = self._object.parent
 		Layer = Path.parent
-		return self._object in Layer.selection()
+		return self._object in Layer.selection
 	
 	def _set_selected(self, value):
 		Path = self._object.parent
 		Layer = Path.parent
-		Layer.selection().addObject_(self._object)
+		Layer.addSelection_(self._object)
 		
 	selected = property(_get_selected, _set_selected, doc="")
 	
