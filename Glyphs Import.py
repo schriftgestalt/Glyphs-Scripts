@@ -400,9 +400,7 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 			print "__ needs decompostion", glyph.name
 			for ComponentGlyphComponent in ComponentGlyph.components:
 				CopyComponent = Component(ComponentGlyphComponent)
-				print "__ComponentGlyphComponent", ComponentGlyphComponent
 				for masterIndex in range(MasterCount):
-					print "Decompose", CopyComponent.deltas[masterIndex].x, component.scales[masterIndex].x, component.deltas[masterIndex].x
 					CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
 					CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
 					CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
@@ -885,6 +883,8 @@ def readFeatures(Font, Dict):
 				if "name" in FeatureDict.keys() and "code" in FeatureDict.keys():
 			
 					CleanCode = str(FeatureDict["code"])
+					CleanCode = CleanCode.replace("\n", " ")
+					CleanCode = CleanCode.replace("  ", " ")
 					CleanCodeList = CleanCode.split(" ")
 					CleanCodeList = map(NotNiceName, CleanCodeList)
 					CleanCode = " ".join(CleanCodeList)
