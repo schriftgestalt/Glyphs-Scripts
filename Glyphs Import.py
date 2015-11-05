@@ -800,10 +800,8 @@ def readKerning(Font, Dict):
 	AllKeys.sort()
 	for Key in AllKeys:
 		Members = RightClasses[Key]
-		Key = Key.replace(".", "_")
-		Key = Key.replace("-", "_")
 		Member = NotNiceName(Members[0])
-		ClassString = "_%s_r: %s'" % (Key, Member)
+		ClassString = "_%s_r: %s'" % (Member, Member)
 		for Member in Members[1:]:
 			Member = NotNiceName(Member)
 			ClassString = ClassString+" "+Member
