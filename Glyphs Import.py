@@ -435,7 +435,11 @@ def readGlyphs(Font, Dict):
 		
 		GlyphDict = Glyphs[i]
 		glyph = Glyph(MasterCount)
-		glyph.name = str(GlyphDict["glyphname"])
+		Name = str(GlyphDict["glyphname"])
+		if "production" in GlyphDict.keys():
+			Production = str(GlyphDict["production"])
+			Nice2Legacy[Name] = Production
+		glyph.name = Name
 		if "unicode" in GlyphDict.keys():
 			glyph.unicode = int(GlyphDict["unicode"], 16)
 		if "export" in GlyphDict.keys() and str(GlyphDict["export"]) == "0":
