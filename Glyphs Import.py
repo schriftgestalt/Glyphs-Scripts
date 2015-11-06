@@ -397,7 +397,7 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 		ComponentGlyph = Font.glyphs[component.index]
 		if len(ComponentGlyph.components) > 0:
 			
-			print "__ needs decompostion", glyph.name
+			print "__ needs decomposition", glyph.name
 			for ComponentGlyphComponent in ComponentGlyph.components:
 				CopyComponent = Component(ComponentGlyphComponent)
 				for masterIndex in range(MasterCount):
@@ -751,7 +751,7 @@ def readGlyphs(Font, Dict):
 			GlyphsWithNestedComponemts.add(glyph.name)
 			checkForNestedComponentsAndDecompose(Font, glyph, MasterCount) # run it again to get double nests.
 
-				
+	
 	if len(GlyphsWithNestedComponemts) > 0:
 		print "The font has nested components. They are not supported in FontLab and were decomposed.\n(%s)" % ", ".join(sorted(GlyphsWithNestedComponemts))
 	fl.UpdateFont()
@@ -885,7 +885,12 @@ def readFeatures(Font, Dict):
 				if "name" in FeatureDict.keys() and "code" in FeatureDict.keys():
 			
 					CleanCode = str(FeatureDict["code"])
-					CleanCode = CleanCode.replace("\n", " ")
+					CodeLines = CleanCode.split("\n")
+					CleanCode = ""
+					for line in CodeLines:
+						if line.find("#") >= 0:
+							line = line[:line.find("#")]
+						CleanCode += line+" "
 					CleanCode = CleanCode.replace("  ", " ")
 					CleanCodeList = CleanCode.split(" ")
 					CleanCodeList = map(NotNiceName, CleanCodeList)
