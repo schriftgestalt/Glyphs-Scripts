@@ -25,7 +25,7 @@ GSLINE = 1
 GSCURVE = 35
 GSOFFCURVE = 65
 GSSHARP = 0
-GSSMOOTH = 4096
+GSSMOOTH = 100
 
 LOCAL_ENCODING = "macroman"
 
@@ -722,7 +722,6 @@ class RContour(BaseContour):
 			Y = Node.position.y
 			_RPoint = RPoint(Node)
 			_RPoint.parent = self
-			_RPoint.smooth = Node.connection == GSSMOOTH
 			
 			points.append(_RPoint) #x=0, y=0, pointType=None, name=None):
 		
@@ -1060,6 +1059,7 @@ class RSegment(BaseSegment):
 	
 	selected = property(_get_selected, _set_selected, doc="if segment is selected")
 
+
 class RBPoint(BaseBPoint):
 	
 	_title = "GlyphsBPoint"
@@ -1209,26 +1209,50 @@ class RPoint(BasePoint):
 			self._object.type = GSOFFCURVE
 		elif value == CURVE:
 			self._object.type = GSCURVE
-		
-		self._hasChanged()
-
+	
 	type = property(_get_type, _set_type, doc="")
 	
 	def _get_name(self):
-		return self._name
+		try:
+			name = self._object.userData()["name"]
+			if name is not None:
+				return name
+		except:
+			pass
+		
+		# Compatibility with old way to store name.
+		try:
+			a = TAG
+		except:
+			TAG = -2
+		Path = self._object.parent
+		Layer = Path.parent
+		for Hint in Layer.hints:
+			if Hint.type == TAG and len(Hint.name()) > 0:
+				if Hint.originNode is None and Hint.originIndex is not None:
+					Hint.updateIndexes()
+				if Hint.originNode == self._object:
+					self._object.setUserData_forKey_(Hint.name(), "name")
+					Layer.removeHint_(Hint)
+					return Hint.name()
+		return None
 	
 	def _set_name(self, value):
-		self._name = value
-		self._hasChanged()
-
+		if value is None or type(value) is str or type(value) is unicode or type(value) is objc.pyobjc_unicode:
+			self._object.setUserData_forKey_(value, "name")
+		else:
+			raise(ValueError)
+	
 	name = property(_get_name, _set_name, doc="")
 	
 	def _get_smooth(self):
-		return self._smooth
+		return self._object.connection == GSSMOOTH
 	
 	def _set_smooth(self, value):
-		self._smooth = value
-		self._hasChanged()
+		if value:
+			self._object.connection = GSSMOOTH
+		else:
+			self._object.connection = GSSHARP
 	
 	smooth = property(_get_smooth, _set_smooth, doc="")
 	
