@@ -207,7 +207,10 @@ class RFont(BaseFont):
 		self._document.close()
 	
 	def _get_lib(self):
-		return self._font.userData.objectForKey_("org.robofab.ufoLib")
+		_lib = self._font.userData.objectForKey_("org.robofab.ufoLib")
+		if _lib is None:
+			return {}
+		return _lib
 	
 	def _set_lib(self, obj):
 		self._font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
