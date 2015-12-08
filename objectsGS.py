@@ -49,7 +49,8 @@ def AllFonts():
 	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
-		all.append(RFont(doc.font, doc.windowController().masterIndex()))
+		for master_index, master_object in enumerate(doc.font.masters):
+			all.append(RFont(doc.font, master_index))
 	return all
 
 
