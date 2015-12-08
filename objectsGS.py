@@ -18,7 +18,7 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 import os
 from warnings import warn
 
-__all__ = ["CurrentFont", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont"]
+__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont"]
 
 GSMOVE = 17
 GSLINE = 1
