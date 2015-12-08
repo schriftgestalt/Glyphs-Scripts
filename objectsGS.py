@@ -18,7 +18,7 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 import os
 from warnings import warn
 
-__all__ = ["CurrentFont", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont"]
+__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont"]
 
 GSMOVE = 17
 GSLINE = 1
@@ -46,10 +46,10 @@ def CurrentFont():
 
 def AllFonts():
 	"""Return a list of all open fonts."""
-	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
-		all.append(RFont(doc.font, doc.windowController().masterIndex()))
+		for master_index, master_object in enumerate(doc.font.masters):
+			all.append(RFont(doc.font, master_index))
 	return all
 
 
