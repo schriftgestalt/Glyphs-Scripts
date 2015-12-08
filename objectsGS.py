@@ -46,7 +46,6 @@ def CurrentFont():
 
 def AllFonts():
 	"""Return a list of all open fonts."""
-	fontCount = len(Glyphs.documents)
 	all = []
 	for doc in Glyphs.documents:
 		for master_index, master_object in enumerate(doc.font.masters):
