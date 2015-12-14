@@ -147,7 +147,6 @@ class RFont(BaseFont):
 		self._master = master
 		self._masterKey = font.masters[master].id
 		self.features = RFeatures(font)
-		self._lib = {}
 		self.info = RInfo(self)
 		
 		self._supportHints = False
