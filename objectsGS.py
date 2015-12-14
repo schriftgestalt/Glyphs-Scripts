@@ -454,7 +454,7 @@ class RGlyph(BaseGlyph):
 		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
 	
 	def getParent(self):
-		return self._object.parent
+		return RFont(self._object.parent)
 	
 	def __getitem__(self, index):
 		return self.contours[index]
