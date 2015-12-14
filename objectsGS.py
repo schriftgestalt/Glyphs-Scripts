@@ -410,23 +410,30 @@ class RGlyph(BaseGlyph):
 	
 	_title = "GSGlyph"
 	
-	def __init__(self, _GSGlyph = None, master = 0):
+	def __init__(self, _GSGlyph = None, master = 0, layer = None):
+		if layer is not None:
+			_GSGlyph = layer.parent
+		
 		if _GSGlyph is None:
 			_GSGlyph = GSGlyph()
 		
 		self._object = _GSGlyph
 		self._layerID = None
-		try:
-			if _GSGlyph.parent:
-				self._layerID = _GSGlyph.parent.masters[master].id
-			elif (_GSGlyph.layers[master]):
-				self._layerID = _GSGlyph.layers[master].layerId
-		except:
-			pass
-		self.masterIndex = master
-		if self._layerID:
-			self._layer = _GSGlyph.layerForKey_(self._layerID)
+		if layer is None:
+			try:
+				if _GSGlyph.parent:
+					self._layerID = _GSGlyph.parent.masters[master].id
+				elif (_GSGlyph.layers[master]):
+					self._layerID = _GSGlyph.layers[master].layerId
+			except:
+				pass
+			self.masterIndex = master
+			if self._layerID:
+				self._layer = _GSGlyph.layerForKey_(self._layerID)
 		else:
+			self._layer = layer
+			self._layerID = layer.associatedMasterId
+		if self._layer is None:
 			self._layerID = "undefined"
 			self._layer = GSLayer()
 			_GSGlyph.setLayer_forKey_(self._layer, self._layerID)
