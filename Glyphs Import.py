@@ -863,7 +863,7 @@ def readKerning(Font, Dict):
 					FontMaster = FontMasters[j]
 					value = 0
 					try:
-						value = int(Kerning[FontMaster["id"]][LeftKey][RightKey])
+						value = int(round(float(Kerning[FontMaster["id"]][LeftKey][RightKey])))
 					except:
 						pass
 					KernPair.values[j] = value
