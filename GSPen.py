@@ -6,21 +6,14 @@ from AppKit import *
 from Foundation import *
 
 from GlyphsApp import *
-from objectsGS import RGlyph
+from objectsGS import RGlyph, GSLINE, GSCURVE, GSOFFCURVE, GSSHARP, GSSMOOTH
 
-__all__ = ["GSPen", "GSPointPen", "drawGSGlyphOntoPointPen"]
+from robofab.objects.objectsBase import MOVE, LINE, CURVE, QCURVE, OFFCURVE
 
+__all__ = ["GSPen", "GSPointPen"]
 
-#from robofab.tools.toolsFL import NewGlyph
 from robofab.pens.pointPen import AbstractPointPen
 from robofab.pens.adapterPens import SegmentToPointPen
-
-GSLINE = 1
-GSCURVE = 35
-GSOFFCURVE = 65
-GSSHARP = 0
-GSSMOOTH = 4096
-
 
 class GSPen(SegmentToPointPen):
 	def __init__(self, r_glyph):
@@ -36,7 +29,7 @@ class GSPointPen(SegmentToPointPen):
 	def beginPath(self):
 		self._path = GSPath()
 		self._path.closed = True
-		self._layer.paths.append( self._path )
+		self._layer.paths.append(self._path)
 	
 	def endPath(self):
 		self._glyph._invalidateContours()
@@ -44,32 +37,37 @@ class GSPointPen(SegmentToPointPen):
 	def moveTo(self, pt):
 		self._path = GSPath()
 		self._path.closed = True
-		self._layer.paths.append( self._path )
-		self.addPoint( pt, "move" )
+		self._layer.paths.append(self._path)
+		self.addPoint(pt, MOVE)
 		
 	def lineTo(self, pt):
-		self.addPoint( pt, "line" )
+		self.addPoint(pt, LINE)
 		
 	def addPoint(self, pt, segmentType=None, smooth=None, name=None, **kwargs):
 		if name is not None:
 			_Anchor = GSAnchor(name=name, pt=pt)
-			self._layer.addAnchor_(_Anchor)
+			self._layer.anchors.append(_Anchor)
 		else:
 			_Node = GSNode(pt)
-			if segmentType == "move":
-				_Node.setType_(GSLINE)
+			if segmentType == MOVE:
+				_Node.type = GSLINE
 				self._layer.paths[-1].setClosed_(0)
-			elif segmentType == "line":
-				_Node.setType_(GSLINE)
-			elif segmentType is "curve":
-				_Node.setType_(GSCURVE)
-			elif segmentType is "qcurve":
-				return
-				#raise NotImplementedError
-			elif segmentType is None:
-				_Node.setType_(GSOFFCURVE)
+			if segmentType is None:
+				segmentType == OFFCURVE
+			
+			if segmentType == MOVE:
+				_Node.type = GSLINE
+				self._layer.paths[-1].setClosed_(0)
+			elif segmentType == LINE:
+				_Node.type = GSLINE
+			elif segmentType is CURVE:
+				_Node.type = GSCURVE
+			elif segmentType is QCURVE:
+				_Node.type = GSQCURVE
+			elif segmentType is OFFCURVE:
+				_Node.type = GSOFFCURVE
 			if smooth:
-				_Node.setConnection_(GSSMOOTH)
+				_Node.connection = GSSMOOTH
 			self._path.nodes.append(_Node)
 	
 	def addComponent(self, baseName, transformation):

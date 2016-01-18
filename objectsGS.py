@@ -18,14 +18,19 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 import os
 from warnings import warn
 
-__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont"]
+__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH"]
 
-GSMOVE = 17
-GSLINE = 1
-GSCURVE = 35
-GSOFFCURVE = 65
+GSMOVE_ = 17
+GSLINE_ = 1
+GSCURVE_ = 35
+GSOFFCURVE_ = 65
 GSSHARP = 0
 GSSMOOTH = 100
+
+GSMOVE = MOVE
+GSLINE = LINE
+GSCURVE = CURVE
+GSOFFCURVE = OFFCURVE
 
 LOCAL_ENCODING = "macroman"
 
@@ -410,6 +415,7 @@ class RFont(BaseFont):
 class RGlyph(BaseGlyph):
 	
 	_title = "GSGlyph"
+	preferedSegmentType = "curve"
 	
 	def __init__(self, _GSGlyph = None, master = 0, layer = None):
 		if layer is not None:
@@ -655,7 +661,7 @@ class RGlyph(BaseGlyph):
 	
 	def update(self):
 		self._contours = None
-		GSGlyphsInfo.updateGlyphInfo_changeName_(self._object, False)
+		#GSGlyphsInfo.updateGlyphInfo_changeName_(self._object, False)
 	
 	def correctDirection(self, trueType=False):
 		self._layer.correctPathDirection()
