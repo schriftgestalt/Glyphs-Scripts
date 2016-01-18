@@ -678,11 +678,9 @@ class RGlyph(BaseGlyph):
 		except:
 			pass
 		return glyph
-
-# for compatiblity with Glyphs version < 2.2
-RGlyph.anchors = property(lambda self: self._layer.anchors)
-
-		
+	
+	anchors = property(lambda self: self._layer.anchors)
+	
 	def getRepresentation(self, representaion):
 		if representaion == "defconAppKit.NSBezierPath":
 			return self._layer.bezierPath.copy()
@@ -742,10 +740,8 @@ def __GSPath__drawPoints__(self, pen):
 	'''draw the object with a fontTools pen'''
 	
 	pen.beginPath()
-	print pen
 	for i in range(len(self)):
 		Node = self.nodeAtIndex_(i)
-		print "____drawPoints", Node.position, Node.type, Node.smooth
 		pen.addPoint(Node.position, segmentType=Node.type, smooth=Node.smooth)
 	pen.endPath()
 
@@ -1063,7 +1059,32 @@ def _set_name(self, value):
 		raise(ValueError)
 	
 GSNode.name = property(_get_name, _set_name, doc="")
-	
+
+def __GSNode_get_type__(self):
+	GS_Type = self.pyobjc_instanceMethods.type()
+	if GS_Type == GSMOVE_:
+		return MOVE
+	elif GS_Type == GSOFFCURVE_:
+		return OFFCURVE
+	elif GS_Type == GSCURVE_:
+		return CURVE
+	else:
+		return LINE
+
+def __GSNode_set_type__(self, value):
+	if value == MOVE:
+		self.setType_(GSLINE_)
+	elif value == LINE:
+		self.setType_(GSLINE_)
+	elif value == OFFCURVE:
+		self.setType_(GSOFFCURVE_)
+	elif value == CURVE:
+		self.setType_(GSCURVE_)
+	elif value == QCURVE:
+		self.setType_(GSQCURVE_)
+
+GSNode.type = property(__GSNode_get_type__, __GSNode_set_type__, doc="")
+
 def __GSNode__get_smooth(self):
 	return self.connection == GSSMOOTH
 
