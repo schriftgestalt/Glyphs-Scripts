@@ -471,19 +471,14 @@ class RGlyph(BaseGlyph):
 		self._layer.removePathAtIndex_(index)
 		self._invalidateContours()
 	
-	def __len__(self):
-		return len(self.contours)
-	
 	def _invalidateContours(self):
 		self._contours = None
 	
-	def _buildContours(self):
-		self._contours = []
-		for currPath in self._layer.paths:
-			c = RContour(currPath)
-			c.setParent(self)
-			#c._buildSegments()
-			self._contours.append(c)
+	def __iter__(self):
+		Values = self._layer.paths
+		if Values is not None:
+			for element in Values:
+				yield element
 	
 	def __len__(self):
 		return len(self._layer.paths)
@@ -495,9 +490,7 @@ class RGlyph(BaseGlyph):
 		return Copy
 	
 	def _get_contours(self):
-		if self._contours is None:
-			self._buildContours()
-		return self._contours
+		return self._layer.paths
 	
 	contours = property(_get_contours, doc="allow for iteration through glyph.contours")
 	
@@ -613,7 +606,10 @@ class RGlyph(BaseGlyph):
 	
 	def removeContour(self, index):
 		"""remove  a specific contour from the glyph"""
-		self._layer.removePathAtIndex_(index)
+		if type(index) == type(int):
+			self._layer.removePathAtIndex_(index)
+		else:
+			self._layer.removePath_(index)
 	
 	def center(self, padding=None):
 		"""Equalise sidebearings, set to padding if wanted."""
@@ -686,249 +682,143 @@ class RGlyph(BaseGlyph):
 # for compatiblity with Glyphs version < 2.2
 RGlyph.anchors = property(lambda self: self._layer.anchors)
 
-from GlyphsApp import Proxy
-class __LayerSelectionProxy(Proxy):
-	def __getitem__(self, idx):
-		return self._owner.pyobjc_instanceMethods.selection()[idx]
-	def values(self):
-		return self._owner.pyobjc_instanceMethods.selection()
+		
+	def getRepresentation(self, representaion):
+		if representaion == "defconAppKit.NSBezierPath":
+			return self._layer.bezierPath.copy()
+		return None
 
-GSLayer.selection = property(	lambda self: __LayerSelectionProxy(self))
+	def performUndo(self):
+		pass
+	def prepareUndo(self, undoTitle):
+		pass
 
-class RContour(BaseContour):
-	
-	_title = "GSContour"
-	
-	def __init__(self, object=None):
-		self._object  = object #GSPath
-	
-	def __repr__(self):
-		return "<RContour with %d nodes>"%(len(self._object.nodes))
-	def __len__(self):
-		return len(self._object.nodes)
-	
-	def __getitem__(self, index):
-		if index < len(self.segments):
-			return self.segments[index]
-		raise IndexError
-	
-	def _get_index(self):
-		return self.getParent().contours.index(self)
-	
-	def _set_index(self, index):
-		ogIndex = self.index
-		if index != ogIndex:
-			contourList = self.getParent().contours
-			contourList.insert(index, contourList.pop(ogIndex))
-	
-	index = property(_get_index, _set_index, doc="index of the contour")
-	
-	def _get_points(self):
-		'''returns a list of RPoints, generated on demand from the GSPath.nodes'''
-		points = []
-		Node = None
-		for Node in self._object.nodes:
-			Type = MOVE
-			if Node.type == GSLINE:
-				Type = LINE
-			elif Node.type == GSCURVE:
-				Type = CURVE
-			elif Node.type == GSOFFCURVE:
-				Type = OFFCURVE
-			X = Node.position.x
-			Y = Node.position.y
-			_RPoint = RPoint(Node)
-			_RPoint.parent = self
-			
-			points.append(_RPoint) #x=0, y=0, pointType=None, name=None):
-		
-		if not self._object.closed:
-			points[0].type = MOVE
-		
-		return points
-	
-	def _set_points(self, points):
-		'''first makes sure that the GSPath.nodes has the right length, than sets the properties from points to nodes'''
-		while len(points) > self._object.nodes().count():
-			newNode = GSNode()
-			self._object.addNode_(newNode)
-		while len(points) < self._object.nodes().count():
-			self._object.removeNodeAtIndex_( 0 )
-		#assert(len(points) == self._object.nodes().count(), "The new point list and the path.nodes count should be equal")
-		for i in range(len(points)):
-			Node = self._object.nodeAtIndex_(i)
-			Node.setPosition_((points[i].x, points[i].y))
-			if points[i].type == MOVE:
-				Node.setType_( GSLINE )
-				self._object.setClosed_(False)
-			if points[i].type == LINE:
-				Node.setType_( GSLINE )
-			if points[i].type == CURVE:
-				Node.setType_( GSCURVE )
-			if points[i].type == OFFCURVE:
-				Node.setType_( GSOFFCURVE )
-			if points[i].smooth:
-				Node.setConnection_( GSSMOOTH )
-			else:
-				Node.setConnection_( GSSHARP )
-	
-	points = property(_get_points, _set_points, doc="the contour as a list of points")
-	
-	def _get_bPoints(self):
-		bPoints = []
-		for segment in self.segments:
-			segType = segment.type
-			if segType == MOVE or segType == LINE or segType == CURVE:
-				b = RBPoint(segment)
-				bPoints.append(b)
-			else:
-				raise RoboFabError, "encountered unknown segment type"
-		return bPoints
-	
-	bPoints = property(_get_bPoints, doc="view the contour as a list of bPoints")
-	
-	def draw(self, pen):
-		"""draw the object with a fontTools pen"""
-		
-		if self._object.closed:
-			for i in range(len(self), -1, -1):
-				StartNode = self._object.nodeAtIndex_(i)
-				if StartNode.type != GSOFFCURVE:
-					pen.moveTo(StartNode.position)
-					break
+RContour = GSPath
+
+GSPath.points = GSPath.nodes
+
+def __GSPath__get_bPoints(self):
+	bPoints = []
+	for segment in self.segments:
+		segType = segment.type
+		if segType == MOVE or segType == LINE or segType == CURVE:
+			b = RBPoint(segment)
+			bPoints.append(b)
 		else:
-			for i in range(len(self)):
-				StartNode = self._object.nodeAtIndex_(i)
-				if StartNode.type != GSOFFCURVE:
-					pen.moveTo(StartNode.position)
-					break
-		for i in range(len(self)):
-			Node = self._object.nodeAtIndex_(i)
-			if Node.type == GSLINE:
-				pen.lineTo(Node.position)
-			elif Node.type == GSCURVE:
-				pen.curveTo(self._object.nodeAtIndex_(i-2).position, self._object.nodeAtIndex_(i-1).position, Node.position)
-		if self._object.closed:
-			pen.closePath()
-		else:
-			pen.endPath()
-		
-	def _get_segments(self):
-		if not len(self._object.nodes):
-			return []
-		segments = []
-		index = 0
-		node = None
-		for i in range(len(self._object.nodes)):
-			node = self._object.nodeAtIndex_(i)
-			if node.type == GSLINE or node.type == GSCURVE:
-				_Segment = RSegment(index, self, node)
-				_Segment.parent = self
-				_Segment.index = index
-				segments.append(_Segment)
-				index += 1
-		if self._object.closed:
-			# TODO fix this out properly. 
-			# _Segment = RSegment(0, self, node)
-			# _Segment.type = MOVE
-			# segments.insert(0, _Segment)
-			pass
-		else:
-			_Segment = RSegment(0, self, self._object.nodeAtIndex_(0))
-			_Segment.type = MOVE
-			segments.insert(0, _Segment)
-			
-		return segments
+			raise RoboFabError, "encountered unknown segment type"
+	return bPoints
 	
-	def _set_segments(self, segments):
-		points = []
-		for segment in segments:
-			points.append(segment.points)
-		
-	segments = property(_get_segments, _set_segments, doc="A list of all points in the contour organized into segments.")
+GSPath.bPoints = property(__GSPath__get_bPoints, doc="view the contour as a list of bPoints")
+
+def __GSPath__draw__(self, pen):
+	'''draw the object with a fontTools pen'''
 	
-	
-	def appendSegment(self, segmentType, points, smooth=False):
-		"""append a segment to the contour"""
-		segment = self.insertSegment(index=len(self.segments), segmentType=segmentType, points=points, smooth=smooth)
-		return segment
-		
-	def insertSegment(self, index, segmentType, points, smooth=False):
-		"""insert a segment into the contour"""
-		segment = RSegment(index, points, smooth)
-		segment.setParent(self)
-		self.segments.insert(index, segment)
-		self._hasChanged()
-		return segment
-		
-	def removeSegment(self, index):
-		"""remove a segment from the contour"""
-		del self.segments[index]
-		self._hasChanged()
-	
-	def reverseContour(self):
-		"""reverse contour direction"""
-		self._object.reverse()
-	
-	def setStartSegment(self, segmentIndex):
-		"""set the first segment on the contour"""
-		# this obviously does not support open contours
-		if len(self.segments) < 2:
-			return
-		if segmentIndex == 0:
-			return
-		if segmentIndex > len(self.segments)-1:
-			raise IndexError, 'segment index not in segments list'
-		oldStart = self.segments[0]
-		oldLast = self.segments[-1]
-		 #check to see if the contour ended with a curve on top of the move
-		 #if we find one delete it,
-		if oldLast.type == CURVE or oldLast.type == QCURVE:
-			startOn = oldStart.onCurve
-			lastOn = oldLast.onCurve
-			if startOn.x == lastOn.x and startOn.y == lastOn.y:
-				del self.segments[0]
-				# since we deleted the first contour, the segmentIndex needs to shift
-				segmentIndex = segmentIndex - 1
-		# if we DO have a move left over, we need to convert it to a line
-		if self.segments[0].type == MOVE:
-			self.segments[0].type = LINE
-		# slice up the segments and reassign them to the contour
-		segments = self.segments[segmentIndex:]
-		self.segments = segments + self.segments[:segmentIndex]
-		# now, draw the contour onto the parent glyph
-		glyph = self.getParent()
-		pen = glyph.getPointPen()
-		self.drawPoints(pen)
-		# we've drawn the new contour onto our parent glyph,
-		# so it sits at the end of the contours list:
-		newContour = glyph.contours.pop(-1)
-		for segment in newContour.segments:
-			segment.setParent(self)
-		self.segments = newContour.segments
-		self._hasChanged()
-	
-	def _get_selected(self):
-		selected = 0
-		nodes = self._object.nodes
-		Layer = self._object.parent
-		for node in nodes:
-			if node in Layer.selection:
-				selected = 1
+	if self.closed:
+		for i in range(len(self), -1, -1):
+			StartNode = self.nodeAtIndex_(i)
+			if StartNode.type != OFFCURVE:
+				pen.moveTo(StartNode.position)
 				break
-		return selected
+	else:
+		for i in range(len(self)):
+			StartNode = self.nodeAtIndex_(i)
+			if StartNode.type != OFFCURVE:
+				pen.moveTo(StartNode.position)
+				break
+	for i in range(len(self)):
+		Node = self.nodeAtIndex_(i)
+		if Node.type == GSLINE:
+			pen.lineTo(Node.position)
+		elif Node.type == CURVE:
+			pen.curveTo(self.nodeAtIndex_(i-2).position, self.nodeAtIndex_(i-1).position, Node.position)
+	if self.closed:
+		pen.closePath()
+	else:
+		pen.endPath()
 
-	def _set_selected(self, value):
-		if value == 1:
-			self._nakedParent.SelectContour(self._index)
-		else:
-			Layer = self._object.parent
-			if value:
-				Layer.addObjectsFromArrayToSelection_(self._object.nodes)
-			else:
-				Layer.removeObjectsFromSelection_(self._object.pyobjc_instanceMethods.nodes())
+GSPath.draw = __GSPath__draw__
+
+def __GSPath__drawPoints__(self, pen):
+	'''draw the object with a fontTools pen'''
 	
-	selected = property(_get_selected, _set_selected, doc="selection of the contour: 1-selected or 0-unselected")
+	pen.beginPath()
+	print pen
+	for i in range(len(self)):
+		Node = self.nodeAtIndex_(i)
+		print "____drawPoints", Node.position, Node.type, Node.smooth
+		pen.addPoint(Node.position, segmentType=Node.type, smooth=Node.smooth)
+	pen.endPath()
+
+GSPath.drawPoints = __GSPath__drawPoints__
+
+def __GSPath_get_segments(self):
+	if not len(self.nodes):
+		return []
+	segments = []
+	index = 0
+	node = None
+	for i in range(len(self.nodes)):
+		node = self.nodeAtIndex_(i)
+		if node.type == GSLINE or node.type == GSCURVE:
+			_Segment = RSegment(index, self, node)
+			_Segment.parent = self
+			_Segment.index = index
+			segments.append(_Segment)
+			index += 1
+	if self.closed:
+		# TODO fix this out properly. 
+		# _Segment = RSegment(0, self, node)
+		# _Segment.type = MOVE
+		# segments.insert(0, _Segment)
+		pass
+	else:
+		_Segment = RSegment(0, self, self.nodeAtIndex_(0))
+		_Segment.type = MOVE
+		segments.insert(0, _Segment)
+	return segments
+
+def __GSPath_set_segments(self, segments):
+	points = []
+	for segment in segments:
+		points.append(segment.points)
+	
+GSPath.segments = property(__GSPath_get_segments, __GSPath_set_segments, doc="A list of all points in the contour organized into segments.")
+
+def __GSPath__reverseContour__(self):
+	'''reverse contour direction'''
+	self.reverse()
+GSPath.reverseContour = __GSPath__reverseContour__
+
+def __GSPath__pointInside__(self, point):
+	return self.bezierPath.containsPoint_(point)
+GSPath.pointInside = __GSPath__pointInside__
+
+def __GSPath__move__(self, (x, y)):
+	"""move the contour"""
+	#this will be faster if we go straight to the points
+	for point in self.points:
+		point.move((x, y))
+
+GSPath.move = __GSPath__move__
+
+def __GSPath__get_selected(self):
+	selected = 0
+	nodes = self.nodes
+	Layer = self.parent
+	for node in nodes:
+		if node in Layer.selection:
+			selected = 1
+			break
+	return selected
+
+def __GSPath__set_selected(self, value):
+	Layer = self.parent
+	if value:
+		Layer.addObjectsFromArrayToSelection_(self.pyobjc_instanceMethods.nodes())
+	else:
+		Layer.removeObjectsFromSelection_(self.pyobjc_instanceMethods.nodes())
+
+GSPath.selected = property(__GSPath__get_selected, __GSPath__set_selected, doc="selection of the contour: 1-selected or 0-unselected")
 
 
 class RSegment(BaseSegment):
@@ -946,14 +836,7 @@ class RSegment(BaseSegment):
 	
 	def _get_type(self):
 		if self.isMove: return MOVE
-		nodeType = self._object.type
-		if nodeType == GSLINE:
-			return LINE
-		elif nodeType == GSCURVE:
-			return CURVE
-		elif nodeType == GSOFFCURVE:
-			return OFFCURVE
-		return
+		return self._object.type
 	
 	def _set_type(self, pointType):
 		if pointType == MOVE:
@@ -1144,147 +1027,59 @@ class RBPoint(BaseBPoint):
 		
 	selected = property(_get_selected, _set_selected, doc="")
 	
+RPoint = GSNode
 
-class RPoint(BasePoint):
+RAnchor = GSAnchor
+
+def _get_name(self):
+	try:
+		name = self._object.userData()["name"]
+		if name is not None:
+			return name
+	except:
+		pass
 	
-	_title = "GlyphsPoint"
+	# Compatibility with old way to store name.
+	try:
+		a = TAG
+	except:
+		TAG = -2
+	Path = self.parent
+	Layer = Path.parent
+	for Hint in Layer.hints:
+		if Hint.type == TAG and len(Hint.name()) > 0:
+			if Hint.originNode is None and Hint.originIndex is not None:
+				Hint.updateIndexes()
+			if Hint.originNode == self._object:
+				self.setUserData_forKey_(Hint.name(), "name")
+				Layer.removeHint_(Hint)
+				return Hint.name()
+	return None
+
+def _set_name(self, value):
+	if value is None or type(value) is str or type(value) is unicode or type(value) is objc.pyobjc_unicode:
+		self.setUserData_forKey_(value, "name")
+	else:
+		raise(ValueError)
 	
-	def __init__(self, gs_point):
-		self._object = gs_point;
-		self.isMove = False
-		# self.selected = False
-		self._type = False
-		# self._x = x
-		# self._y = y
-		# self._name = None
-		# self._smooth = False
+GSNode.name = property(_get_name, _set_name, doc="")
 	
-	def __repr__(self):
-		GlyphName = "unnamed_glyph"
-		pathIndex = -1
-		nodeIndex = -1
-		Path = self._object.parent
-		if Path is not None:
-			
-			try:
-				nodeIndex = Path.indexOfNode_(self._object)
-			except AttributeError: pass
-			Layer = Path.parent
-			if Layer is not None:
-				try:
-					pathIndex = Layer.indexOfPath_(Path)
-				except AttributeError: pass
-				Glyph = Layer.parent
-				if Glyph is not None:
-					try:
-						GlyphName = Glyph.name
-					except AttributeError: pass
-		Type = ""
-		if self._type == MOVE:
-			Type = "MOVE"
-		elif self._object.type == GSOFFCURVE:
-			Type ="OFFCURVE"
-		elif self._object.type == GSCURVE:
-			Type ="CURVE"
-		else:
-			Type ="LINE"
-		#return "<RPoint (%.1f, %.1f %s) for %s[%d][%d]>"%( self._object.position.x, self._object.position.y, Type, GlyphName, pathIndex, nodeIndex)
-		return "<RPoint (%.1f, %.1f %s)>"%( self._object.position.x, self._object.position.y, Type)
+def __GSNode__get_smooth(self):
+	return self.connection == GSSMOOTH
+
+def __GSNode__set_smooth(self, value):
+	if value:
+		self.connection = GSSMOOTH
+	else:
+		self.connection = GSSHARP
+
+GSNode.smooth = property(__GSNode__get_smooth, __GSNode__set_smooth, doc="")
+
+def __GSNode__move__(self, (x, y)):
+	"""Move the point"""
+	self.x, self.y = addPt((self.x, self.y), (x, y))
 	
-	def _get_x(self):
-		return self._object.x
-	
-	def _set_x(self, value):
-		self._object.setPosition_((value, self._object.position.y))
-	
-	x = property(_get_x, _set_x, doc="")
-	
-	def _get_y(self):
-		return self._object.y
-	
-	def _set_y(self, value):
-		self._object.setPosition_((self._object.position.x, value))
-	
-	y = property(_get_y, _set_y, doc="")
-	
-	def _get_type(self):
-		if self._type == MOVE:
-			return MOVE
-		elif self._object.type == GSOFFCURVE:
-			return OFFCURVE
-		elif self._object.type == GSCURVE:
-			return CURVE
-		else:
-			return LINE
-	
-	def _set_type(self, value):
-		if value == MOVE:
-			self._type = value
-		elif value == LINE:
-			self._object.type = GSLINE
-		elif value == OFFCURVE:
-			self._object.type = GSOFFCURVE
-		elif value == CURVE:
-			self._object.type = GSCURVE
-	
-	type = property(_get_type, _set_type, doc="")
-	
-	def _get_name(self):
-		try:
-			name = self._object.userData()["name"]
-			if name is not None:
-				return name
-		except:
-			pass
-		
-		# Compatibility with old way to store name.
-		try:
-			a = TAG
-		except:
-			TAG = -2
-		Path = self._object.parent
-		Layer = Path.parent
-		for Hint in Layer.hints:
-			if Hint.type == TAG and len(Hint.name()) > 0:
-				if Hint.originNode is None and Hint.originIndex is not None:
-					Hint.updateIndexes()
-				if Hint.originNode == self._object:
-					self._object.setUserData_forKey_(Hint.name(), "name")
-					Layer.removeHint_(Hint)
-					return Hint.name()
-		return None
-	
-	def _set_name(self, value):
-		if value is None or type(value) is str or type(value) is unicode or type(value) is objc.pyobjc_unicode:
-			self._object.setUserData_forKey_(value, "name")
-		else:
-			raise(ValueError)
-	
-	name = property(_get_name, _set_name, doc="")
-	
-	def _get_smooth(self):
-		return self._object.connection == GSSMOOTH
-	
-	def _set_smooth(self, value):
-		if value:
-			self._object.connection = GSSMOOTH
-		else:
-			self._object.connection = GSSHARP
-	
-	smooth = property(_get_smooth, _set_smooth, doc="")
-	
-	def _get_selected(self):
-		Path = self._object.parent
-		Layer = Path.parent
-		return self._object in Layer.selection
-	
-	def _set_selected(self, value):
-		Path = self._object.parent
-		Layer = Path.parent
-		Layer.addSelection_(self._object)
-		
-	selected = property(_get_selected, _set_selected, doc="")
-	
+GSNode.move = __GSNode__move__
 
 
 GSComponent.offset = property(lambda self: self.position)
@@ -1353,6 +1148,7 @@ def __GSAnchor_draw_(self, pen):
 	pen.beginPath()
 	pen.addPoint((self.x, self.y), segmentType="move", smooth=False, name=self.name)
 	pen.endPath()
+
 GSAnchor.drawPoints = __GSAnchor_draw_
 
 class RKerning(BaseKerning):
