@@ -18,7 +18,7 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 import os
 from warnings import warn
 
-__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH"]
+__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH", "GlyphPreview"]
 
 GSMOVE_ = 17
 GSLINE_ = 1
@@ -1315,3 +1315,58 @@ class RFeatures(BaseFeatures):
 
 	text = property(_get_text, _set_text, doc="raw feature text.")
 
+from AppKit import *
+from vanilla.vanillaBase import VanillaBaseObject
+
+class GlyphPreviewView(NSView):
+	
+	def setGlyph_(self, glyph):
+		self._glyph = glyph
+	
+	def drawRect_(self, rect):
+		frame = self.frame()
+		NSColor.whiteColor().set()
+		NSRectFill(frame)
+		try:
+			if self._glyph is not None:
+				print self._glyph.__class__.__name__, isinstance(self._glyph, GSLayer)
+			
+				if self._glyph.__class__.__name__ == "NSKVONotifying_GSLayer":
+					layer = self._glyph
+				elif isinstance(self._glyph, RGlyph):
+					layer = self._glyph._layer
+				if layer:
+					layer.drawInFrame_(frame)
+		except:
+			import traceback
+			print traceback.format_exc()
+
+class GlyphPreview(VanillaBaseObject):
+
+	"""
+	A control that allows for showing a glyph
+
+	GlyphPreview objects handle GSLayer or RGlyph
+		from vanilla import *
+		from objectsGS import GlyphPreview
+		class GlyphPreviewDemo(object):
+			def __init__(self):
+				self.title = "Glyph Preview"
+				self.w = FloatingWindow((200, 200), self.title, closable=False)
+				glyph = Glyphs.font.selectedLayers[0]
+				self.w.Preview = GlyphPreview((0, 0, 0, 0), glyph=glyph)
+				self.w.open()
+		
+		GlyphPreviewDemo()
+
+	**posSize** Tuple of form *(left, top, width, height)* representing the position and size of the color well.
+
+	**glyph** A *GSLayer* or a *RGlyph* object. If *None* is given, the view will be white.
+	"""
+
+	nsGlyphPreviewClass = GlyphPreviewView
+
+	def __init__(self, posSize, glyph=None):
+		self._setupView(self.nsGlyphPreviewClass, posSize)
+		self._nsObject.setGlyph_(glyph)
+	
