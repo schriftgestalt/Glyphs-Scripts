@@ -1268,7 +1268,7 @@ class RInfo(BaseInfo):
 			if value is None and attr in _renameAttributes:
 				value = gsFont.valueForKey_(_renameAttributes[attr])
 			if value is None:
-				Instance = gsFont.instanceAtIndex_(self._object._master)
+				Instance = gsFont.fontMasterAtIndex_(self._object._master)
 				if Instance is None:
 					raise ValueError("The font has no Instance")
 				value = Instance.valueForKey_(attr)
