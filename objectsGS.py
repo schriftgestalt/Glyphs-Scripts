@@ -712,7 +712,7 @@ def __GSPath__draw__(self, pen):
 	'''draw the object with a fontTools pen'''
 	
 	if self.closed:
-		for i in range(len(self), -1, -1):
+		for i in range(-1, -4, -1):
 			StartNode = self.nodeAtIndex_(i)
 			if StartNode.type != OFFCURVE:
 				pen.moveTo(StartNode.position)
@@ -725,7 +725,7 @@ def __GSPath__draw__(self, pen):
 				break
 	for i in range(len(self)):
 		Node = self.nodeAtIndex_(i)
-		if Node.type == GSLINE:
+		if Node.type == LINE:
 			pen.lineTo(Node.position)
 		elif Node.type == CURVE:
 			pen.curveTo(self.nodeAtIndex_(i-2).position, self.nodeAtIndex_(i-1).position, Node.position)
