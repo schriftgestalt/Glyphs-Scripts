@@ -25,6 +25,28 @@ def convertFLSToUnicode(Value):
 		except:
 			pass
 	return Uni
+	
+def mapFLToCustomParameter(font, CustomParametersMapping):
+	CustomParameters = []
+	for FLKey, GlyphsKey in CustomParametersMapping.iteritems():
+		Value = None
+		if len(FLKey.split(".")) > 1:
+			FLKeyList = FLKey.split(".")
+			obj = font
+			for Key in FLKeyList:
+				obj = getattr(obj, Key)
+			Value = obj
+		else:
+			Value = getattr(font, FLKey)
+		if type(Value) is int:
+			Value = str(Value)
+		if Value and len(Value) > 0:
+			Value = convertFLSToUnicode(Value)
+			if Value is not None:
+				CustomParameters.append({"name":GlyphsKey, "value": Value})
+			else:
+				print "!!! invalid character or encoding in Font Info field: ", FLKey
+	return CustomParameters
 
 def makePlist(font):
 	f = fl.font
@@ -149,14 +171,6 @@ def makePlist(font):
 				Font[GlyphsKey] = Value
 			else:
 				print "!!  invalid character or encoding in Font Info field: ", FLKey
-					
-	CustomParametersMapping = {
-		"trademark":"trademark",
-		"notice":"description",
-		"license":"license",
-		"license_url":"licenseURL",
-		#"vendor":"openTypeOS2VendorID",
-	}
 	
 	Sec = getattr(font.ttinfo, "head_creation")[0]
 	if Sec < 0:
@@ -168,23 +182,16 @@ def makePlist(font):
 	Font["versionMajor"] = font.version_major
 	Font["versionMinor"] = font.version_minor
 	
-	CustomParameters = []
-	for FLKey, GlyphsKey in CustomParametersMapping.iteritems():
-		Value = None
-		if len(FLKey.split(".")) > 1:
-			FLKeyList = FLKey.split(".")
-			obj = font
-			for Key in FLKeyList:
-				obj = getattr(obj, Key)
-			Value = obj
-		else:
-			Value = getattr(font, FLKey)
-		if Value and len(Value) > 0:
-			Value = convertFLSToUnicode(Value)
-			if Value is not None:
-				CustomParameters.append({"name":GlyphsKey, "value": Value})
-			else:
-				print "!!! invalid character or encoding in Font Info field: ", FLKey
+	CustomParametersMapping = {
+		"trademark":"trademark",
+		"notice":"description",
+		"license":"license",
+		"license_url":"licenseURL",
+		#"vendor":"openTypeOS2VendorID",
+	}
+	
+	CustomParameters = mapFLToCustomParameter(font, CustomParametersMapping)
+	
 	CustomParameters.append({"name":"panose", "value":list(font.panose)})
 	
 	if font.vendor and len(font.vendor) > 0 and font.vendor.upper() != "PYRS":
@@ -250,6 +257,20 @@ def makePlist(font):
 		for j in range(AlignmentCount-1, 0, -2):
 			FontMaster["alignmentZones"].append("{%d, %d}" %( font.other_blues[i][j-1] , font.other_blues[i][j] - font.other_blues[i][j-1]))
 		
+		CustomParametersMapping = {
+			"ttinfo.os2_s_typo_ascender": "typoAscender",
+			"ttinfo.os2_s_typo_descender": "typoDescender",
+			"ttinfo.os2_s_typo_line_gap": "typoLineGap",
+			"ttinfo.os2_us_win_ascent": "winAscent",
+			"ttinfo.os2_us_win_descent": "winDescent",
+			"ttinfo.hhea_ascender": "hheaAscender",
+			"ttinfo.hhea_descender": "hheaDescender",
+			"ttinfo.hhea_line_gap": "hheaLineGap",
+		}
+		
+		CustomParameters = mapFLToCustomParameter(font, CustomParametersMapping)
+		if len(CustomParameters) > 0:
+			FontMaster["customParameters"] = CustomParameters
 		
 	if len(FontMasters) == 2:
 		try:
