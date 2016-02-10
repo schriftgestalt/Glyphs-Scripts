@@ -185,6 +185,7 @@ def makePlist(font):
 				CustomParameters.append({"name":GlyphsKey, "value": Value})
 			else:
 				print "!!! invalid character or encoding in Font Info field: ", FLKey
+	CustomParameters.append({"name":"panose", "value":list(font.panose)})
 	
 	if font.vendor and len(font.vendor) > 0 and font.vendor.upper() != "PYRS":
 		CustomParameters.append({"name":"openTypeOS2VendorID", "value": font.vendor.decode('UTF-8')})
