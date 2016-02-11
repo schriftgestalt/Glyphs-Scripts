@@ -1164,6 +1164,8 @@ GSComponent.drawPoints = __GSComponent_draw_
 def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
 	return GSComponent(baseGlyphName, offset, scale, transform)
 
+RAnchor = GSAnchor
+
 def __GSAnchor_draw_(self, pen):
 	"""draw the object with a point pen"""
 	pen.beginPath()
