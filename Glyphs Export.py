@@ -242,12 +242,22 @@ def makePlist(font):
 		AlignmentCount = font.blue_values_num
 		FontMaster["alignmentZones"] = []
 		for j in range(AlignmentCount-1, 0, -2):
-			FontMaster["alignmentZones"].append("{%d, %d}" %( font.blue_values[i][j-1] , font.blue_values[i][j] - font.blue_values[i][j-1]))
+			pos = font.blue_values[i][j-1]
+			size = font.blue_values[i][j] - font.blue_values[i][j-1]
+			if pos + size == 0:
+				pos = 0
+				size = -size
+			FontMaster["alignmentZones"].append("{%d, %d}" %(pos, size))
 		
 		AlignmentCount = font.other_blues_num
 		
 		for j in range(AlignmentCount-1, 0, -2):
-			FontMaster["alignmentZones"].append("{%d, %d}" %( font.other_blues[i][j-1] , font.other_blues[i][j] - font.other_blues[i][j-1]))
+			pos = font.other_blues[i][j-1]
+			size = font.other_blues[i][j] - font.other_blues[i][j-1]
+			if size > 0:
+				pos += size
+				size = -size
+			FontMaster["alignmentZones"].append("{%d, %d}" %(pos, size))
 		
 		
 	if len(FontMasters) == 2:
