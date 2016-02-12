@@ -3,7 +3,7 @@
 import sys
 import objc
 from GlyphsApp import *
-
+from GlyphsApp import Proxy
 from AppKit import *
 from Foundation import *
 
@@ -134,8 +134,78 @@ class PostScriptGlyphHintValues(BasePostScriptGlyphHintValues):
 			self._loadFromLib(aGlyph.lib)
 		if data is not None:
 			self.fromDict(data)
-	
-	
+
+class KerningProxy(Proxy, BaseKerning):
+	def _convertKeys(self, keys):
+		firstKey, secondKey = keys
+		if firstKey[0] != "@":
+			firstKey = self._owner._font.glyphForName_(firstKey).id
+			if firstKey == None:
+				raise KeyError, "glyph with name %s not found" % keys[0]
+		if secondKey[0] != "@":
+			secondKey = self._owner._font.glyphForName_(secondKey).id
+			if secondKey == None:
+				raise KeyError, "glyph with name %s not found" % keys[1]
+		return (firstKey, secondKey)
+	def __getitem__(self, keys):
+		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
+			FontMaster = self._owner._font.masters[self._owner._master]
+			firstKey, secondKey = self._convertKeys(keys)
+			value = self._owner._font.kerningForFontMasterID_LeftKey_RightKey_(FontMaster.id, firstKey, secondKey)
+			if value > 100000: # NSNotFound
+				value = None
+			return value
+		else:
+			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def __setitem__(self, keys, value):
+		if not isinstance(value, (int, float)):
+			raise ValueError
+		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
+			FontMaster = self._owner._font.masters[self._owner._master]
+			firstKey, secondKey = self._convertKeys(keys)
+			self._owner._font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMaster.id, firstKey, secondKey, value)
+		else:
+			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def __delitem__(self, keys):
+		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
+			FontMaster = self._owner._font.masters[self._owner._master]
+			firstKey, secondKey = self._convertKeys(keys)
+			self._owner._font.removeKerningForFontMasterID_LeftKey_RightKey_(FontMaster.id, firstKey, secondKey)
+		else:
+			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def remove(self, keys):
+		self.__delitem__(keys)
+	def __repr__(self):
+		font = "unnamed_font"
+		fontParent = self.getParent()
+		if fontParent is not None:
+			try:
+				font = fontParent.info.postscriptFullName
+			except AttributeError: pass
+		return "<RKerning for %s>" % font
+	def keys(self):
+		return self._dict().keys()
+	def values(self):
+		return self._dict().values()
+	def __iter__(self):
+		for key in self.keys():
+			yield key
+	def _dict(self):
+		FontMaster = self._owner._font.masters[self._owner._master]
+		GSKerning = self._owner._font.kerning.objectForKey_(FontMaster.id)
+		kerning = {}
+		if GSKerning != None:
+			for LeftKey in GSKerning.allKeys():
+				LeftKerning = GSKerning.objectForKey_(LeftKey)
+				if LeftKey[0] != '@':
+					LeftKey = self._owner._font.glyphForId_(LeftKey).name
+				for RightKey in LeftKerning.allKeys():
+					RightKerning = LeftKerning.objectForKey_(RightKey)
+					if RightKey[0] != '@':
+						RightKey = self._owner._font.glyphForId_(RightKey).name
+					kerning[(str(LeftKey), str(RightKey))] = RightKerning
+		return kerning
+
 class RFont(BaseFont):
 	"""RoboFab UFO wrapper for GS Font object"""
 	
@@ -278,32 +348,8 @@ class RFont(BaseFont):
 	
 	groups = property(_get_groups, _set_groups, doc="groups")
 	
-	def _get_kerning(self):
-		FontMaster = self._font.masters[self._master]
-		GSKerning = self._font.kerning.objectForKey_(FontMaster.id)
-		kerning = {}
-		if GSKerning != None:
-			for LeftKey in GSKerning.allKeys():
-				LeftKerning = GSKerning.objectForKey_(LeftKey)
-				if LeftKey[0] != '@':
-					LeftKey = self._font.glyphForId_(LeftKey).name
-				for RightKey in LeftKerning.allKeys():
-					RightKerning = LeftKerning.objectForKey_(RightKey)
-					if RightKey[0] != '@':
-						RightKey = self._font.glyphForId_(RightKey).name
-					kerning[(LeftKey, RightKey)] = RightKerning
-		rk = RKerning(kerning)
-		rk.setParent(self)
-		return rk
-	
-	def _set_kerning(self, kerning):
-		FontMasterID = self._font.masters[self._master].id
-		LeftKerning = NSMutableDictionary.alloc().init()
-		Font = self._font
-		for pair in kerning:
-			Font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMasterID, pair[0], pair[1], kerning[pair])
-	
-	kerning = property(_get_kerning, _set_kerning, doc="groups")
+	kerning = property( lambda self: KerningProxy(self),
+						lambda self, value: KerningProxy(self).setter(value))
 	
 	#
 	# methods for imitating GlyphSet?
