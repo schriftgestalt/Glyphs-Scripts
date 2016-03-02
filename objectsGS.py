@@ -157,6 +157,11 @@ class KerningProxy(Proxy, BaseKerning):
 			return value
 		else:
 			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def get(self, pair, default=None):
+		try:
+			return self.__getitem__(pair)
+		except:
+			return default
 	def __setitem__(self, keys, value):
 		if not isinstance(value, (int, float)):
 			raise ValueError
@@ -1328,6 +1333,8 @@ class RInfo(BaseInfo):
 					elif attr == "postscriptFontName" or attr == "fontName":
 						value = "%s-%s" % (gsFont.valueForKey_("familyName"), Instance.name)
 						value = value.replace(" ", "")
+					elif attr == "styleName":
+						value = "%s" % (Instance.name)
 			return value
 		except:
 			raise AttributeError("Unknown attribute %s." % attr)
