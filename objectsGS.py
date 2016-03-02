@@ -157,6 +157,11 @@ class KerningProxy(Proxy, BaseKerning):
 			return value
 		else:
 			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def get(self, pair, default=None):
+		try:
+			return self.__getitem__(pair)
+		except:
+			return default
 	def __setitem__(self, keys, value):
 		if not isinstance(value, (int, float)):
 			raise ValueError
