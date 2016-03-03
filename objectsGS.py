@@ -746,11 +746,11 @@ class RGlyph(BaseGlyph):
 
 RContour = GSPath
 
-def __GSPath__get_box__(self):
+def __GSElement__get_box__(self):
 	rect = self.bounds
-	return (rect.origin.x, rect.origin.y, rect.origin.x + rect.size.width, rect.origin.y + rect.size.height)
+	return (NSMinX(rect), NSMinY(rect), NSMaxX(rect), NSMaxY(rect))
 
-GSPath.box = property(__GSPath__get_box__, doc="get the contour bounding box as a tuple of lower left x, lower left y, width, height coordinates")
+GSPath.box = property(__GSElement__get_box__, doc="get the contour bounding box as a tuple of lower left x, lower left y, width, height coordinates")
 
 GSPath.points = GSPath.nodes
 
@@ -977,11 +977,11 @@ class RSegment(BaseSegment):
 		points = []
 		if index < len(Path.nodes):
 			if self._object.type == GSCURVE:
-				points.append(RPoint(Path.nodes[index-2]))
-				points.append(RPoint(Path.nodes[index-1]))
-				points.append(RPoint(Path.nodes[index]))
+				points.append(Path.nodes[index-2])
+				points.append(Path.nodes[index-1])
+				points.append(Path.nodes[index])
 			elif self._object.type == GSLINE:
-				points.append(RPoint(Path.nodes[index]))
+				points.append(Path.nodes[index])
 		return points
 	
 	points = property(_get_points, doc="index of the segment")
@@ -1201,10 +1201,7 @@ def __GSComponent_get_index(self):
 	return self.parent.components.index(self)
 GSComponent.index = property(__GSComponent_get_index, doc="index of the component")
 
-def __GSComponent_get_box_(self):
-	Rect = self.bounds
-	return (NSMinX(Rect), NSMinY(Rect), NSMaxX(Rect), NSMaxY(Rect))
-GSComponent.box = property(__GSComponent_get_box_, doc="the bounding box of the component: (xMin, yMin, xMax, yMax)")
+GSComponent.box = property(__GSElement__get_box__, doc="the bounding box of the component: (xMin, yMin, xMax, yMax)")
 
 def __GSComponent_round_(self):
 	(xx, xy, yx, yy, dx, dy) = self.transformStruct()
