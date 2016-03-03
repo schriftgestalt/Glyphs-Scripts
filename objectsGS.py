@@ -746,6 +746,12 @@ class RGlyph(BaseGlyph):
 
 RContour = GSPath
 
+def __GSPath__get_box__(self):
+	rect = self.bounds
+	return (rect.origin.x, rect.origin.y, rect.origin.x + rect.size.width, rect.origin.y + rect.size.height)
+
+GSPath.box = property(__GSPath__get_box__, doc="get the contour bounding box as a tuple of lower left x, lower left y, width, height coordinates")
+
 GSPath.points = GSPath.nodes
 
 def __GSPath__get_bPoints(self):
