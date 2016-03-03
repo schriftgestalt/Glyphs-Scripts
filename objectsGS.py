@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import objc
+import weakref
 from GlyphsApp import *
 from GlyphsApp import Proxy
 from AppKit import *
@@ -60,10 +61,10 @@ def AllFonts():
 
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
-	Doc = Glyphs.currentDocument
+	doc = Glyphs.currentDocument
 	try:
 		Layer = Doc.selectedLayers()[0]
-		return RGlyph(Layer.parent)
+		return RGlyph(Layer.parent, doc.windowControllers()[0].masterIndex())
 	except: pass
 	
 	print "No glyph selected!"
@@ -400,7 +401,8 @@ class RFont(BaseFont):
 			n = self._RGlyphs[glyphName]
 		else:
 			# haven't served it before, is it in the glyphSet then?
-			n = RGlyph( self._font.glyphForName_(glyphName) )
+			n = RGlyph(self._font.glyphForName_(glyphName), self._master)
+			n.setParent(self)
 			self._RGlyphs[glyphName] = n
 			
 		if n is None:
@@ -514,8 +516,13 @@ class RGlyph(BaseGlyph):
 			pass
 		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
 	
+	def setParent(self, parent):
+		self._parent = weakref.ref(parent)
+	
 	def getParent(self):
-		return RFont(self._object.parent)
+		if self._parent != None:
+			self._parent = RFont(self._object.parent, self.masterIndex)
+		return self._parent
 	
 	def __getitem__(self, index):
 		return self.contours[index]
