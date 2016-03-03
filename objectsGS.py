@@ -60,10 +60,10 @@ def AllFonts():
 
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
-	Doc = Glyphs.currentDocument
+	doc = Glyphs.currentDocument
 	try:
 		Layer = Doc.selectedLayers()[0]
-		return RGlyph(Layer.parent)
+		return RGlyph(Layer.parent, doc.windowControllers()[0].masterIndex())
 	except: pass
 	
 	print "No glyph selected!"
