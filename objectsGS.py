@@ -162,6 +162,8 @@ class KerningProxy(Proxy, BaseKerning):
 			return self.__getitem__(pair)
 		except:
 			return default
+	def items(self):
+		return self._dict().items()
 	def __setitem__(self, keys, value):
 		if not isinstance(value, (int, float)):
 			raise ValueError
