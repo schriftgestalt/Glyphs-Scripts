@@ -83,7 +83,7 @@ def OpenFont(path=None, note=None):
 
 def NewFont(familyName=None, styleName=None):
 	"""Make a new font"""
-	doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)
+	doc = Glyphs.documentController().openUntitledDocumentAndDisplay_error_(True, None)[0]
 	rf = RFont(doc.font)
 	if familyName:
 		rf.info.familyName = familyName
@@ -362,14 +362,7 @@ class RFont(BaseFont):
 	
 	def save(self, path=None):
 		"""Save the font, path is required."""
-		if not path:
-			if not self._document.filePath():
-				raise RoboFabError, "No destination path specified."
-			else:
-				self._document.setFilePath_( self.filename )
-		else:
-			self._document.setFilePath_( path )
-		self._document.saveDocument_(None)
+		self._font.save(path)
 	
 	def close(self, save=False):
 		"""Close the font, saving is optional."""
@@ -1393,6 +1386,8 @@ GSComponent.drawPoints = __GSComponent_draw_
 
 def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
 	return GSComponent(baseGlyphName, offset, scale, transform)
+
+RAnchor = GSAnchor
 
 def __GSAnchor_draw_(self, pen):
 	"""draw the object with a point pen"""
