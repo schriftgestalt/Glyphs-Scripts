@@ -181,6 +181,11 @@ class KerningProxy(Proxy, BaseKerning):
 			self._owner._font.removeKerningForFontMasterID_LeftKey_RightKey_(FontMaster.id, firstKey, secondKey)
 		else:
 			raise KeyError, 'kerning pair must be a tuple: (left, right)'
+	def clear(self):
+		FontMaster = self._owner._font.masters[self._owner._master]
+		GSKerning = self._owner._font.kerning.objectForKey_(FontMaster.id)
+		if GSKerning is not None:
+			GSKerning.clear()
 	def remove(self, keys):
 		self.__delitem__(keys)
 	def __repr__(self):
