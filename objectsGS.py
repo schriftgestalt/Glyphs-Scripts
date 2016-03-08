@@ -522,7 +522,8 @@ class RGlyph(BaseGlyph):
 		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
 	
 	def setParent(self, parent):
-		self._parent = weakref.ref(parent)
+		#self._parent = weakref.ref(parent)
+		self._parent = parent
 	
 	def getParent(self):
 		if self._parent is not None:
