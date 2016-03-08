@@ -525,7 +525,7 @@ class RGlyph(BaseGlyph):
 		self._parent = weakref.ref(parent)
 	
 	def getParent(self):
-		if self._parent != None:
+		if self._parent is not None:
 			self._parent = RFont(self._object.parent, self.masterIndex)
 		return self._parent
 	
