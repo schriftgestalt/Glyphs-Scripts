@@ -477,35 +477,46 @@ class RGlyph(BaseGlyph):
 	_title = "GSGlyph"
 	preferedSegmentType = "curve"
 	
-	def __init__(self, _GSGlyph = None, master = 0, layer = None):
+	def __init__(self, glyph = None, master = 0, layer = None):
+		
+		self.masterIndex = 0;
+		self._layer = None
+		
+		if type(glyph) == RGlyph:
+			self._object = glyph._object
+			self._layer = glyph._layer.copy()
+			self._layerID = glyph._layerID
+			if hasattr(glyph, "masterIndex"):
+				self.masterIndex = glyph.masterIndex
+			return
+		
 		if layer is not None:
-			_GSGlyph = layer.parent
+			glyph = layer.parent
 		
-		if _GSGlyph is None:
-			_GSGlyph = GSGlyph()
+		if glyph is None:
+			glyph = GSGlyph()
 		
-		self._object = _GSGlyph
+		self._object = glyph
 		self._layerID = None
 		if layer is None:
 			try:
-				if _GSGlyph.parent:
-					self._layerID = _GSGlyph.parent.masters[master].id
-				elif (_GSGlyph.layers[master]):
-					self._layerID = _GSGlyph.layers[master].layerId
+				if glyph.parent:
+					self._layerID = glyph.parent.masters[master].id
+				elif (glyph.layers[master]):
+					self._layerID = glyph.layers[master].layerId
 			except:
 				pass
 			self.masterIndex = master
 			if self._layerID:
-				self._layer = _GSGlyph.layerForKey_(self._layerID)
+				self._layer = glyph.layerForKey_(self._layerID)
 		else:
 			self._layer = layer
 			self._layerID = layer.associatedMasterId
 		if self._layer is None:
 			self._layerID = "undefined"
 			self._layer = GSLayer()
-			_GSGlyph.setLayer_forKey_(self._layer, self._layerID)
-		self._contours = None
-		
+			glyph.setLayer_forKey_(self._layer, self._layerID)
+	
 	def __repr__(self):
 		font = "unnamed_font"
 		glyph = "unnamed_glyph"
