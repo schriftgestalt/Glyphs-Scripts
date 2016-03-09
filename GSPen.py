@@ -62,7 +62,7 @@ class GSPointPen(SegmentToPointPen):
 				self._layer.paths[-1].setClosed_(0)
 			if smooth:
 				_Node.connection = GSSMOOTH
-			self._path.nodes.append(_Node)
+			self._path.addNodeFast_(_Node)
 	
 	def addComponent(self, baseName, transformation):
 		if isinstance(baseName, RGlyph):
