@@ -152,7 +152,7 @@ class KerningProxy(Proxy, BaseKerning):
 		return (firstKey, secondKey)
 	def __getitem__(self, keys):
 		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
-			FontMaster = self._owner._font.masters[self._owner._master]
+			FontMaster = self._owner._font.masters[self._owner._masterIndex]
 			firstKey, secondKey = self._convertKeys(keys)
 			value = self._owner._font.kerningForFontMasterID_LeftKey_RightKey_(FontMaster.id, firstKey, secondKey)
 			if value > 100000: # NSNotFound
@@ -171,20 +171,20 @@ class KerningProxy(Proxy, BaseKerning):
 		if not isinstance(value, (int, float)):
 			raise ValueError
 		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
-			FontMaster = self._owner._font.masters[self._owner._master]
+			FontMaster = self._owner._font.masters[self._owner._masterIndex]
 			firstKey, secondKey = self._convertKeys(keys)
 			self._owner._font.setKerningForFontMasterID_LeftKey_RightKey_Value_(FontMaster.id, firstKey, secondKey, value)
 		else:
 			raise KeyError, 'kerning pair must be a tuple: (left, right)'
 	def __delitem__(self, keys):
 		if (type(keys) == list or type(keys) == tuple) and len(keys) == 2:
-			FontMaster = self._owner._font.masters[self._owner._master]
+			FontMaster = self._owner._font.masters[self._owner._masterIndex]
 			firstKey, secondKey = self._convertKeys(keys)
 			self._owner._font.removeKerningForFontMasterID_LeftKey_RightKey_(FontMaster.id, firstKey, secondKey)
 		else:
 			raise KeyError, 'kerning pair must be a tuple: (left, right)'
 	def clear(self):
-		FontMaster = self._owner._font.masters[self._owner._master]
+		FontMaster = self._owner._font.masters[self._owner._masterIndex]
 		GSKerning = self._owner._font.kerning.objectForKey_(FontMaster.id)
 		if GSKerning is not None:
 			GSKerning.clear()
@@ -206,7 +206,7 @@ class KerningProxy(Proxy, BaseKerning):
 		for key in self.keys():
 			yield key
 	def _dict(self):
-		FontMaster = self._owner._font.masters[self._owner._master]
+		FontMaster = self._owner._font.masters[self._owner._masterIndex]
 		GSKerning = self._owner._font.kerning.objectForKey_(FontMaster.id)
 		kerning = {}
 		if GSKerning != None:
@@ -234,7 +234,7 @@ class RFont(BaseFont):
 			doc = None
 		self._document = doc
 		self._font = font
-		self._master = master
+		self._masterIndex = master
 		self._masterKey = font.masters[master].id
 		self.features = RFeatures(font)
 		self.info = RInfo(self)
@@ -271,7 +271,7 @@ class RFont(BaseFont):
 		if GGlyph is None:
 			raise KeyError("Glyph '%s' not in font." % glyphName)
 		else:
-			glyph = RGlyph(GGlyph, self._master)
+			glyph = RGlyph(GGlyph, self._masterIndex)
 			glyph.setParent(self)
 			return glyph
 	
@@ -408,7 +408,7 @@ class RFont(BaseFont):
 			n = self._RGlyphs[glyphName]
 		else:
 			# haven't served it before, is it in the glyphSet then?
-			n = RGlyph(self._font.glyphForName_(glyphName), self._master)
+			n = RGlyph(self._font.glyphForName_(glyphName), self._masterIndex)
 			n.setParent(self)
 			self._RGlyphs[glyphName] = n
 			
@@ -1340,7 +1340,7 @@ class RInfo(BaseInfo):
 			if attr in _renameAttributes:
 				attr = _renameAttributes[attr]
 			
-			self._object._font.fontMasterAtIndex_(self._object._master).setValue_forKey_(value, attr)
+			self._object._font.fontMasterAtIndex_(self._object._masterIndex).setValue_forKey_(value, attr)
 			return
 		
 		if attr not in _baseAttributes:
@@ -1378,7 +1378,7 @@ class RInfo(BaseInfo):
 			if value is None and attr in _renameAttributes:
 				value = gsFont.valueForKey_(_renameAttributes[attr])
 			if value is None:
-				Instance = gsFont.fontMasterAtIndex_(self._object._master)
+				Instance = gsFont.fontMasterAtIndex_(self._object._masterIndex)
 				if Instance is None:
 					raise ValueError("The font has no Instance")
 				value = Instance.valueForKey_(attr)
