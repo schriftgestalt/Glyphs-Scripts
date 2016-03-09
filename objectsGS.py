@@ -62,13 +62,15 @@ def AllFonts():
 def CurrentGlyph():
 	"""Return a RoboFab glyph object for the currently selected glyph."""
 	doc = Glyphs.currentDocument
-	try:
-		Layer = Doc.selectedLayers()[0]
-		return RGlyph(Layer.parent, doc.windowControllers()[0].masterIndex())
-	except: pass
-	
-	print "No glyph selected!"
-	return None
+	Layer = doc.selectedLayers()[0]
+	if Layer is None:
+		return None
+	else:
+		master_index = doc.windowControllers()[0].masterIndex()
+		rg = RGlyph(Layer.parent, master_index)
+		rg.setParent(RFont(doc.font, master_index))
+		return rg
+
 
 def OpenFont(path=None, note=None):
 	"""Open a font from a path."""
@@ -533,10 +535,10 @@ class RGlyph(BaseGlyph):
 		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
 	
 	def setParent(self, parent):
-		self._parent = weakref.ref(parent)
+		self._parent = weakref.proxy(parent)
 	
 	def getParent(self):
-		if self._parent != None:
+		if self._parent is not None:
 			self._parent = RFont(self._object.parent, self.masterIndex)
 		return self._parent
 	
