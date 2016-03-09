@@ -481,7 +481,7 @@ class RGlyph(BaseGlyph):
 	
 	def __init__(self, glyph = None, master = 0, layer = None):
 		
-		self.masterIndex = 0;
+		self.masterIndex = master;
 		self._layer = None
 		
 		if type(glyph) == RGlyph:
