@@ -497,6 +497,8 @@ class RGlyph(BaseGlyph):
 		
 		if glyph is None:
 			glyph = GSGlyph()
+		else:
+			self.setParent(RFont(glyph.parent, self.masterIndex))
 		
 		self._object = glyph
 		self._layerID = None
@@ -538,9 +540,10 @@ class RGlyph(BaseGlyph):
 		self._parent = weakref.proxy(parent)
 	
 	def getParent(self):
-		if self._parent is not None:
-			self._parent = RFont(self._object.parent, self.masterIndex)
-		return self._parent
+		try:
+			return self._parent()
+		except:
+			return None
 	
 	def __getitem__(self, index):
 		return self.contours[index]
