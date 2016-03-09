@@ -766,6 +766,11 @@ class RGlyph(BaseGlyph):
 		pass
 	def prepareUndo(self, undoTitle):
 		pass
+#############
+#
+#  GSPath/Contour
+#
+#############
 
 RContour = GSPath
 
@@ -837,7 +842,7 @@ def __GSPath_get_segments(self):
 	node = None
 	for i in range(len(self.nodes)):
 		node = self.nodeAtIndex_(i)
-		if node.type == GSLINE or node.type == GSCURVE:
+		if node.type != OFFCURVE:
 			_Segment = RSegment(index, self, node)
 			_Segment.parent = self
 			_Segment.index = index
@@ -861,6 +866,25 @@ def __GSPath_set_segments(self, segments):
 		points.append(segment.points)
 	
 GSPath.segments = property(__GSPath_get_segments, __GSPath_set_segments, doc="A list of all points in the contour organized into segments.")
+
+def __GSPath__removeSegment__(self, index):
+	segmentIndex = 0
+	for i in range(len(self.nodes)):
+		node = self.nodeAtIndex_(i)
+		if node.type != OFFCURVE:
+			if index == segmentIndex:
+				self.removeNodeAtIndex_(i)
+				if node.type != LINE:
+					self.removeNodeAtIndex_(i)
+					i -= 1
+					while self.nodeAtIndex_(i).type == OFFCURVE:
+						self.removeNodeAtIndex_(i)
+						i -= 1
+				return
+				
+			segmentIndex += 1
+
+GSPath.removeSegment = __GSPath__removeSegment__
 
 def __GSPath__reverseContour__(self):
 	'''reverse contour direction'''
