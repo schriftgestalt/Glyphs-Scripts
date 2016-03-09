@@ -963,8 +963,10 @@ def updateKeyGlyphsForSelected():
 			RightKey = Glyph.name
 		
 		print Glyph.name, ">", LeftKey, RightKey
-		Glyph.setLeftKerningGroup_(LeftKey)
-		Glyph.setRightKerningGroup_(RightKey)
+		if Glyph.leftKerningGroup is None or len(Glyph.leftKerningGroup) == 0:
+			Glyph.setLeftKerningGroup_(LeftKey)
+		if Glyph.rightKerningGroup is None or len(Glyph.rightKerningGroup) == 0:
+			Glyph.setRightKerningGroup_(RightKey)
 
 def main():
  	print "*** Start Update Key Glyphs ***\n"
