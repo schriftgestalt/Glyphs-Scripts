@@ -534,7 +534,7 @@ class RGlyph(BaseGlyph):
 			glyph = self.name
 		except AttributeError:
 			pass
-		return "<RGlyph %s for %s.%s>" %(self._object.name, font, glyph)
+		return "<RGlyph %s for %s>" %(self._object.name, font)
 	
 	def setParent(self, parent):
 		self._parent = weakref.proxy(parent)
