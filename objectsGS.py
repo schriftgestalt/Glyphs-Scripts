@@ -1436,8 +1436,6 @@ class GlyphPreviewView(NSView):
 		NSRectFill(frame)
 		try:
 			if self._glyph is not None:
-				print self._glyph.__class__.__name__, isinstance(self._glyph, GSLayer)
-			
 				if self._glyph.__class__.__name__ == "NSKVONotifying_GSLayer":
 					layer = self._glyph
 				elif isinstance(self._glyph, RGlyph):
