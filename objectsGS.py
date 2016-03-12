@@ -800,45 +800,6 @@ def __GSPath__get_bPoints(self):
 	
 GSPath.bPoints = property(__GSPath__get_bPoints, doc="view the contour as a list of bPoints")
 
-def __GSPath__draw__(self, pen):
-	'''draw the object with a fontTools pen'''
-	
-	if self.closed:
-		for i in range(-1, -4, -1):
-			StartNode = self.nodeAtIndex_(i)
-			if StartNode.type != OFFCURVE:
-				pen.moveTo(StartNode.position)
-				break
-	else:
-		for i in range(len(self)):
-			StartNode = self.nodeAtIndex_(i)
-			if StartNode.type != OFFCURVE:
-				pen.moveTo(StartNode.position)
-				break
-	for i in range(len(self)):
-		Node = self.nodeAtIndex_(i)
-		if Node.type == LINE:
-			pen.lineTo(Node.position)
-		elif Node.type == CURVE:
-			pen.curveTo(self.nodeAtIndex_(i-2).position, self.nodeAtIndex_(i-1).position, Node.position)
-	if self.closed:
-		pen.closePath()
-	else:
-		pen.endPath()
-
-GSPath.draw = __GSPath__draw__
-
-def __GSPath__drawPoints__(self, pen):
-	'''draw the object with a fontTools pen'''
-	
-	pen.beginPath()
-	for i in range(len(self)):
-		Node = self.nodeAtIndex_(i)
-		pen.addPoint(Node.position, segmentType=Node.type, smooth=Node.smooth)
-	pen.endPath()
-
-GSPath.drawPoints = __GSPath__drawPoints__
-
 def __GSPath_get_segments(self):
 	if not len(self.nodes):
 		return []
