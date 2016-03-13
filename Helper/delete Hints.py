@@ -1,7 +1,11 @@
 #MenuTitle: Delete Hints
 
-Layers = Glyphs.currentDocument.selectedLayers()
-for Layer in Layers:
+from GlyphsApp import CORNER, CAP
+
+for Layer in Glyphs.font.selectedLayers:
 	print Layer.parent.name
 	if len(Layer.hints) > 0:
-		Layer.hints = None
+		hints = list(Layer.hints)
+		for idx, hint in reversed(list(enumerate(hints))):
+			if hint.type not in (CORNER, CAP):
+				del(Layer.hints[idx])

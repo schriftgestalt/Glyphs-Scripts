@@ -49,26 +49,20 @@ class GSPointPen(SegmentToPointPen):
 			self._layer.anchors.append(_Anchor)
 		else:
 			_Node = GSNode(pt)
-			if segmentType == MOVE:
+			if segmentType == LINE:
 				_Node.type = GSLINE
-				self._layer.paths[-1].setClosed_(0)
-			if segmentType is None:
-				segmentType == OFFCURVE
-			
-			if segmentType == MOVE:
-				_Node.type = GSLINE
-				self._layer.paths[-1].setClosed_(0)
-			elif segmentType == LINE:
-				_Node.type = GSLINE
-			elif segmentType is CURVE:
+			elif segmentType == CURVE:
 				_Node.type = GSCURVE
-			elif segmentType is QCURVE:
+			elif segmentType == QCURVE:
 				_Node.type = GSQCURVE
-			elif segmentType is OFFCURVE:
+			elif segmentType == OFFCURVE or segmentType is None:
 				_Node.type = GSOFFCURVE
+			elif segmentType == MOVE:
+				_Node.type = GSLINE
+				self._layer.paths[-1].setClosed_(0)
 			if smooth:
 				_Node.connection = GSSMOOTH
-			self._path.nodes.append(_Node)
+			self._path.addNodeFast_(_Node)
 	
 	def addComponent(self, baseName, transformation):
 		if isinstance(baseName, RGlyph):
