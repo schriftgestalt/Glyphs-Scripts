@@ -358,12 +358,14 @@ def loadGlyphsInfo():
 		GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
 		WeightCodesPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/weights.plist"
 	
+	print 'Loading GlyphData from "%s" ...' % GlyphsInfoPath
 	parseGlyphDataFile(GlyphsInfoPath)
 	
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
 		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
 		if os.path.isfile(CustomGlyphsInfoPath):
+			print 'Loading custom GlyphData from "%s" ...' % CustomGlyphsInfoPath
 			parseGlyphDataFile(CustomGlyphsInfoPath)
 	
 	global weightCodes
