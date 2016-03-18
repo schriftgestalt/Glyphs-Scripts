@@ -1,5 +1,5 @@
 #FLM: Glyphs Import
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 # Version 0.4
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
@@ -111,7 +111,7 @@ def setInstanceStyleNames(Font, Dict):
 		_shortStyle = _shortStyle.replace(any, shortStyleList[any])
 	_postscriptName = _Familie + "-" + _shortStyle
 	_postscriptName = _postscriptName.replace(" ", "")
-	print _postscriptName
+	# print _postscriptName
 	Font.family_name = _Familie
 	Font.style_name = _WinStyle
 	
@@ -397,10 +397,12 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 		ComponentGlyph = Font.glyphs[component.index]
 		if len(ComponentGlyph.components) > 0:
 			
-			print "__ needs decomposition", glyph.name
+			#print "__ needs decompostion", glyph.name
 			for ComponentGlyphComponent in ComponentGlyph.components:
 				CopyComponent = Component(ComponentGlyphComponent)
+				#print "__ComponentGlyphComponent", ComponentGlyphComponent
 				for masterIndex in range(MasterCount):
+					#print "Decompose", CopyComponent.deltas[masterIndex].x, component.scales[masterIndex].x, component.deltas[masterIndex].x
 					CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
 					CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
 					CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
