@@ -984,13 +984,21 @@ def GetFile(message=None, filetypes = None, selectFolders = True, selectFiles = 
 		return Panel.filename()
 	return None
 
+def listdir_fullpath(d):
+    return [os.path.join(d, f) for f in os.listdir(d)]
+
 def main():
 	fl.output = ""
-	path = GetFile(message="Please select a .glyphs file", filetypes=["glyphs"], selectFolders=False, selectFiles=True)
+	path = GetFile(message="Please select a .glyphs file", filetypes=["glyphs"], selectFolders=True, selectFiles=True)
 	StartTime = time.clock()
 	if path is None:
 		return
-	readGlyphsFile(path)
+	if os.path.isfile(path):
+		readGlyphsFile(path)
+	else:
+		for glyphs_file_path in listdir_fullpath(path):
+			if glyphs_file_path.endswith(".glyphs") and os.path.basename(glyphs_file_path)[0] != ".":
+				readGlyphsFile(glyphs_file_path)
 	
 	print "import Time:", (time.clock() - StartTime), "s."
 
