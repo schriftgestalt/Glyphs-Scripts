@@ -1,5 +1,5 @@
 #FLM: Glyphs Import
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 # Version 0.4
 # copyright Georg Seifert 2012, schriftgestaltung.de
 # 
@@ -25,17 +25,20 @@ Name2SubCategory = {}
 
 shortStyleList = {"Extra": "Ex", "Condensed": "Cond", "Extended": "Extd", "Semi":"Sm", "Italic": "It", "Bold":"Bd", " Sans":"", " Mono":""}
 weightCodes = {}
+
 def NotNiceName(Name):
-	Suffix = ""
-	if "." in Name:
-		Name, Suffix = Name.split(".", 1)
-	if convertName and Name in Nice2Legacy:
-		Name = Nice2Legacy[Name]
-	else:
-		Name = Name.replace("-", "")
-	if len(Suffix) > 0:
-		Name = Name + "." + Suffix
-	return Name
+	if convertName:
+		if Name in Nice2Legacy:
+			Name = Nice2Legacy[Name]
+		else:
+			if "." in Name:
+				parts = Name.split(".")
+				for i in range(1, len(parts)):
+					part = ".".join(parts[:-i])
+					if part in Nice2Legacy:
+						Name = Nice2Legacy[part] + "." + ".".join(parts[-i:])
+						break
+	return Name.replace("-", "")
 
 def setInstanceStyleNames(Font, Dict):
 	_Familie = str(Dict['familyName'])
@@ -111,7 +114,7 @@ def setInstanceStyleNames(Font, Dict):
 		_shortStyle = _shortStyle.replace(any, shortStyleList[any])
 	_postscriptName = _Familie + "-" + _shortStyle
 	_postscriptName = _postscriptName.replace(" ", "")
-	print _postscriptName
+	# print _postscriptName
 	Font.family_name = _Familie
 	Font.style_name = _WinStyle
 	
@@ -358,12 +361,14 @@ def loadGlyphsInfo():
 		GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
 		WeightCodesPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/weights.plist"
 	
+	print 'Loading GlyphData from "%s" ...' % GlyphsInfoPath
 	parseGlyphDataFile(GlyphsInfoPath)
 	
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
 		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
 		if os.path.isfile(CustomGlyphsInfoPath):
+			print 'Loading custom GlyphData from "%s" ...' % CustomGlyphsInfoPath
 			parseGlyphDataFile(CustomGlyphsInfoPath)
 	
 	global weightCodes
@@ -397,10 +402,12 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 		ComponentGlyph = Font.glyphs[component.index]
 		if len(ComponentGlyph.components) > 0:
 			
-			print "__ needs decomposition", glyph.name
+			#print "__ needs decompostion", glyph.name
 			for ComponentGlyphComponent in ComponentGlyph.components:
 				CopyComponent = Component(ComponentGlyphComponent)
+				#print "__ComponentGlyphComponent", ComponentGlyphComponent
 				for masterIndex in range(MasterCount):
+					#print "Decompose", CopyComponent.deltas[masterIndex].x, component.scales[masterIndex].x, component.deltas[masterIndex].x
 					CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
 					CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
 					CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
@@ -984,13 +991,21 @@ def GetFile(message=None, filetypes = None, selectFolders = True, selectFiles = 
 		return Panel.filename()
 	return None
 
+def listdir_fullpath(d):
+    return [os.path.join(d, f) for f in os.listdir(d)]
+
 def main():
 	fl.output = ""
-	path = GetFile(message="Please select a .glyphs file", filetypes=["glyphs"], selectFolders=False, selectFiles=True)
+	path = GetFile(message="Please select a .glyphs file", filetypes=["glyphs"], selectFolders=True, selectFiles=True)
 	StartTime = time.clock()
 	if path is None:
 		return
-	readGlyphsFile(path)
+	if os.path.isfile(path):
+		readGlyphsFile(path)
+	else:
+		for glyphs_file_path in listdir_fullpath(path):
+			if glyphs_file_path.endswith(".glyphs") and os.path.basename(glyphs_file_path)[0] != ".":
+				readGlyphsFile(glyphs_file_path)
 	
 	print "import Time:", (time.clock() - StartTime), "s."
 
