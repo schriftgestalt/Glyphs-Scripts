@@ -25,17 +25,20 @@ Name2SubCategory = {}
 
 shortStyleList = {"Extra": "Ex", "Condensed": "Cond", "Extended": "Extd", "Semi":"Sm", "Italic": "It", "Bold":"Bd", " Sans":"", " Mono":""}
 weightCodes = {}
+
 def NotNiceName(Name):
-	Suffix = ""
-	if "." in Name:
-		Name, Suffix = Name.split(".", 1)
-	if convertName and Name in Nice2Legacy:
-		Name = Nice2Legacy[Name]
-	else:
-		Name = Name.replace("-", "")
-	if len(Suffix) > 0:
-		Name = Name + "." + Suffix
-	return Name
+	if convertName:
+		if Name in Nice2Legacy:
+			Name = Nice2Legacy[Name]
+		else:
+			if "." in Name:
+				parts = Name.split(".")
+				for i in range(1, len(parts)):
+					part = ".".join(parts[:-i])
+					if part in Nice2Legacy:
+						Name = Nice2Legacy[part] + "." + ".".join(parts[-i:])
+						break
+	return Name.replace("-", "")
 
 def setInstanceStyleNames(Font, Dict):
 	_Familie = str(Dict['familyName'])
