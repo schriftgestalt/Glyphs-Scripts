@@ -7,6 +7,6 @@ Feel free to organize files in subfolders.
 To be able to use [Robofab](http://robofab.com) scripts, you need to put the file `objectsGS.py` and `GSPen.py` directly in the Script folder.
 
 #### Data exchange with FontLab
-Only two files ("Glyphs Export.py", "Glyphs Import.py") need to go to the FontLab Macros Folder:
-~/Library/Application Support/FontLab/Studio 5/Macros/
+Only the two files `Glyphs Export.py`, `Glyphs Import.py` need to go to the FontLab Macros Folder:
+`~/Library/Application Support/FontLab/Studio 5/Macros/`
 Copy the path, and in Finder, press cmd+shift+G and paste the path.
