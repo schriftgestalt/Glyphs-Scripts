@@ -1,5 +1,5 @@
 """Pens for creating glyphs in Glyphs."""
-
+# -*- coding: utf-8 -*-
 import sys
 import objc
 from AppKit import *
