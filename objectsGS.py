@@ -793,95 +793,6 @@ def __GSPath__get_bPoints(self):
 	
 GSPath.bPoints = property(__GSPath__get_bPoints, doc="view the contour as a list of bPoints")
 
-def __GSPath_get_segments(self):
-	if not len(self.nodes):
-		return []
-	segments = []
-	index = 0
-	node = None
-	for i in range(len(self.nodes)):
-		node = self.nodeAtIndex_(i)
-		if node.type != OFFCURVE:
-			_Segment = RSegment(index, self, node)
-			_Segment.parent = self
-			_Segment.index = index
-			segments.append(_Segment)
-			index += 1
-	if self.closed:
-		# TODO fix this out properly. 
-		# _Segment = RSegment(0, self, node)
-		# _Segment.type = MOVE
-		# segments.insert(0, _Segment)
-		pass
-	else:
-		_Segment = RSegment(0, self, self.nodeAtIndex_(0))
-		_Segment.type = MOVE
-		segments.insert(0, _Segment)
-	return segments
-
-def __GSPath_set_segments(self, segments):
-	points = []
-	for segment in segments:
-		points.append(segment.points)
-	
-GSPath.segments = property(__GSPath_get_segments, __GSPath_set_segments, doc="A list of all points in the contour organized into segments.")
-
-def __GSPath__removeSegment__(self, index):
-	segmentIndex = 0
-	for i in range(len(self.nodes)):
-		node = self.nodeAtIndex_(i)
-		if node.type != OFFCURVE:
-			if index == segmentIndex:
-				self.removeNodeAtIndex_(i)
-				if node.type != LINE:
-					self.removeNodeAtIndex_(i)
-					i -= 1
-					while self.nodeAtIndex_(i).type == OFFCURVE:
-						self.removeNodeAtIndex_(i)
-						i -= 1
-				return
-				
-			segmentIndex += 1
-
-GSPath.removeSegment = __GSPath__removeSegment__
-
-def __GSPath__reverseContour__(self):
-	'''reverse contour direction'''
-	self.reverse()
-GSPath.reverseContour = __GSPath__reverseContour__
-
-def __GSPath__pointInside__(self, point):
-	return self.bezierPath.containsPoint_(point)
-GSPath.pointInside = __GSPath__pointInside__
-
-def __GSPath__move__(self, (x, y)):
-	"""move the contour"""
-	#this will be faster if we go straight to the points
-	for point in self.points:
-		point.move((x, y))
-
-GSPath.move = __GSPath__move__
-
-def __GSPath__get_selected(self):
-	selected = 0
-	nodes = self.nodes
-	Layer = self.parent
-	for node in nodes:
-		if node in Layer.selection:
-			selected = 1
-			break
-	return selected
-
-def __GSPath__set_selected(self, value):
-	Layer = self.parent
-	if value:
-		Layer.addObjectsFromArrayToSelection_(self.pyobjc_instanceMethods.nodes())
-	else:
-		Layer.removeObjectsFromSelection_(self.pyobjc_instanceMethods.nodes())
-
-GSPath.selected = property(__GSPath__get_selected, __GSPath__set_selected, doc="selection of the contour: 1-selected or 0-unselected")
-
-
 class RSegment(BaseSegment):
 	def __init__(self, index, contoure, node):
 		BaseSegment.__init__(self)
@@ -892,8 +803,19 @@ class RSegment(BaseSegment):
 	
 	def __repr__(self):
 		return "<RSegment %s (%d), r>"%(self.type, self.smooth)#, self.points)
+	
 	def getParent(self):
 		return self.parent
+	
+	def __len__(self):
+		if self._object.type == CURVE:
+			return 4
+		return 2
+	
+	def __getitem__(self, Key):
+		if type(Key) != int:
+			raise KeyError
+		return self.points[Key]
 	
 	def _get_type(self):
 		if self.isMove: return MOVE
@@ -983,10 +905,12 @@ class RSegment(BaseSegment):
 		points = []
 		if index < len(Path.nodes):
 			if self._object.type == GSCURVE:
+				points.append(Path.nodes[index-3])
 				points.append(Path.nodes[index-2])
 				points.append(Path.nodes[index-1])
 				points.append(Path.nodes[index])
 			elif self._object.type == GSLINE:
+				points.append(Path.nodes[index-1])
 				points.append(Path.nodes[index])
 		return points
 	
@@ -1020,6 +944,102 @@ class RSegment(BaseSegment):
 	
 	selected = property(_get_selected, _set_selected, doc="if segment is selected")
 
+
+
+
+def __GSPath_get_segments(self):
+	if not len(self.nodes):
+		return []
+	segments = []
+	index = 0
+	node = None
+	for i in range(len(self.nodes)):
+		node = self.nodeAtIndex_(i)
+		if node.type != OFFCURVE:
+			_Segment = RSegment(index, self, node)
+			_Segment.parent = self
+			_Segment.index = index
+			segments.append(_Segment)
+			index += 1
+	if self.closed:
+		# TODO fix this out properly. 
+		# _Segment = RSegment(0, self, node)
+		# _Segment.type = MOVE
+		# segments.insert(0, _Segment)
+		pass
+	else:
+		_Segment = RSegment(0, self, self.nodeAtIndex_(0))
+		_Segment.type = MOVE
+		segments.insert(0, _Segment)
+	return segments
+
+def __GSPath_set_segments(self, segments):
+	points = []
+	for segment in segments:
+		points.append(segment.points)
+	
+GSPath.segments = property(__GSPath_get_segments, __GSPath_set_segments, doc="A list of all points in the contour organized into segments.")
+
+def __GSPath__removeSegment__(self, index):
+	segmentIndex = 0
+	for i in range(len(self.nodes)):
+		node = self.nodeAtIndex_(i)
+		if node.type != OFFCURVE:
+			if index == segmentIndex:
+				self.removeNodeAtIndex_(i)
+				if node.type != LINE:
+					self.removeNodeAtIndex_(i)
+					i -= 1
+					while self.nodeAtIndex_(i).type == OFFCURVE:
+						self.removeNodeAtIndex_(i)
+						i -= 1
+				return
+				
+			segmentIndex += 1
+
+GSPath.removeSegment = __GSPath__removeSegment__
+
+def __GSPath__reverseContour__(self):
+	'''reverse contour direction'''
+	self.reverse()
+GSPath.reverseContour = __GSPath__reverseContour__
+
+def __GSPath__pointInside__(self, point):
+	return self.bezierPath.containsPoint_(point)
+GSPath.pointInside = __GSPath__pointInside__
+
+def __GSPath__move__(self, (x, y)):
+	"""move the contour"""
+	#this will be faster if we go straight to the points
+	for point in self.points:
+		point.move((x, y))
+
+GSPath.move = __GSPath__move__
+
+def __GSPath__get_selected(self):
+	selected = 0
+	nodes = self.nodes
+	Layer = self.parent
+	for node in nodes:
+		if node in Layer.selection:
+			selected = 1
+			break
+	return selected
+
+def __GSPath__set_selected(self, value):
+	Layer = self.parent
+	if value:
+		Layer.addObjectsFromArrayToSelection_(self.pyobjc_instanceMethods.nodes())
+	else:
+		Layer.removeObjectsFromSelection_(self.pyobjc_instanceMethods.nodes())
+
+GSPath.selected = property(__GSPath__get_selected, __GSPath__set_selected, doc="selection of the contour: 1-selected or 0-unselected")
+
+
+def getPointVale(self):
+	# compatibility with speedpunk
+	return self.position
+GSNode.pointValue = getPointVale
 
 class RBPoint(BaseBPoint):
 	
