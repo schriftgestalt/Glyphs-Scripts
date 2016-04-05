@@ -1209,8 +1209,8 @@ def __GSComponent_set_scale(self, (xScale, yScale)):
 	
 GSComponent.scale = property(__GSComponent_get_scale, __GSComponent_set_scale, doc="the scale of the component")
 
-transformation = property(lambda self: self.transformStruct(),
-						  lambda self, value: self.setTransformStruct_(value))
+GSComponent.transformation = property(lambda self: self.transformStruct(),
+									  lambda self, value: self.setTransformStruct_(value))
 
 def __GSComponent_move_(self, (x, y)):
 	"""Move the component"""
