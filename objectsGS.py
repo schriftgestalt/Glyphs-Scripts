@@ -1112,39 +1112,6 @@ RPoint = GSNode
 
 RAnchor = GSAnchor
 
-def _get_name(self):
-	try:
-		name = self._object.userData()["name"]
-		if name is not None:
-			return name
-	except:
-		pass
-	
-	# Compatibility with old way to store name.
-	try:
-		a = TAG
-	except:
-		TAG = -2
-	Path = self.parent
-	Layer = Path.parent
-	for Hint in Layer.hints:
-		if Hint.type == TAG and len(Hint.name()) > 0:
-			if Hint.originNode is None and Hint.originIndex is not None:
-				Hint.updateIndexes()
-			if Hint.originNode == self._object:
-				self.setUserData_forKey_(Hint.name(), "name")
-				Layer.removeHint_(Hint)
-				return Hint.name()
-	return None
-
-def _set_name(self, value):
-	if value is None or type(value) is str or type(value) is unicode or type(value) is objc.pyobjc_unicode:
-		self.setUserData_forKey_(value, "name")
-	else:
-		raise(ValueError)
-	
-GSNode.name = property(_get_name, _set_name, doc="")
-
 def __GSNode__get_smooth(self):
 	return self.connection == GSSMOOTH
 
