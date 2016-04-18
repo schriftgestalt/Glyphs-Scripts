@@ -649,15 +649,19 @@ def readGlyphs(Font, Dict):
 								glyph.vhints.append(hint)
 						else:
 							if Horizontal:
-								hint = glyph.hhints[hHintIndex]
-								hint.positions[masterIndex] = Origin
-								hint.widths[masterIndex] = Size
-								hHintIndex = hHintIndex + 1
+								try:
+									hint = glyph.hhints[hHintIndex]
+									hint.positions[masterIndex] = Origin
+									hint.widths[masterIndex] = Size
+									hHintIndex += 1
+								except: pass
 							else:
-								hint = glyph.vhints[vHintIndex]
-								hint.positions[masterIndex] = Origin
-								hint.widths[masterIndex] = Size
-								vHintIndex = vHintIndex + 1
+								try:
+									hint = glyph.vhints[vHintIndex]
+									hint.positions[masterIndex] = Origin
+									hint.widths[masterIndex] = Size
+									vHintIndex += 1
+								except: pass
 			if "anchors" in Layer.keys():
 				for AnchorIndex in range(len(Layer["anchors"])):
 					# print "__nodeIndex:", nodeIndex
