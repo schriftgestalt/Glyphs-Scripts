@@ -114,7 +114,6 @@ def setInstanceStyleNames(Font, Dict):
 		_shortStyle = _shortStyle.replace(any, shortStyleList[any])
 	_postscriptName = _Familie + "-" + _shortStyle
 	_postscriptName = _postscriptName.replace(" ", "")
-	# print _postscriptName
 	Font.family_name = _Familie
 	Font.style_name = _WinStyle
 	
@@ -361,14 +360,12 @@ def loadGlyphsInfo():
 		GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
 		WeightCodesPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/weights.plist"
 	
-	print 'Loading GlyphData from "%s" ...' % GlyphsInfoPath
 	parseGlyphDataFile(GlyphsInfoPath)
 	
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
 		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
 		if os.path.isfile(CustomGlyphsInfoPath):
-			print 'Loading custom GlyphData from "%s" ...' % CustomGlyphsInfoPath
 			parseGlyphDataFile(CustomGlyphsInfoPath)
 	
 	global weightCodes
@@ -402,12 +399,10 @@ def checkForNestedComponentsAndDecompose(Font, glyph, MasterCount):
 		ComponentGlyph = Font.glyphs[component.index]
 		if len(ComponentGlyph.components) > 0:
 			
-			#print "__ needs decompostion", glyph.name
+			print "Needs decomposition:", glyph.name
 			for ComponentGlyphComponent in ComponentGlyph.components:
 				CopyComponent = Component(ComponentGlyphComponent)
-				#print "__ComponentGlyphComponent", ComponentGlyphComponent
 				for masterIndex in range(MasterCount):
-					#print "Decompose", CopyComponent.deltas[masterIndex].x, component.scales[masterIndex].x, component.deltas[masterIndex].x
 					CopyComponent.scales[masterIndex].x = CopyComponent.scales[masterIndex].x * component.scales[masterIndex].x
 					CopyComponent.scales[masterIndex].y = CopyComponent.scales[masterIndex].y * component.scales[masterIndex].y
 					CopyComponent.deltas[masterIndex].x = (CopyComponent.deltas[masterIndex].x * component.scales[masterIndex].x) + component.deltas[masterIndex].x
@@ -992,7 +987,7 @@ def GetFile(message=None, filetypes = None, selectFolders = True, selectFiles = 
 	return None
 
 def listdir_fullpath(d):
-    return [os.path.join(d, f) for f in os.listdir(d)]
+	return [os.path.join(d, f) for f in os.listdir(d)]
 
 def main():
 	fl.output = ""
