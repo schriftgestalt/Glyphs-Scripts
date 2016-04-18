@@ -1,7 +1,7 @@
 #FLM: Glyphs Import
 # -*- coding: utf-8 -*-
-# Version 0.4
-# copyright Georg Seifert 2012, schriftgestaltung.de
+# Version 0.5
+# copyright Georg Seifert 2016, schriftgestaltung.de
 # 
 # The script will read a .glyphs file and import it into FontLab.
 # It requires FontLab 5.1 on Mac
