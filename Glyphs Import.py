@@ -277,7 +277,7 @@ def setFontInfo(Font, Dict):
 			Font.cap_height[i] = int(FontMasters[i]["capHeight"])
 			Font.x_height[i] = int(FontMasters[i]["xHeight"])
 			if "italicAngle" in FontMasters[i]:
-				Font.italic_angle = float(FontMasters[i]["italicAngle"])
+				Font.italic_angle = -float(FontMasters[i]["italicAngle"])
 			
 			if "horizontalStems" in FontMasters[i]:
 				if i == 0:
