@@ -8,15 +8,13 @@
 # if you find any bugs, please report to info@glyphsapp.com
 
 from FL import *
-from Foundation import NSOpenPanel, NSAutoreleasePool, NSDictionary, NSSearchPathForDirectoriesInDomains, NSApplicationSupportDirectory, NSUserDomainMask
-from AppKit import NSWorkspace
 import os.path
 import math, time
-import Nav
-import MacOS
-import Carbon.File
-from plistlib import *
 import colorsys
+
+
+# path to the "GlyphsData.xml" file. If None, the script will search inside Glyphs.app
+GLYPHS_INFO_PATH = None
 
 convertName = True
 Nice2Legacy = {}
@@ -24,7 +22,22 @@ Name2Category = {}
 Name2SubCategory = {}
 
 shortStyleList = {"Extra": "Ex", "Condensed": "Cond", "Extended": "Extd", "Semi":"Sm", "Italic": "It", "Bold":"Bd", " Sans":"", " Mono":""}
-weightCodes = {}
+weightCodes = {
+	"Thin": 250,
+	"ExtraLight": 250,
+	"UltraLight": 250,
+	"Light": 300,
+	"Normal": 400,
+	"Regular": 400,
+	"Medium": 500,
+	"SemiBold": 600,
+	"DemiBold": 600,
+	"Bold": 700,
+	"ExtraBold": 800,
+	"UltraBold": 800,
+	"Black": 900,
+	"Heavy": 900,
+}
 
 def NotNiceName(Name):
 	if convertName:
@@ -191,7 +204,7 @@ def setFontInfo(Font, Dict):
 		"manufacturerURL" : ("vendor_url", unicode),
 	}
 	for Key in KeyTranslate:
-		if Key in Dict.allKeys():
+		if Key in Dict.keys():
 			FlKey, FlType = KeyTranslate[Key]
 			if FlType == unicode:
 				setattr(Font, FlKey, unicode(Dict[Key]).encode("utf-8"))
@@ -295,7 +308,7 @@ def setFontInfo(Font, Dict):
 				BlueZones = []
 				OtherZones = []
 				for ZoneString in FontMasters[i]["alignmentZones"]:
-					Zone = str(ZoneString)[1:-1].split(", ")
+					Zone = str(ZoneString).strip()[1:-1].split(", ")
 					Zone = map(int, Zone)
 					
 					if Zone[1] < 0 and Zone[0] != 0:
@@ -318,6 +331,10 @@ def setFontInfo(Font, Dict):
 	return True
 
 def applicationSupportFolder(appname=u"Glyphs"):
+	try:
+		from Foundation import NSSearchPathForDirectoriesInDomains, NSApplicationSupportDirectory, NSUserDomainMask
+	except ImportError:
+		return None
 	paths = NSSearchPathForDirectoriesInDomains(NSApplicationSupportDirectory,NSUserDomainMask,True)
 	basePath = (len(paths) > 0 and paths[0]) or NSTemporaryDirectory()
 	fullPath = basePath.stringByAppendingPathComponent_(appname)
@@ -343,33 +360,36 @@ def parseGlyphDataFile(Path):
 	except:
 		print "there was a problem reading the GlyphData.xml file. Probably because you did not have a copy of Glyphs in the application folder.(%s)" % Path
 
-def loadGlyphsInfo():
-	try:
-		GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs2")
-		if GlyphsPath is None:
-			GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
-		if GlyphsPath is None:
-			GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.schriftgestaltung.Glyphs")
-		if GlyphsPath is None:
-			GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.schriftgestaltung.GlyphsMini")
-		GlyphsPath = GlyphsPath.path()
-	except:
-		return
-	
-	if GlyphsPath is not None:
-		GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
-		WeightCodesPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/weights.plist"
-	
-	parseGlyphDataFile(GlyphsInfoPath)
-	
+def loadGlyphsInfo(GlyphsInfoPath=None):
+	if GlyphsInfoPath is None:
+		try:
+			from AppKit import NSWorkspace
+		except ImportError:
+			pass  # on Windows, skip
+		else:
+			try:
+				GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs2")
+				if GlyphsPath is None:
+					GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.GeorgSeifert.Glyphs")
+				if GlyphsPath is None:
+					GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.schriftgestaltung.Glyphs")
+				if GlyphsPath is None:
+					GlyphsPath = NSWorkspace.sharedWorkspace().URLForApplicationWithBundleIdentifier_("com.schriftgestaltung.GlyphsMini")
+				GlyphsPath = GlyphsPath.path()
+			except:
+				return
+
+			if GlyphsPath is not None:
+				GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
+
+	if GlyphsInfoPath:
+		parseGlyphDataFile(GlyphsInfoPath)
+
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
 		CustomGlyphsInfoPath = CustomGlyphsInfoPath.stringByAppendingPathComponent_("/Info/GlyphData.xml")
 		if os.path.isfile(CustomGlyphsInfoPath):
 			parseGlyphDataFile(CustomGlyphsInfoPath)
-	
-	global weightCodes
-	weightCodes = NSDictionary.alloc().initWithContentsOfFile_(WeightCodesPath)
 
 def fixNodes(Nodes):
 	while "OFFCURVE" in Nodes[-1]:
@@ -947,13 +967,16 @@ def setLegacyNames(Font):
 	
 def readGlyphsFile(filePath):
 	print "Import Glyphs File"
-	pool = NSAutoreleasePool.alloc().init()
-	GlyphsDoc = NSDictionary.alloc().initWithContentsOfFile_(filePath)
-	if GlyphsDoc is None:
-		print "Could not load .glyphs file."
-		pool.drain()
-		return
-	loadGlyphsInfo()
+	with open(filePath, 'rb') as f:
+		data = f.read()
+
+	if data.startswith("<?xml"):
+		from plistlib import readPlistFromString
+		GlyphsDoc = readPlistFromString(data)
+	else:
+		from glyphs2ufo.parser import Parser
+		GlyphsDoc = Parser(dict_type=dict).parse(data)
+
 	from FL import fl, Font
 	folder, base = os.path.split(filePath)
 	base = base.replace(".glyphs", ".vfb")
@@ -974,11 +997,17 @@ def readGlyphsFile(filePath):
 	
 	fl.UpdateFont()
 	f.modified = 0
-	pool.drain()
 
 
 def GetFile(message=None, filetypes = None, selectFolders = True, selectFiles = True):
 	assert(filetypes)
+	try:
+		from Foundation import NSOpenPanel
+	except ImportError:
+		# on Windows, use Fontlab's dialog (only supports single file, not folders)
+		assert len(filetypes) == 1
+		filetype = filetypes[0]
+		return fl.GetFileName(1, "", "", "%s file|*.%s" % (filetype.capitalize(), filetype))
 	Panel = NSOpenPanel.openPanel()
 	if message != None:
 		Panel.setMessage_(message)
@@ -997,8 +1026,9 @@ def main():
 	fl.output = ""
 	path = GetFile(message="Please select a .glyphs file", filetypes=["glyphs"], selectFolders=True, selectFiles=True)
 	StartTime = time.clock()
-	if path is None:
+	if not path:
 		return
+	loadGlyphsInfo(GLYPHS_INFO_PATH)
 	if os.path.isfile(path):
 		readGlyphsFile(path)
 	else:
