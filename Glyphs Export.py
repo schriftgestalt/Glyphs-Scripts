@@ -559,8 +559,14 @@ def writeFeatures(font, Dict):
 def GetSaveFile(message=None, ProposedFileName=None, filetypes=None):
 	if filetypes is None:
 		filetypes = []
-	from Foundation import NSSavePanel
-	from AppKit import NSOKButton
+	try:
+		from Foundation import NSSavePanel
+		from AppKit import NSOKButton
+	except ImportError:
+		assert len(filetypes) == 1
+		filetype = filetypes[0]
+		ProposedFileName = ProposedFileName if ProposedFileName else ""
+		return fl.GetFileName(0, "", ProposedFileName, "%s file|*.%s" % (filetype.capitalize(), filetype))
 	Panel = NSSavePanel.savePanel().retain()
 	if message is not None:
 		Panel.setTitle_(message)
@@ -588,7 +594,7 @@ def main():
 		if FamilyName is not None:
 			FamilyName = FamilyName + ".glyphs"
 		path = GetSaveFile(message="Please select a .glyphs file", ProposedFileName=FamilyName, filetypes=["glyphs"])
-		if path is None:
+		if not path:
 			return
 	path = os.path.splitext(path)[0]
 	path = path+".glyphs"
