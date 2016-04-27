@@ -967,15 +967,32 @@ def setLegacyNames(Font):
 	
 def readGlyphsFile(filePath):
 	print "Import Glyphs File"
-	with open(filePath, 'rb') as f:
-		data = f.read()
-
-	if data.startswith("<?xml"):
-		from plistlib import readPlistFromString
-		GlyphsDoc = readPlistFromString(data)
+	pool = None
+	try:
+		from Foundation import NSAutoreleasePool, NSDictionary
+	except ImportError:
+		# on Windows, PyObjC is not available
+		with open(filePath, 'rb') as f:
+			data = f.read()
+		if data.startswith("<?xml"):
+			# use the built-in plistlib module for XML plist
+			from plistlib import readPlistFromString
+			GlyphsDoc = readPlistFromString(data)
+		else:
+			# use glyphsLib's Parser for ASCII plist.
+			# Download it from: https://github.com/googlei18n/glyphsLib
+			from glyphsLib.parser import Parser
+			GlyphsDoc = Parser(dict_type=dict).parse(data)
 	else:
-		from glyphs2ufo.parser import Parser
-		GlyphsDoc = Parser(dict_type=dict).parse(data)
+		# on OS X, use NSDictionary
+		pool = NSAutoreleasePool.alloc().init()
+		GlyphsDoc = NSDictionary.alloc().initWithContentsOfFile_(filePath)
+
+	if not GlyphsDoc:
+		print "Could not load .glyphs file."
+		if pool:
+			pool.drain()
+		return
 
 	from FL import fl, Font
 	folder, base = os.path.split(filePath)
@@ -997,6 +1014,8 @@ def readGlyphsFile(filePath):
 	
 	fl.UpdateFont()
 	f.modified = 0
+	if pool:
+		pool.drain()
 
 
 def GetFile(message=None, filetypes = None, selectFolders = True, selectFiles = True):
