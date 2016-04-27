@@ -344,7 +344,11 @@ def applicationSupportFolder(appname=u"Glyphs"):
 
 def parseGlyphDataFile(Path):
 	try:
-		from xml.etree import ElementTree as ET
+		try:
+			from xml.etree import cElementTree as ET
+		except ImportError:
+			from xml.etree import ElementTree as ET
+
 		element = ET.parse(Path)
 		
 		for subelement in element.getiterator():
