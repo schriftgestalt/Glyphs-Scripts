@@ -979,9 +979,9 @@ def readGlyphsFile(filePath):
 			from plistlib import readPlistFromString
 			GlyphsDoc = readPlistFromString(data)
 		else:
-			# use glyphs2ufo's Parser for ASCII plist.
-			# Download it from: https://github.com/googlei18n/glyphs2ufo
-			from glyphs2ufo.parser import Parser
+			# use glyphsLib's Parser for ASCII plist.
+			# Download it from: https://github.com/googlei18n/glyphsLib
+			from glyphsLib.parser import Parser
 			GlyphsDoc = Parser(dict_type=dict).parse(data)
 	else:
 		# on OS X, use NSDictionary
