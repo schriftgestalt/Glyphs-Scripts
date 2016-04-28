@@ -4,7 +4,7 @@
 # copyright Georg Seifert 2016, schriftgestaltung.de
 # 
 # The script will read a .glyphs file and import it into FontLab.
-# It requires FontLab 5.1 on Mac
+# It requires FontLab 5.1.
 # if you find any bugs, please report to info@glyphsapp.com
 
 from FL import *
@@ -13,7 +13,13 @@ import math, time
 import colorsys
 
 
-# path to the "GlyphsData.xml" file. If None, the script will search inside Glyphs.app
+# custom path to the "GlyphsData.xml" file. If not specified, the script will first
+# search inside Glyphs.app. If that is not installed, the script will try to find
+# GlyphData.xml in FontLab's "Data" folder:
+# - on OS X: /Library/Application Support/FontLab/Studio 5/Data/GlyphData.xml
+# - on Windows: C:\Program Files (x86)\FontLab\Studio 5\Data\GlyphData.xml
+# A copy is available at the 'GlyphsInfo' repository:
+# https://raw.githubusercontent.com/schriftgestalt/GlyphsInfo/master/GlyphData.xml
 GLYPHS_INFO_PATH = None
 
 convertName = True
@@ -384,10 +390,22 @@ def loadGlyphsInfo(GlyphsInfoPath=None):
 				return
 
 			if GlyphsPath is not None:
-				GlyphsInfoPath = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
+				bundledGlyphData = GlyphsPath+"/Contents/Frameworks/GlyphsCore.framework/Versions/A/Resources/GlyphData.xml"
+				if os.path.isfile(bundledGlyphData):
+					GlyphsInfoPath = bundledGlyphData
 
-	if GlyphsInfoPath:
+	if GlyphsInfoPath is None:
+		# try to locate GlyphData.xml in FontLab's "Data" directory
+		flGlyphData = os.path.join(fl.path, "Data", "GlyphData.xml")
+		if os.path.isfile(flGlyphData):
+			GlyphsInfoPath = flGlyphData
+
+	if GlyphsInfoPath and os.path.isfile(GlyphsInfoPath):
 		parseGlyphDataFile(GlyphsInfoPath)
+	else:
+		print ("Cannot find \"GlyphData.xml\".\n"
+			   "Make sure Glyphs.app is installed correctly, or download \"GlyphData.xml\" from\n"
+			   "https://github.com/schriftgestalt/GlyphsInfo, and place it inside \"FontLab/Studio 5/Data\".")
 
 	CustomGlyphsInfoPath = applicationSupportFolder()
 	if CustomGlyphsInfoPath:
