@@ -511,12 +511,11 @@ def readGlyphs(Font, Dict):
 		
 		for masterIndex in range(MasterCount):
 			FontMaster = FontMasters[masterIndex]
-			Layer = None
-			try:
-				for Layer in GlyphDict["layers"]:
-					if Layer["layerId"] == FontMaster["id"]:
-						break
-			except:
+			for Layer in GlyphDict["layers"]:
+				if Layer["layerId"] == FontMaster["id"]:
+					break
+			else:
+				# 'master' layer not found, skip
 				continue
 			ShiftNodes = 0
 			if isNonSpacingMark:
