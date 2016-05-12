@@ -547,6 +547,8 @@ class RGlyph(BaseGlyph):
 	
 	def _invalidateContours(self):
 		self._contours = None
+		if self._layer:
+			self._layer.updatePath()
 	
 	def __iter__(self):
 		Values = self._layer.paths
