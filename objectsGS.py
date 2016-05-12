@@ -688,7 +688,7 @@ class RGlyph(BaseGlyph):
 			self._layer.removePath_(index)
 	
 	def center(self, padding=None):
-		"""Equalise sidebearings, set to padding if wanted."""
+		"""Equalize sidebearings, set to padding if wanted."""
 		left = self._layer.LSB
 		right = self._layer.RSB
 		if padding:
