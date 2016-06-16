@@ -7,6 +7,7 @@ from GlyphsApp import *
 from GlyphsApp import Proxy
 from AppKit import *
 from Foundation import *
+import traceback
 
 from robofab import RoboFabError, RoboFabWarning, ufoLib
 from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseInfo, BaseFeatures, BaseLib,\
@@ -1349,24 +1350,40 @@ from AppKit import *
 from vanilla.vanillaBase import VanillaBaseObject
 
 class GlyphPreviewView(NSView):
-	
 	def setGlyph_(self, glyph):
 		self._glyph = glyph
-	
+	def setDelegate_(self, delegate):
+		self._delegate = delegate
 	def drawRect_(self, rect):
 		frame = self.frame()
 		NSColor.whiteColor().set()
 		NSRectFill(frame)
 		try:
 			if self._glyph is not None:
-				if self._glyph.__class__.__name__ == "NSKVONotifying_GSLayer":
+				print "__self._glyph", self._glyph, self._glyph.__class__.__name__
+				if self._glyph.__class__.__name__ in ("NSKVONotifying_GSLayer", "GSLayer"):
 					layer = self._glyph
 				elif isinstance(self._glyph, RGlyph):
 					layer = self._glyph._layer
 				if layer:
 					layer.drawInFrame_(frame)
 		except:
-			import traceback
+			print traceback.format_exc()
+	def mouseDown_(self, event):
+		try:
+			if event.clickCount() == 2:
+				if self._delegate.mouseDoubleDownCallBack:
+					self._delegate.mouseDoubleDownCallBack(self)
+				return;
+			if self._delegate.mouseDownCallBack:
+				self._delegate.mouseDownCallBack(self)
+		except:
+			print traceback.format_exc()
+	def mouseUp_(self, event):
+		try:
+			if self._delegate.mouseUpCallBack:
+				self._delegate.mouseUpCallBack(self)
+		except:
 			print traceback.format_exc()
 
 class GlyphPreview(VanillaBaseObject):
@@ -1383,7 +1400,10 @@ class GlyphPreview(VanillaBaseObject):
 				self.w = FloatingWindow((200, 200), self.title, closable=False)
 				glyph = Glyphs.font.selectedLayers[0]
 				self.w.Preview = GlyphPreview((0, 0, 0, 0), glyph=glyph)
+				self.w.Preview.mouseDoubleDownCallBack = self.mouseDoubleDown
 				self.w.open()
+			def mouseDoubleDown(self, sender):
+				print "Mouse Double Down"
 		
 		GlyphPreviewDemo()
 
@@ -1395,6 +1415,9 @@ class GlyphPreview(VanillaBaseObject):
 	nsGlyphPreviewClass = GlyphPreviewView
 
 	def __init__(self, posSize, glyph=None):
+		self.mouseDownCallBack = None
+		self.mouseDoubleDownCallBack = None
+		self.mouseUpCallBack = None
 		self._setupView(self.nsGlyphPreviewClass, posSize)
+		self._nsObject.setDelegate_(self)
 		self._nsObject.setGlyph_(glyph)
-	
