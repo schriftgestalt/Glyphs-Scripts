@@ -297,11 +297,11 @@ class RFont(BaseFont):
 		self._document.close()
 	
 	def _get_lib(self):
-		lib = self._font.userData.objectForKey_("org.robofab.ufoLib")
+		lib = self._font.userData["org.robofab.ufoLib"]
 		if lib is None:
-			lib = NSClassFromString("GSNotifyingDictionary").alloc().init()
-			lib.setParent_(self._font)
-			self._font.setUserObject_forKey_(lib, "org.robofab.ufoLib")
+			lib = NSClassFromString("NSMutableDictionary").alloc().init()
+			#lib.setParent_(self._font)
+			self._font.setUserData_forKey_(lib, "org.robofab.ufoLib")
 		return lib
 	
 	def _set_lib(self, obj):
