@@ -767,6 +767,9 @@ class RGlyph(BaseGlyph):
 		pass
 	def prepareUndo(self, undoTitle):
 		pass
+		
+	def getLayer(self, name):
+		return RGlyph(layer = self._object.layerForName_(name))
 #############
 #
 #  GSPath/Contour
