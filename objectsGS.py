@@ -4,7 +4,7 @@ import sys
 import objc
 import weakref
 from GlyphsApp import *
-from GlyphsApp import Proxy
+from GlyphsApp import Proxy, UserDataProxy
 from AppKit import *
 from Foundation import *
 import traceback
@@ -296,18 +296,7 @@ class RFont(BaseFont):
 	def close(self):
 		self._document.close()
 	
-	def _get_lib(self):
-		lib = self._font.userData["org.robofab.ufoLib"]
-		if lib is None:
-			lib = NSClassFromString("NSMutableDictionary").alloc().init()
-			#lib.setParent_(self._font)
-			self._font.setUserData_forKey_(lib, "org.robofab.ufoLib")
-		return lib
-	
-	def _set_lib(self, obj):
-		self._font.userData.setObject_forKey_(obj, "org.robofab.ufoLib")
-	
-	lib = property(_get_lib, _set_lib, doc="font lib object")
+	lib = property(lambda self: UserDataProxy(self._font))
 	
 	def _hasNotChanged(self, doGlyphs=True):
 		raise NotImplementedError
