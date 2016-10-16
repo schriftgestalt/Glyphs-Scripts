@@ -1011,25 +1011,6 @@ def __GSPath__move__(self, (x, y)):
 
 GSPath.move = __GSPath__move__
 
-def __GSPath__get_selected(self):
-	selected = 0
-	nodes = self.nodes
-	Layer = self.parent
-	for node in nodes:
-		if node in Layer.selection:
-			selected = 1
-			break
-	return selected
-
-def __GSPath__set_selected(self, value):
-	Layer = self.parent
-	if value:
-		Layer.addObjectsFromArrayToSelection_(self.pyobjc_instanceMethods.nodes())
-	else:
-		Layer.removeObjectsFromSelection_(self.pyobjc_instanceMethods.nodes())
-
-GSPath.selected = property(__GSPath__get_selected, __GSPath__set_selected, doc="selection of the contour: 1-selected or 0-unselected")
-
 
 def getPointVale(self):
 	# compatibility with speedpunk
