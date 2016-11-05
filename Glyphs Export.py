@@ -1,13 +1,15 @@
 #FLM: Glyphs Export
 # -*- coding: utf8 -*-
-# Version 0.6 (1. April 2014)
-# copyright Georg Seifert 2014, schriftgestaltung.de
-# 
-# please install it to: /Library/Application Support/FontLab/Studio 5/Macros/Glyphs Export.py
-# 
-# The scrit will write a .glyphs file at the same loaction than the .vfb file.
-# This preserves hints/links, kerning and Multiple Masters.
-# if you find any bugs, please report to info@glyphsapp.com
+# Version 0.7 (20. June 2016)
+# copyright Georg Seifert 2016, schriftgestaltung.de
+
+__doc__ = '''
+Please install it to: /Library/Application Support/FontLab/Studio 5/Macros/Glyphs Export.py
+
+The script will write a .glyphs file at the same location than the .vfb file. This preserves hints/links, kerning and Multiple Masters.
+
+If you find any bugs, please open a issue at this repository (https://github.com/schriftgestalt/Glyphs-Scripts).
+'''
 
 import os.path
 import math, time

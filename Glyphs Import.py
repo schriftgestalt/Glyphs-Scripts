@@ -1,11 +1,15 @@
 #FLM: Glyphs Import
 # -*- coding: utf-8 -*-
-# Version 0.5
+# Version 0.6 (29. April 2016)
 # copyright Georg Seifert 2016, schriftgestaltung.de
-# 
-# The script will read a .glyphs file and import it into FontLab.
-# It requires FontLab 5.1.
-# if you find any bugs, please report to info@glyphsapp.com
+
+__doc__ = '''
+The script will read a .glyphs file and import it into FontLab.
+
+It requires FontLab 5.1.
+
+If you find any bugs, please open a issue at this repository (https://github.com/schriftgestalt/Glyphs-Scripts).
+'''
 
 from FL import *
 import os.path
