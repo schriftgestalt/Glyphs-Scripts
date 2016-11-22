@@ -1,6 +1,6 @@
 #FLM: Glyphs Export
 # -*- coding: utf8 -*-
-# Version 0.7 (20. June 2016)
+# Version 0.8 (22. Nov 2016)
 # copyright Georg Seifert 2016, schriftgestaltung.de
 
 __doc__ = '''
