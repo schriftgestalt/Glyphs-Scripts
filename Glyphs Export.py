@@ -89,9 +89,9 @@ def makePlist(font):
 	#kerning
 	Font = Plist ()
 	if font.pref_family_name is not None:
-		Font["familyName"] = font.pref_family_name
+		Font["familyName"] = convertFLSToUnicode(font.pref_family_name)
 	elif font.family_name is not None:
-		Font["familyName"] = font.family_name
+		Font["familyName"] = convertFLSToUnicode(font.family_name)
 	
 	WeightValues = {
 		"Thin" : 250,
