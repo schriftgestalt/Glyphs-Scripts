@@ -508,12 +508,14 @@ def writeFeatures(font, Dict):
 	Classes = []
 	for i in range(len(font.classes)):
 		ClassText = font.classes[i]
-		if ClassText[0] != "_" and ClassText[0] != ".":
+		if ClassText[0] != "_":
 			ClassTupel = ClassText.split(":", 1)
 			if len(ClassTupel) == 2:
 				Class = {}
 				Class["name"] = ClassTupel[0].strip()
 				Class["code"] = ClassTupel[1].strip()
+				if ClassText[0] == ".":
+					Class["disabled"] = 1
 				Classes.append(Class)
 	if len(Classes) > 0:
 		Dict["classes"] = Classes
