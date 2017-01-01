@@ -225,7 +225,7 @@ def makePlist(font):
 	
 	Font["disablesAutomaticAlignment"] = True
 	print "Font is written with \"Disables Automatic Alignment\" activated. Please review this setting in Font Info."
-	
+
 	MasterCount = font[0].layers_number
 	for i in range(MasterCount):
 		FontMaster = {}
@@ -364,16 +364,23 @@ def makePlist(font):
 				for component in glyph.components:
 					Component = {}
 					Component["name"] = font[component.index].name
+				
 					Component["transform"] = "{%f, 0, 0, %f, %d, %d}" % (component.scales[masterIndex].x, component.scales[masterIndex].y, component.deltas[masterIndex].x, component.deltas[masterIndex].y)
 					Components.append(Component)
 				Layer["components"] = Components;
 			Paths = []
 			PathIndesPaths = []
 			Nodes = False
+			hasLinks = len(glyph.vlinks) > 0 or len(glyph.hlinks) > 0
 			for i in range(len(glyph)):
 				node = glyph.nodes[i].Layer(masterIndex)
 				if glyph.nodes[i].type == nMOVE:
 					if Nodes:
+						if Nodes[-1].find("CURVE") > 0 and not hasLinks:
+							LastParts = Nodes[-1].split(" ")
+							FirstParts = Nodes[0].split(" ")
+							if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+								Nodes.pop(0)
 						Paths.append({"nodes": Nodes, "closed":True})
 					Nodes = []
 				
@@ -385,9 +392,15 @@ def makePlist(font):
 					Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
 				if (glyph.nodes[i].alignment != nSHARP):
 					Nodes[-1] = Nodes[-1] + " SMOOTH"
+				
 				PathIndesPaths.append("{%d, %d}" % (len(Paths), len(Nodes)-1))
 			
 			if Nodes:
+				if Nodes[-1].find("CURVE") > 0 and not hasLinks:
+					LastParts = Nodes[-1].split(" ")
+					FirstParts = Nodes[0].split(" ")
+					if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
+						Nodes.pop(0)
 				Paths.append({"nodes": Nodes, "closed":True})
 			Layer["paths"] = Paths
 			
