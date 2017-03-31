@@ -1088,6 +1088,13 @@ RPoint = GSNode
 
 RAnchor = GSAnchor
 
+def __GSAnchor_move_(self, (x, y)):
+	"""Move the anchor"""
+	self.position.x += x
+	self.position.y += y
+
+GSAnchor.move = __GSAnchor_move_
+
 def __GSNode__get_smooth(self):
 	return self.connection == GSSMOOTH
 
@@ -1152,27 +1159,8 @@ def __GSComponent_round_(self):
 	self.setTransformStruct_((xx, xy, yx, yy, int(round(dx)), int(round(dy))))
 GSComponent.round = __GSComponent_round_
 
-def __GSComponent_draw_(self, pen):
-	pen.addComponent(self.baseGlyph, self.transformation)
-	# else:
-	#	# It's an "old" 'Fab pen
-	#	pen.addComponent(self.baseGlyph, self.offset, self.scale)
-GSComponent.draw = __GSComponent_draw_
-
-GSComponent.drawPoints = __GSComponent_draw_
-
 def RComponent(baseGlyphName=None, offset=(0,0), scale=(1,1), transform=None):
 	return GSComponent(baseGlyphName, offset, scale, transform)
-
-RAnchor = GSAnchor
-
-def __GSAnchor_draw_(self, pen):
-	"""draw the object with a point pen"""
-	pen.beginPath()
-	pen.addPoint((self.x, self.y), segmentType="move", smooth=False, name=self.name)
-	pen.endPath()
-
-GSAnchor.drawPoints = __GSAnchor_draw_
 
 class RKerning(BaseKerning):
 	_title = "GlyphsKerning"
