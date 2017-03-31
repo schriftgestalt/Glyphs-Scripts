@@ -1088,6 +1088,13 @@ RPoint = GSNode
 
 RAnchor = GSAnchor
 
+def __GSAnchor_move_(self, (x, y)):
+	"""Move the anchor"""
+	self.position.x += x
+	self.position.y += y
+
+GSAnchor.move = __GSAnchor_move_
+
 def __GSNode__get_smooth(self):
 	return self.connection == GSSMOOTH
 
