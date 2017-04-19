@@ -20,7 +20,7 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 import os
 from warnings import warn
 
-__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH", "GlyphPreview"]
+__all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSQCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH", "GlyphPreview"]
 
 GSMOVE_ = 17
 GSLINE_ = 1
@@ -32,6 +32,7 @@ GSSMOOTH = 100
 GSMOVE = MOVE
 GSLINE = LINE
 GSCURVE = CURVE
+GSQCURVE = QCURVE
 GSOFFCURVE = OFFCURVE
 
 LOCAL_ENCODING = "macroman"
