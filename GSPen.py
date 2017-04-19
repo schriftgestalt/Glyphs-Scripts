@@ -6,7 +6,7 @@ from AppKit import *
 from Foundation import *
 
 from GlyphsApp import *
-from objectsGS import RGlyph, GSLINE, GSCURVE, GSOFFCURVE, GSSHARP, GSSMOOTH
+from objectsGS import RGlyph, GSLINE, GSCURVE, GSQCURVE, GSOFFCURVE, GSSHARP, GSSMOOTH
 
 from robofab.objects.objectsBase import MOVE, LINE, CURVE, QCURVE, OFFCURVE
 
