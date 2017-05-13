@@ -470,11 +470,11 @@ def makePlist(font):
 							Paths.append({"nodes": Nodes, "closed":True})
 						Nodes = []
 				
-					if len(node) > 1:
+					if len(node) > 2:
 						Nodes.append(("%d %d OFFCURVE" % (node[1].x, node[1].y)))
 						Nodes.append(("%d %d OFFCURVE" % (node[2].x, node[2].y)))
 						Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
-					else:
+					elif len(node) > 0:
 						Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
 					if (mask.nodes[i].alignment != nSHARP):
 						Nodes[-1] = Nodes[-1] + " SMOOTH"
