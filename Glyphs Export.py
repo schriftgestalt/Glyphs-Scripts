@@ -23,9 +23,13 @@ def convertFLSToUnicode(Value):
 		Uni = Value.decode("UTF-8")
 	except:
 		try:
-			Uni = unicode(Value, 'cp1252')
+			Uni = unicode(Value, 'mac-roman')
 		except:
-			pass
+			try:
+				Uni = unicode(Value, 'cp1252')
+			except:
+				print "Can't covert Value", Value.decode('utf8','ignore')
+				pass
 	return Uni
 	
 def mapFLToCustomParameter(font, CustomParametersMapping):
@@ -514,7 +518,7 @@ def makePlist(font):
 def writeFeatures(font, Dict):
 	Prefix = {}
 	if font.ot_classes is not None and len(font.ot_classes) > 0:
-		Prefix["code"] = font.ot_classes.strip()
+		Prefix["code"] = convertFLSToUnicode(font.ot_classes.strip())
 		Prefix["name"] = "FontLab OTPanel"
 		Dict["featurePrefixes"] = [Prefix]
 	
@@ -526,7 +530,7 @@ def writeFeatures(font, Dict):
 			if len(ClassTupel) == 2:
 				Class = {}
 				Class["name"] = ClassTupel[0].strip()
-				Class["code"] = ClassTupel[1].strip()
+				Class["code"] = convertFLSToUnicode(ClassTupel[1].strip())
 				if ClassText[0] == ".":
 					Class["disabled"] = 1
 				Classes.append(Class)
@@ -541,22 +545,21 @@ def writeFeatures(font, Dict):
 		Feature["name"] = FeatureText.tag
 		if Feature["name"] == "kern":
 			continue
-		
 		try:
 			Match = p.findall(FeatureText.value.decode('utf8','ignore'))
 		except:
 			print "__ illegal character in feature", FeatureText.tag
 		try:
-			Feature["code"] = Match[0][1]
+			Feature["code"] = convertFLSToUnicode(Match[0][1])
 			Features.append(Feature)
 		except:
 			StartIndex = FeatureText.value.find("{")
 			EndIndex = FeatureText.value.rfind("}")
 			if StartIndex > 0 and EndIndex > 0 and EndIndex > StartIndex:
-				Feature["code"] = FeatureText.value[StartIndex+1:EndIndex].strip()
+				Feature["code"] = convertFLSToUnicode(FeatureText.value[StartIndex+1:EndIndex].strip())
 				Features.append(Feature)
-				continue
-			print "__ Problme with Features:", FeatureText.tag, "\n", FeatureText.value
+			else:
+				print "Problme with Features:", FeatureText.tag, "\n", FeatureText.value
 	if len(Features) > 0:
 		Dict["features"] = Features
 	return Dict
