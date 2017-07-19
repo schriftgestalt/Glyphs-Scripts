@@ -17,7 +17,7 @@ from robofab.objects.objectsBase import BaseFont, BaseKerning, BaseGroups, BaseI
 		MOVE, LINE, CORNER, CURVE, QCURVE, OFFCURVE,\
 		BasePostScriptFontHintValues, postScriptHintDataLibKey, BasePostScriptGlyphHintValues
 
-import os
+import os, traceback
 from warnings import warn
 
 __all__ = ["CurrentFont", "AllFonts", "CurrentGlyph", 'OpenFont', 'RFont', 'RGlyph', 'RContour', 'RPoint', 'RAnchor', 'RComponent', "NewFont", "GSMOVE", "GSLINE", "GSCURVE", "GSQCURVE", "GSOFFCURVE", "GSSHARP", "GSSMOOTH", "GlyphPreview"]
@@ -44,11 +44,12 @@ if type(GSElement.parent) != type(GSGlyph.parent):
 
 def CurrentFont():
 	"""Return a RoboFab font object for the currently selected font."""
-	doc = Glyphs.currentDocument
+	doc = Glyphs.currentFontDocument()
 	if doc:
 		try:
 			return RFont(doc.font, doc.windowControllers()[0].masterIndex())
 		except:
+			traceback.print_exc()
 			pass
 	return None
 
@@ -481,7 +482,7 @@ class RGlyph(BaseGlyph):
 		
 		if glyph is None:
 			glyph = GSGlyph()
-		else:
+		elif glyph.parent is not None:
 			self.setParent(RFont(glyph.parent, self.masterIndex))
 		
 		self._object = glyph
