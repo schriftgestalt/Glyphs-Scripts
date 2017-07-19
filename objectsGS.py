@@ -1006,7 +1006,6 @@ GSPath.pointInside = __GSPath__pointInside__
 
 def __GSPath__move__(self, (x, y)):
 	"""move the contour"""
-	#this will be faster if we go straight to the points
 	for point in self.points:
 		point.move((x, y))
 
@@ -1089,12 +1088,14 @@ RPoint = GSNode
 
 RAnchor = GSAnchor
 
-def __GSAnchor_move_(self, (x, y)):
+def __GSElement_move_(self, (x, y)):
 	"""Move the anchor"""
-	self.position.x += x
-	self.position.y += y
+	pt = self.position
+	pt.x += x
+	pt.y += y
+	self.position = pt
 
-GSAnchor.move = __GSAnchor_move_
+GSAnchor.move = __GSElement_move_
 
 def __GSNode__get_smooth(self):
 	return self.connection == GSSMOOTH
@@ -1107,12 +1108,7 @@ def __GSNode__set_smooth(self, value):
 
 GSNode.smooth = property(__GSNode__get_smooth, __GSNode__set_smooth, doc="")
 
-def __GSNode__move__(self, (x, y)):
-	"""Move the point"""
-	self.x, self.y = addPt((self.x, self.y), (x, y))
-	
-GSNode.move = __GSNode__move__
-
+GSNode.move = __GSElement_move_
 
 GSComponent.offset = property(lambda self: self.position)
 
