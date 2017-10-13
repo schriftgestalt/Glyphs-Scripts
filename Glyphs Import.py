@@ -333,11 +333,21 @@ def setFontInfo(Font, Dict):
 				if i == 0:
 					Font.blue_values_num = len(BlueZones)
 					Font.other_blues_num = len(OtherZones)
-				
+				blue_values = Font.blue_values[i]
+				other_blues = Font.other_blues[i]
+				print Font.blue_values_num, blue_values
 				for j in range(Font.blue_values_num):
-					Font.blue_values[i][j] = BlueZones[j]
+					try:
+						blue_values[j] = BlueZones[j]
+					except:
+						print ":: Alignment zones are not compatible in all masters"
 				for j in range(Font.other_blues_num):
-					Font.other_blues[i][j] = OtherZones[j]
+					try:
+						other_blues[j] = OtherZones[j]
+					except:
+						print ":: Alignment zones are not compatible in all masters"
+					
+					
 	return True
 
 def applicationSupportFolder(appname=u"Glyphs"):
