@@ -1,9 +1,7 @@
-"""Pens for creating glyphs in Glyphs."""
 # -*- coding: utf-8 -*-
+"""Pens for creating glyphs in Glyphs."""
 import sys
 import objc
-from AppKit import *
-from Foundation import *
 
 from GlyphsApp import *
 from objectsGS import RGlyph, GSLINE, GSCURVE, GSQCURVE, GSOFFCURVE, GSSHARP, GSSMOOTH

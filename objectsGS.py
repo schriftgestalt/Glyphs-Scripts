@@ -5,8 +5,9 @@ import objc
 import weakref
 from GlyphsApp import *
 from GlyphsApp import Proxy, UserDataProxy
-from AppKit import *
-from Foundation import *
+from AppKit import NSView, NSColor, NSRectFill, NSChangeCleared
+from Foundation import NSNumber, NSMutableArray, NSAffineTransform, NSClassFromString, NSMinX, NSMinY, NSMaxX, NSMaxY
+from WebKit import WebView
 import traceback
 
 from robofab import RoboFabError, RoboFabWarning, ufoLib
@@ -1305,7 +1306,6 @@ class RFeatures(BaseFeatures):
 
 	text = property(_get_text, _set_text, doc="raw feature text.")
 
-from AppKit import *
 from vanilla.vanillaBase import VanillaBaseObject
 
 class GlyphPreviewView(NSView):
