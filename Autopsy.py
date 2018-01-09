@@ -726,18 +726,19 @@ Extra Black	1000'''
 				if len(f.masters) == 1:
 					
 					# width
-					if f.masters[0].width and f.masters[0].width in widths:
-						width = widths[f.masters[0].width]
-					else:
-						width = 500
+					#if f.masters[0].width and f.masters[0].width in widths:
+					#	width = widths[f.masters[0].width]
+					#else:
+					#	width = 500
+					width = f.masters[0].widthValue
 					
 					# weights
-					#print "__weights", weights
-					weight = 0
-					try:
-						weight = weights[f.masters[0].weight]
-					except:
-						pass
+					# weight = 0
+					# try:
+					# 	weight = weights[f.masters[0].weightValue]
+					# except:
+					# 	pass
+					weight = f.masters[0].weightValue
 					
 					if weight < 10:
 						weight = 400
