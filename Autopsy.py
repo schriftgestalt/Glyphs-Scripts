@@ -944,7 +944,7 @@ Extra Black	1000'''
 
 			
 		# Calculate ratio
-		if not NSUserDefaults.standardUserDefaults()["com_yanone_Autopsy_PageOrientation_landscape"]:
+		if not Glyphs.boolDefaults["com_yanone_Autopsy_PageOrientation_landscape"]:
 			ratio = (scrapboard['top'] - scrapboard['bottom']) / maxheight * mm
 			ratio2 = (scrapboard['right'] - scrapboard['left']) / maxsinglewidth * mm
 			maxratio = 0.3
