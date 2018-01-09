@@ -19,11 +19,11 @@
 #
 ########################################################################
 
-
-from AppKit import *
+from Foundation import NSURL, NSMakeRect
+from AppKit import NSApp, NSAttributedString, NSFont, NSFontAttributeName, NSColor, NSForegroundColorAttributeName, NSBezierPath, NSRectFill, NSOKButton, NSCancelButton, NSValueTransformerNameBindingOption, NSGraphicsContext
 import time, os, string, math, random
 
-from Quartz.CoreGraphics import *
+from Quartz import CGRectMake, CGPDFContextCreateWithURL, CGPDFContextBeginPage, CGPDFContextEndPage, CGPDFContextClose
 
 try:
 	from vanilla import *
@@ -49,7 +49,7 @@ class Ddict(dict):
 		return dict.__getitem__(self, key)
 
 def setup_binding_CheckBox(self, Object, KeyPath, options = objc.nil):
-	self._nsObject.subviews()[0].bind_toObject_withKeyPath_options_("value", Object, "values."+KeyPath, options)
+	self._nsObject.bind_toObject_withKeyPath_options_("value", Object, "values."+KeyPath, options)
 	
 CheckBox.binding = setup_binding_CheckBox
 
@@ -925,8 +925,6 @@ Extra Black	1000'''
 					# L + R sidebearing
 					reports[glyph]['leftsidebearing'].addvalue((g.LSB, widthforgraph, heightforgraph))
 					reports[glyph]['rightsidebearing'].addvalue((g.RSB, widthforgraph, heightforgraph))
-
-		
 
 		# Recalculate drawing boards
 		numberoftables = 0
