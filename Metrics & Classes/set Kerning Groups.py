@@ -980,7 +980,5 @@ def test():
 			newValues.append( niceName(value) )
 		print "	\"%s\" : [\"%s\", \"%s\"]," % (key, newValues[1], newValues[0])
 		NewDefaultKeys[key] = newValues
-	#print NewDefaultKeys
 main()
 
-#test()

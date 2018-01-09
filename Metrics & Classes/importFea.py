@@ -1,7 +1,7 @@
 #MenuTitle: import fea file
 # encoding: utf-8
 """
-importAFM.py
+importFea.py
 
 Created by Georg Seifert on 2010-04-03.
 Copyright (c) 2010 schriftgestaltung.de. All rights reserved.
@@ -82,8 +82,7 @@ def main():
 		if result is not None:
 			importfea_file(Doc, result)
 	else:
-		Alert = NSAlert.alertWithMessageText_defaultButton_alternateButton_otherButton_informativeTextWithFormat_(objc.nil, objc.nil, objc.nil, objc.nil, "Please open a document")
-		Alert.runModal()
+		Message("Please open a document", "")
 
 if __name__ == '__main__':
 	main()
