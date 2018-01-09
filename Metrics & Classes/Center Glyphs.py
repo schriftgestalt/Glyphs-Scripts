@@ -11,8 +11,6 @@ import sys
 import os
 from GlyphsApp import *
 import objc
-from AppKit import *
-from Foundation import *
 
 def main():
 	Doc = Glyphs.currentDocument

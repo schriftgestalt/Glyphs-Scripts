@@ -11,8 +11,6 @@ import sys
 import os
 from GlyphsApp import *
 import objc
-from AppKit import *
-from Foundation import *
 
 def importfea_file(Doc, filePath):
 	if os.path.isfile(filePath):
