@@ -4,7 +4,7 @@ import sys
 import objc
 import weakref
 from GlyphsApp import *
-from GlyphsApp import Proxy, UserDataProxy
+from GlyphsApp import Proxy, UserDataProxy, GSElement, GSGlyph, GSClass, GSLayer, GSComponent, GSAnchor, GSPath, GSNode
 from AppKit import NSView, NSColor, NSRectFill, NSChangeCleared
 from Foundation import NSNumber, NSMutableArray, NSAffineTransform, NSClassFromString, NSMinX, NSMinY, NSMaxX, NSMaxY
 from WebKit import WebView
