@@ -499,7 +499,7 @@ def readGlyphs(Font, Dict):
 			Nice2Legacy[Name] = Production
 		glyph.name = Name
 		if "unicode" in GlyphDict.keys():
-			glyph.unicode = int(GlyphDict["unicode"], 16)
+			glyph.unicodes = list([int(x, 16) for x in GlyphDict["unicode"].split(",")])
 		if "export" in GlyphDict.keys() and str(GlyphDict["export"]) == "0":
 			glyph.customdata = "Not Exported"
 			glyph.mark = 2
