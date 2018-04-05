@@ -376,35 +376,53 @@ def makePlist(font):
 			PathIndesPaths = []
 			Nodes = False
 			hasLinks = len(glyph.vlinks) > 0 or len(glyph.hlinks) > 0
+			hasOffCurve = False
+			firstNode = None
 			for i in range(len(glyph)):
-				node = glyph.nodes[i].Layer(masterIndex)
-				if glyph.nodes[i].type == nMOVE:
-					if Nodes:
-						if Nodes[-1].find("CURVE") > 0 and not hasLinks:
+				pointList = glyph.nodes[i].Layer(masterIndex)
+				node = glyph.nodes[i]
+				if node.type == nMOVE:
+					if firstNode and Nodes:
+						if hasOffCurve:
+							Nodes.append(("%d %d QCURVE" % (firstNode[0].x, firstNode[0].y)))
+						else:
 							LastParts = Nodes[-1].split(" ")
 							FirstParts = Nodes[0].split(" ")
-							if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-								Nodes.pop(0)
+							if not(FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1] and FirstParts[2] != "OFFCURVE"):
+								Nodes.append(("%d %d LINE" % (firstNode[0].x, firstNode[0].y)))
+					
+					if Nodes:
 						Paths.append({"nodes": Nodes, "closed":True})
 					Nodes = []
-				
-				if len(node) > 1:
-					Nodes.append(("%d %d OFFCURVE" % (node[1].x, node[1].y)))
-					Nodes.append(("%d %d OFFCURVE" % (node[2].x, node[2].y)))
-					Nodes.append(("%d %d CURVE" % (node[0].x, node[0].y)))
+					firstNode = pointList
+					hasOffCurve = False
+				elif node.type == nOFF:
+					Nodes.append(("%d %d OFFCURVE" % (pointList[0].x, pointList[0].y)))
+					hasOffCurve = True
+				elif node.type == nCURVE and len(pointList) > 1:
+					Nodes.append(("%d %d OFFCURVE" % (pointList[1].x, pointList[1].y)))
+					Nodes.append(("%d %d OFFCURVE" % (pointList[2].x, pointList[2].y)))
+					Nodes.append(("%d %d CURVE" % (pointList[0].x, pointList[0].y)))
+					hasOffCurve = False
 				else:
-					Nodes.append(("%d %d LINE" % (node[0].x, node[0].y)))
-				if (glyph.nodes[i].alignment != nSHARP):
+					if hasOffCurve:
+						Nodes.append(("%d %d QCURVE" % (pointList[0].x, pointList[0].y)))
+					else:
+						Nodes.append(("%d %d LINE" % (pointList[0].x, pointList[0].y)))
+					hasOffCurve = False
+				if len(Nodes) > 0 and node.alignment != nSHARP:
 					Nodes[-1] = Nodes[-1] + " SMOOTH"
 				
 				PathIndesPaths.append("{%d, %d}" % (len(Paths), len(Nodes)-1))
-			
 			if Nodes:
-				if Nodes[-1].find("CURVE") > 0 and not hasLinks:
+				if hasOffCurve:
+					Nodes.append(("%d %d QCURVE" % (firstNode[0].x, firstNode[0].y)))
+				else:
 					LastParts = Nodes[-1].split(" ")
 					FirstParts = Nodes[0].split(" ")
-					if FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1]:
-						Nodes.pop(0)
+					if not(FirstParts[0] == LastParts[0] and FirstParts[1] == LastParts[1] and FirstParts[2] != "OFFCURVE"):
+						Nodes.append(("%d %d LINE" % (firstNode[0].x, firstNode[0].y)))
+				
 				Paths.append({"nodes": Nodes, "closed":True})
 			Layer["paths"] = Paths
 			
