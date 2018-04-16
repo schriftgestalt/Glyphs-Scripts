@@ -512,8 +512,8 @@ def makePlist(font):
 					Layer["background"] = {"paths" : Paths}
 			Layers.append(Layer)
 		Glyph["layers"] = Layers
-		if glyph.unicode > 1:
-			Glyph["unicode"] = join("%.4X" % x for x in glyph.unicodes)
+		if glyph.unicode > 0:
+			Glyph["unicode"] = ",".join("%.4X" % x for x in glyph.unicodes)
 			
 		if glyph.mark > 0:
 			Mark = glyph.mark
