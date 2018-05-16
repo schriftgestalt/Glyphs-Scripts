@@ -17,10 +17,10 @@ def FilterGlyphKey(Key):
 def remove():
 	for glyph in Glyphs.font.glyphs:
 		for layer in glyph.layers:
-			Key = FilterLayerKey(layer.leftMetricsKey())
+			Key = FilterLayerKey(layer.leftMetricsKey)
 			if Key is not None:
 				layer.setLeftMetricsKey_(Key)
-			Key = FilterLayerKey(layer.rightMetricsKey())
+			Key = FilterLayerKey(layer.rightMetricsKey)
 			if Key is not None:
 				layer.setRightMetricsKey_(Key)
 		Key = FilterGlyphKey(glyph.leftMetricsKey)
