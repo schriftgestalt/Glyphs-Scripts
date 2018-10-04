@@ -4,7 +4,7 @@ __doc__="""
 Batch Generate Fonts.
 """
 
-from GlyphsApp import OTF, TTF, WOFF, WOFF2, EOT
+from GlyphsApp import OTF, TTF, WOFF, WOFF2, EOT, UFO
 
 fileFolder = "~/Desktop/files"
 
@@ -40,4 +40,8 @@ for fileName in fileNames:
 		for instance in font.instances:
 			print "== Exporting Web =="
 			print instance.generate(Format=Web_OutlineFormat, FontPath=os.path.expanduser(web_path), AutoHint=TTF_AutoHint, RemoveOverlap=RemoveOverlap, UseSubroutines=UseSubroutines, UseProductionNames=UseProductionNames, Containers=[WOFF, WOFF2, EOT])
+		print
+		for instance in font.instances:
+			print "== Exporting UFO =="
+			print instance.generate(Format=UFO, FontPath=os.path.expanduser(ufo_path), UseProductionNames=UseProductionNames)
 		print
