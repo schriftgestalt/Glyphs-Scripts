@@ -510,13 +510,14 @@ def makePlist(font):
 					Paths.append({"nodes": Nodes, "closed":True})
 				if len(Paths) > 0:
 					Layer["background"] = {"paths" : Paths}
-			if glyph.note and len(glyph.note) > 0:
-				Layer["note"] = convertFLSToUnicode(glyph.note)
 			Layers.append(Layer)
 		Glyph["layers"] = Layers
 		if glyph.unicode > 0:
 			Glyph["unicode"] = ",".join("%.4X" % x for x in glyph.unicodes)
 			
+		if glyph.note and len(glyph.note) > 0:
+			Glyph["note"] = convertFLSToUnicode(glyph.note)
+
 		if glyph.mark > 0:
 			Mark = glyph.mark
 			Color2Mark = [5, 18, 29, 44, 63, 85, 139, 166, 195, 234]
