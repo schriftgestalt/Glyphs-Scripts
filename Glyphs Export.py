@@ -510,6 +510,8 @@ def makePlist(font):
 					Paths.append({"nodes": Nodes, "closed":True})
 				if len(Paths) > 0:
 					Layer["background"] = {"paths" : Paths}
+			if glyph.note and len(glyph.note) > 0:
+				Layer["note"] = glyph.note
 			Layers.append(Layer)
 		Glyph["layers"] = Layers
 		if glyph.unicode > 0:
