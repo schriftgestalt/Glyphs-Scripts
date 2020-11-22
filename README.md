@@ -1,3 +1,5 @@
+**Don’t use those scripts any more. The relevate parts moved to [mekkablue/Glyphs-Scripts](https://github.com/mekkablue/Glyphs-Scripts)
+
 # Scripts for Glyphs
 These are some sample scripts and the necessary files to use Robofab scripts from within Glyphs.
 Copy the files to the Glyphs Scripts folder. To navigate there quickly, choose Open Scripts Folder from the Scripts menu.
